@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import { Send, ArrowRight } from "lucide-react";
 import RevealBox from "@/components/RevealBox";
+import { salvarOrcamento } from "@/lib/orcamentos";
 
 export default function Contato() {
   const [loading, setLoading] = useState(false);
@@ -12,10 +13,19 @@ export default function Contato() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
     setTimeout(() => {
+      salvarOrcamento({
+        nome: (formData.get("nome") as string) || "",
+        email: (formData.get("email") as string) || "",
+        empresa: (formData.get("empresa") as string) || "",
+        descricao: (formData.get("descricao") as string) || "",
+      });
       setLoading(false);
       toast.success("Solicitação enviada com sucesso! Entraremos em contato em breve.");
-      (e.target as HTMLFormElement).reset();
+      form.reset();
     }, 1000);
   };
 
@@ -31,19 +41,19 @@ export default function Contato() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Nome</label>
-              <Input required placeholder="Seu nome completo" className="bg-muted/50 border-border/50 focus:border-primary/50 transition-colors" />
+              <Input name="nome" required placeholder="Seu nome completo" className="bg-muted/50 border-border/50 focus:border-primary/50 transition-colors" />
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Email</label>
-              <Input required type="email" placeholder="seu@email.com" className="bg-muted/50 border-border/50 focus:border-primary/50 transition-colors" />
+              <Input name="email" required type="email" placeholder="seu@email.com" className="bg-muted/50 border-border/50 focus:border-primary/50 transition-colors" />
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Empresa</label>
-              <Input placeholder="Nome da empresa (opcional)" className="bg-muted/50 border-border/50 focus:border-primary/50 transition-colors" />
+              <Input name="empresa" placeholder="Nome da empresa (opcional)" className="bg-muted/50 border-border/50 focus:border-primary/50 transition-colors" />
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Tipo de projeto</label>
-              <Textarea required placeholder="Descreva brevemente o que você precisa..." rows={4} className="bg-muted/50 border-border/50 focus:border-primary/50 transition-colors" />
+              <Textarea name="descricao" required placeholder="Descreva brevemente o que você precisa..." rows={4} className="bg-muted/50 border-border/50 focus:border-primary/50 transition-colors" />
             </div>
             <button
               type="submit"
