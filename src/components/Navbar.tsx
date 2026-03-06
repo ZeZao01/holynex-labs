@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import logo from "@/assets/logo.png";
 
 const links = [
   { to: "/", label: "Home" },
@@ -25,13 +26,22 @@ export default function Navbar() {
     >
       <div className="container mx-auto flex items-center justify-between h-20 px-4">
         {/* Logo */}
-        <Link to="/" className="font-display text-xl font-bold tracking-tight relative z-10">
-          <span className="text-gradient-animated">HOLYNEX</span>{" "}
-          <span className="text-foreground">LABS</span>
+        <Link to="/" className="flex items-center gap-2.5 relative z-10 group">
+          <motion.img
+            src={logo}
+            alt="HolyNex Labs"
+            className="h-9 w-9"
+            whileHover={{ rotate: 15, scale: 1.1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          />
+          <span className="font-display text-xl font-bold tracking-tight">
+            <span className="text-gradient-animated">HOLYNEX</span>{" "}
+            <span className="text-foreground">LABS</span>
+          </span>
         </Link>
 
         {/* Desktop — Pill nav */}
-        <div className="hidden md:flex items-center">
+        <div className="hidden lg:flex items-center">
           <div className="nav-pill flex items-center gap-1 px-2 py-1.5">
             {links.map((l) => (
               <Link
@@ -50,7 +60,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop CTA */}
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <Link
             to="/contato"
             className="btn-glow-filled inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-primary-foreground"
@@ -62,7 +72,7 @@ export default function Navbar() {
 
         {/* Mobile toggle */}
         <motion.button
-          className="md:hidden text-foreground relative z-10 w-10 h-10 flex items-center justify-center rounded-full glass"
+          className="lg:hidden text-foreground relative z-[60] w-10 h-10 flex items-center justify-center rounded-full glass"
           onClick={() => setOpen(!open)}
           whileTap={{ scale: 0.9 }}
         >
@@ -84,20 +94,28 @@ export default function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="md:hidden fixed inset-0 z-40 bg-background/95 backdrop-blur-2xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            className="lg:hidden fixed inset-0 z-50 bg-background/98 backdrop-blur-3xl"
+            initial={{ opacity: 0, clipPath: "circle(0% at 95% 5%)" }}
+            animate={{ opacity: 1, clipPath: "circle(150% at 95% 5%)" }}
+            exit={{ opacity: 0, clipPath: "circle(0% at 95% 5%)" }}
+            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <div className="flex flex-col items-center justify-center h-full gap-2">
+            <div className="flex flex-col items-center justify-center h-full gap-3">
+              <motion.img
+                src={logo}
+                alt="HolyNex Labs"
+                className="h-16 w-16 mb-4"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              />
               {links.map((l, i) => (
                 <motion.div
                   key={l.to}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                  initial={{ opacity: 0, x: -40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 40 }}
+                  transition={{ delay: 0.1 + i * 0.06, duration: 0.4 }}
                 >
                   <Link
                     to={l.to}
@@ -113,11 +131,10 @@ export default function Navbar() {
                 </motion.div>
               ))}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: 0.35, duration: 0.3 }}
-                className="mt-4"
+                transition={{ delay: 0.5, duration: 0.4 }}
+                className="mt-6"
               >
                 <Link
                   to="/contato"
