@@ -58,7 +58,7 @@ export default function Index() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Large logo behind hero */}
         <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none -translate-y-[5%] md:-translate-y-[8%]"
           initial={{ opacity: 0, scale: 0.6, rotate: -20 }}
           animate={{ opacity: 0.07, scale: 1, rotate: 0 }}
           transition={{ duration: 1.5, ease: [0.25, 0.46, 0.45, 0.94] }}
