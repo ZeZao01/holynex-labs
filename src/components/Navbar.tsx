@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Menu, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const links = [
@@ -18,68 +17,121 @@ export default function Navbar() {
   const location = useLocation();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass">
-      <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <Link to="/" className="font-display text-xl font-bold tracking-tight">
-          <span className="text-gradient">HOLYNEX</span>{" "}
+    <motion.nav
+      className="fixed top-0 left-0 right-0 z-50"
+      initial={{ y: -80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
+      <div className="container mx-auto flex items-center justify-between h-20 px-4">
+        {/* Logo */}
+        <Link to="/" className="font-display text-xl font-bold tracking-tight relative z-10">
+          <span className="text-gradient-animated">HOLYNEX</span>{" "}
           <span className="text-foreground">LABS</span>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden md:flex items-center gap-8">
-          {links.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                location.pathname === l.to ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              {l.label}
-            </Link>
-          ))}
-          <Button asChild size="sm" className="bg-gradient-purple hover:opacity-90 border-0">
-            <Link to="/contato">Iniciar Projeto</Link>
-          </Button>
+        {/* Desktop — Pill nav */}
+        <div className="hidden md:flex items-center">
+          <div className="nav-pill flex items-center gap-1 px-2 py-1.5">
+            {links.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className={`nav-link-animated text-sm font-medium px-4 py-2 rounded-full transition-all duration-300 ${
+                  location.pathname === l.to
+                    ? "text-primary bg-primary/10 active"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop CTA */}
+        <div className="hidden md:block">
+          <Link
+            to="/contato"
+            className="btn-glow-filled inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-primary-foreground"
+          >
+            Começar agora
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden text-foreground" onClick={() => setOpen(!open)}>
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <motion.button
+          className="md:hidden text-foreground relative z-10 w-10 h-10 flex items-center justify-center rounded-full glass"
+          onClick={() => setOpen(!open)}
+          whileTap={{ scale: 0.9 }}
+        >
+          <AnimatePresence mode="wait">
+            {open ? (
+              <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                <X size={20} />
+              </motion.div>
+            ) : (
+              <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                <Menu size={20} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.button>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile fullscreen menu */}
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden glass border-t border-border/50"
+            className="md:hidden fixed inset-0 z-40 bg-background/95 backdrop-blur-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
-              {links.map((l) => (
-                <Link
+            <div className="flex flex-col items-center justify-center h-full gap-2">
+              {links.map((l, i) => (
+                <motion.div
                   key={l.to}
-                  to={l.to}
-                  onClick={() => setOpen(false)}
-                  className={`text-sm font-medium py-2 transition-colors hover:text-primary ${
-                    location.pathname === l.to ? "text-primary" : "text-muted-foreground"
-                  }`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ delay: i * 0.05, duration: 0.3 }}
                 >
-                  {l.label}
-                </Link>
+                  <Link
+                    to={l.to}
+                    onClick={() => setOpen(false)}
+                    className={`text-2xl font-display font-semibold py-3 px-8 rounded-xl transition-all duration-300 block ${
+                      location.pathname === l.to
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
+                </motion.div>
               ))}
-              <Button asChild size="sm" className="bg-gradient-purple border-0 w-full mt-2">
-                <Link to="/contato" onClick={() => setOpen(false)}>
-                  Iniciar Projeto
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ delay: 0.35, duration: 0.3 }}
+                className="mt-4"
+              >
+                <Link
+                  to="/contato"
+                  onClick={() => setOpen(false)}
+                  className="btn-glow-filled inline-flex items-center gap-2 px-8 py-3 rounded-full text-base font-semibold text-primary-foreground"
+                >
+                  Começar agora
+                  <ArrowRight className="h-5 w-5" />
                 </Link>
-              </Button>
+              </motion.div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
   );
 }
