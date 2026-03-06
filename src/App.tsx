@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { LanguageProvider } from "@/i18n/LanguageContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -20,23 +21,25 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AnimatedBackground />
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/servicos" element={<Servicos />} />
-          <Route path="/solucoes" element={<Solucoes />} />
-          <Route path="/portfolio" element={<Portfolio />} />
-          <Route path="/sobre" element={<Sobre />} />
-          <Route path="/contato" element={<Contato />} />
-          <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Footer />
-      </BrowserRouter>
+      <LanguageProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AnimatedBackground />
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/servicos" element={<Servicos />} />
+            <Route path="/solucoes" element={<Solucoes />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/sobre" element={<Sobre />} />
+            <Route path="/contato" element={<Contato />} />
+            <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Footer />
+        </BrowserRouter>
+      </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
