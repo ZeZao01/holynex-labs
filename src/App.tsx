@@ -12,6 +12,7 @@ import Solucoes from "./pages/Solucoes";
 import Portfolio from "./pages/Portfolio";
 import Sobre from "./pages/Sobre";
 import Contato from "./pages/Contato";
+import AdminOrcamentos from "./pages/AdminOrcamentos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/contato" element={<Contato />} />
+          <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
