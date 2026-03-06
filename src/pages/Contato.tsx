@@ -48,7 +48,7 @@ export default function Contato() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-glow-filled inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-base font-semibold text-primary-foreground disabled:opacity-50"
+              className="w-full btn-glow inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-base font-semibold text-foreground disabled:opacity-50"
             >
               <Send className="h-4 w-4" />
               {loading ? "Enviando..." : "Solicitar orçamento"}

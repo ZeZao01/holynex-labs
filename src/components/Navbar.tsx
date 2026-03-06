@@ -63,7 +63,7 @@ export default function Navbar() {
         <div className="hidden lg:block">
           <Link
             to="/contato"
-            className="btn-glow-filled inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-primary-foreground"
+            className="btn-glow inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-foreground"
           >
             Começar agora
             <ArrowRight className="h-4 w-4" />
@@ -139,7 +139,7 @@ export default function Navbar() {
                 <Link
                   to="/contato"
                   onClick={() => setOpen(false)}
-                  className="btn-glow-filled inline-flex items-center gap-2 px-8 py-3 rounded-full text-base font-semibold text-primary-foreground"
+                  className="btn-glow inline-flex items-center gap-2 px-8 py-3 rounded-full text-base font-semibold text-foreground"
                 >
                   Começar agora
                   <ArrowRight className="h-5 w-5" />

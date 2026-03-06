@@ -87,7 +87,7 @@ export default function Index() {
             <motion.div variants={fadeUp} custom={4} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 to="/contato"
-                className="btn-glow-filled inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-semibold text-primary-foreground group"
+                className="btn-glow inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-semibold text-foreground group"
               >
                 <Rocket className="h-5 w-5 group-hover:rotate-12 transition-transform" />
                 Iniciar Projeto
@@ -241,7 +241,7 @@ export default function Index() {
             </p>
             <Link
               to="/contato"
-              className="btn-glow-filled inline-flex items-center gap-3 px-10 py-5 rounded-full text-lg font-semibold text-primary-foreground group"
+              className="btn-glow inline-flex items-center gap-3 px-10 py-5 rounded-full text-lg font-semibold text-foreground group"
             >
               <Rocket className="h-5 w-5 group-hover:rotate-12 transition-transform" />
               Iniciar projeto
