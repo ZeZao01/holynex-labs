@@ -3,19 +3,22 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/logo.png";
-
-const links = [
-  { to: "/", label: "Home" },
-  { to: "/servicos", label: "Serviços" },
-  { to: "/solucoes", label: "Soluções" },
-  { to: "/portfolio", label: "Portfólio" },
-  { to: "/sobre", label: "Sobre" },
-  { to: "/contato", label: "Contato" },
-];
+import LanguageSelector from "@/components/LanguageSelector";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { t } = useLanguage();
+
+  const links = [
+    { to: "/", label: t("nav.home") },
+    { to: "/servicos", label: t("nav.services") },
+    { to: "/solucoes", label: t("nav.solutions") },
+    { to: "/portfolio", label: t("nav.portfolio") },
+    { to: "/sobre", label: t("nav.about") },
+    { to: "/contato", label: t("nav.contact") },
+  ];
 
   return (
     <motion.nav
@@ -24,17 +27,17 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <div className="container mx-auto flex items-center justify-between h-20 px-4">
+      <div className="container mx-auto flex items-center justify-between h-16 sm:h-20 px-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 relative z-10 group">
+        <Link to="/" className="flex items-center gap-2 relative z-10 group">
           <motion.img
             src={logo}
             alt="HolyNex Labs"
-            className="h-9 w-9"
+            className="h-8 w-8 sm:h-9 sm:w-9"
             whileHover={{ rotate: 15, scale: 1.1 }}
             transition={{ type: "spring", stiffness: 300 }}
           />
-          <span className="font-display text-xl font-bold tracking-tight">
+          <span className="font-display text-lg sm:text-xl font-bold tracking-tight">
             <span className="text-gradient-animated">HOLYNEX</span>{" "}
             <span className="text-foreground">LABS</span>
           </span>
@@ -59,35 +62,39 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Desktop CTA */}
-        <div className="hidden lg:block">
+        {/* Desktop CTA + Lang */}
+        <div className="hidden lg:flex items-center gap-3">
+          <LanguageSelector />
           <Link
             to="/contato"
             className="btn-glow inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-foreground"
           >
-            Começar agora
+            {t("nav.cta")}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
-        {/* Mobile toggle */}
-        <motion.button
-          className="lg:hidden text-foreground relative z-[60] w-10 h-10 flex items-center justify-center rounded-full glass"
-          onClick={() => setOpen(!open)}
-          whileTap={{ scale: 0.9 }}
-        >
-          <AnimatePresence mode="wait">
-            {open ? (
-              <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                <X size={20} />
-              </motion.div>
-            ) : (
-              <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                <Menu size={20} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        {/* Mobile: lang + toggle */}
+        <div className="flex lg:hidden items-center gap-2">
+          <LanguageSelector />
+          <motion.button
+            className="text-foreground relative z-[60] w-10 h-10 flex items-center justify-center rounded-full glass"
+            onClick={() => setOpen(!open)}
+            whileTap={{ scale: 0.9 }}
+          >
+            <AnimatePresence mode="wait">
+              {open ? (
+                <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <X size={20} />
+                </motion.div>
+              ) : (
+                <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <Menu size={20} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
       </div>
 
       {/* Mobile fullscreen menu */}
@@ -104,7 +111,7 @@ export default function Navbar() {
               <motion.img
                 src={logo}
                 alt="HolyNex Labs"
-                className="h-16 w-16 mb-4"
+                className="h-14 w-14 sm:h-16 sm:w-16 mb-4"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
@@ -120,7 +127,7 @@ export default function Navbar() {
                   <Link
                     to={l.to}
                     onClick={() => setOpen(false)}
-                    className={`text-2xl font-display font-semibold py-3 px-8 rounded-xl transition-all duration-300 block ${
+                    className={`text-xl sm:text-2xl font-display font-semibold py-3 px-8 rounded-xl transition-all duration-300 block ${
                       location.pathname === l.to
                         ? "text-primary bg-primary/10"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -141,7 +148,7 @@ export default function Navbar() {
                   onClick={() => setOpen(false)}
                   className="btn-glow inline-flex items-center gap-2 px-8 py-3 rounded-full text-base font-semibold text-foreground"
                 >
-                  Começar agora
+                  {t("nav.cta")}
                   <ArrowRight className="h-5 w-5" />
                 </Link>
               </motion.div>
