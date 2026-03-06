@@ -1,11 +1,23 @@
 import { useEffect, useRef } from "react";
 
-interface Column {
+interface Orb {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  hue: number;
+  alpha: number;
+}
+
+interface Particle {
   x: number;
   y: number;
   speed: number;
-  chars: string[];
-  fontSize: number;
+  char: string;
+  alpha: number;
+  size: number;
+  fadeSpeed: number;
 }
 
 export default function AnimatedBackground() {
@@ -18,67 +30,100 @@ export default function AnimatedBackground() {
     if (!ctx) return;
 
     let animationId: number;
-    let columns: Column[] = [];
-    const fontSize = 14;
+    const orbs: Orb[] = [];
+    const particles: Particle[] = [];
+    const orbCount = 4;
+    const particleCount = 80;
     const tokens = ["0", "0", "0", "1", "1", "1"];
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      initColumns();
     };
-
-    const initColumns = () => {
-      const colCount = Math.floor(canvas.width / fontSize);
-      columns = [];
-      for (let i = 0; i < colCount; i++) {
-        columns.push({
-          x: i * fontSize,
-          y: Math.random() * canvas.height * -1,
-          speed: 1 + Math.random() * 3,
-          chars: Array.from({ length: 20 + Math.floor(Math.random() * 20) }, () =>
-            tokens[Math.floor(Math.random() * tokens.length)]
-          ),
-          fontSize,
-        });
-      }
-    };
-
     resize();
     window.addEventListener("resize", resize);
 
+    // Create nebula orbs
+    for (let i = 0; i < orbCount; i++) {
+      orbs.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        radius: 180 + Math.random() * 280,
+        hue: 250 + Math.random() * 40,
+        alpha: 0.04 + Math.random() * 0.04,
+      });
+    }
+
+    // Create binary particles
+    const createParticle = (): Particle => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      speed: 0.2 + Math.random() * 0.6,
+      char: tokens[Math.floor(Math.random() * tokens.length)],
+      alpha: Math.random() * 0.4,
+      size: 10 + Math.random() * 6,
+      fadeSpeed: 0.002 + Math.random() * 0.005,
+    });
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(createParticle());
+    }
+
     const render = () => {
-      ctx.fillStyle = "rgba(3, 5, 8, 0.12)";
+      ctx.fillStyle = "rgba(3, 5, 8, 0.15)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      for (const col of columns) {
-        for (let j = 0; j < col.chars.length; j++) {
-          const charY = col.y + j * col.fontSize;
-          if (charY < -col.fontSize || charY > canvas.height + col.fontSize) continue;
+      // Draw nebula orbs
+      for (const orb of orbs) {
+        orb.x += orb.vx;
+        orb.y += orb.vy;
 
-          const distFromHead = col.chars.length - 1 - j;
-          if (distFromHead === 0) {
-            ctx.fillStyle = "rgba(180, 255, 180, 0.9)";
-          } else if (distFromHead < 3) {
-            ctx.fillStyle = `rgba(130, 80, 255, ${0.7 - distFromHead * 0.1})`;
-          } else {
-            const alpha = Math.max(0.03, 0.35 - distFromHead * 0.015);
-            ctx.fillStyle = `rgba(130, 80, 255, ${alpha})`;
-          }
+        if (orb.x < -orb.radius) orb.x = canvas.width + orb.radius;
+        if (orb.x > canvas.width + orb.radius) orb.x = -orb.radius;
+        if (orb.y < -orb.radius) orb.y = canvas.height + orb.radius;
+        if (orb.y > canvas.height + orb.radius) orb.y = -orb.radius;
 
-          ctx.font = `${col.fontSize}px monospace`;
-          ctx.fillText(col.chars[j], col.x, charY);
+        const gradient = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius);
+        gradient.addColorStop(0, `hsla(${orb.hue}, 90%, 65%, ${orb.alpha})`);
+        gradient.addColorStop(0.4, `hsla(${orb.hue}, 80%, 50%, ${orb.alpha * 0.5})`);
+        gradient.addColorStop(1, `hsla(${orb.hue}, 70%, 40%, 0)`);
 
-          // Randomly mutate characters
-          if (Math.random() < 0.02) {
-            col.chars[j] = tokens[Math.floor(Math.random() * tokens.length)];
-          }
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw binary particles
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.y -= p.speed;
+        p.alpha += p.fadeSpeed;
+
+        // Pulse alpha
+        if (p.alpha > 0.5) p.fadeSpeed = -Math.abs(p.fadeSpeed);
+        if (p.alpha < 0.02) {
+          particles[i] = createParticle();
+          particles[i].y = canvas.height + 10;
+          particles[i].alpha = 0.02;
+          continue;
         }
 
-        col.y += col.speed;
-        if (col.y > canvas.height + col.chars.length * col.fontSize) {
-          col.y = -col.chars.length * col.fontSize;
-          col.speed = 1 + Math.random() * 3;
+        ctx.font = `${p.size}px monospace`;
+        ctx.fillStyle = `hsla(262, 80%, 70%, ${p.alpha})`;
+        ctx.fillText(p.char, p.x, p.y);
+
+        // Randomly mutate
+        if (Math.random() < 0.01) {
+          p.char = tokens[Math.floor(Math.random() * tokens.length)];
+        }
+
+        // Reset if off screen
+        if (p.y < -20) {
+          particles[i] = createParticle();
+          particles[i].y = canvas.height + 10;
         }
       }
 
@@ -97,7 +142,7 @@ export default function AnimatedBackground() {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 z-0 pointer-events-none"
-      style={{ opacity: 0.6 }}
+      style={{ opacity: 0.7 }}
     />
   );
 }
