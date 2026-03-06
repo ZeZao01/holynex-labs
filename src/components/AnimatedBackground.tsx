@@ -1,13 +1,11 @@
 import { useEffect, useRef } from "react";
 
-interface Orb {
+interface Column {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
-  radius: number;
-  hue: number;
-  alpha: number;
+  speed: number;
+  chars: string[];
+  fontSize: number;
 }
 
 export default function AnimatedBackground() {
@@ -20,49 +18,68 @@ export default function AnimatedBackground() {
     if (!ctx) return;
 
     let animationId: number;
-    const orbs: Orb[] = [];
-    const orbCount = 5;
+    let columns: Column[] = [];
+    const fontSize = 14;
+    const tokens = ["0", "0", "0", "1", "1", "1"];
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      initColumns();
     };
+
+    const initColumns = () => {
+      const colCount = Math.floor(canvas.width / fontSize);
+      columns = [];
+      for (let i = 0; i < colCount; i++) {
+        columns.push({
+          x: i * fontSize,
+          y: Math.random() * canvas.height * -1,
+          speed: 1 + Math.random() * 3,
+          chars: Array.from({ length: 20 + Math.floor(Math.random() * 20) }, () =>
+            tokens[Math.floor(Math.random() * tokens.length)]
+          ),
+          fontSize,
+        });
+      }
+    };
+
     resize();
     window.addEventListener("resize", resize);
 
-    for (let i = 0; i < orbCount; i++) {
-      orbs.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        radius: 200 + Math.random() * 300,
-        hue: 250 + Math.random() * 40,
-        alpha: 0.03 + Math.random() * 0.04,
-      });
-    }
-
     const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(3, 5, 8, 0.12)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      for (const orb of orbs) {
-        orb.x += orb.vx;
-        orb.y += orb.vy;
+      for (const col of columns) {
+        for (let j = 0; j < col.chars.length; j++) {
+          const charY = col.y + j * col.fontSize;
+          if (charY < -col.fontSize || charY > canvas.height + col.fontSize) continue;
 
-        if (orb.x < -orb.radius) orb.x = canvas.width + orb.radius;
-        if (orb.x > canvas.width + orb.radius) orb.x = -orb.radius;
-        if (orb.y < -orb.radius) orb.y = canvas.height + orb.radius;
-        if (orb.y > canvas.height + orb.radius) orb.y = -orb.radius;
+          const distFromHead = col.chars.length - 1 - j;
+          if (distFromHead === 0) {
+            ctx.fillStyle = "rgba(180, 255, 180, 0.9)";
+          } else if (distFromHead < 3) {
+            ctx.fillStyle = `rgba(130, 80, 255, ${0.7 - distFromHead * 0.1})`;
+          } else {
+            const alpha = Math.max(0.03, 0.35 - distFromHead * 0.015);
+            ctx.fillStyle = `rgba(130, 80, 255, ${alpha})`;
+          }
 
-        const gradient = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius);
-        gradient.addColorStop(0, `hsla(${orb.hue}, 90%, 65%, ${orb.alpha})`);
-        gradient.addColorStop(0.5, `hsla(${orb.hue}, 80%, 50%, ${orb.alpha * 0.5})`);
-        gradient.addColorStop(1, `hsla(${orb.hue}, 70%, 40%, 0)`);
+          ctx.font = `${col.fontSize}px monospace`;
+          ctx.fillText(col.chars[j], col.x, charY);
 
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
-        ctx.fill();
+          // Randomly mutate characters
+          if (Math.random() < 0.02) {
+            col.chars[j] = tokens[Math.floor(Math.random() * tokens.length)];
+          }
+        }
+
+        col.y += col.speed;
+        if (col.y > canvas.height + col.chars.length * col.fontSize) {
+          col.y = -col.chars.length * col.fontSize;
+          col.speed = 1 + Math.random() * 3;
+        }
       }
 
       animationId = requestAnimationFrame(render);
@@ -80,7 +97,7 @@ export default function AnimatedBackground() {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 z-0 pointer-events-none"
-      style={{ opacity: 0.8 }}
+      style={{ opacity: 0.6 }}
     />
   );
 }
