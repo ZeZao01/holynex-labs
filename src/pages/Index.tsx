@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import { Rocket, Mail, Monitor, Cpu, BarChart3, Zap, CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
+import logo from "@/assets/logo.png";
 import Typewriter from "@/components/Typewriter";
 import RevealBox from "@/components/RevealBox";
 
@@ -55,6 +56,16 @@ export default function Index() {
     <div className="min-h-screen relative z-10">
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Large logo behind hero */}
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+          initial={{ opacity: 0, scale: 0.6, rotate: -20 }}
+          animate={{ opacity: 0.07, scale: 1, rotate: 0 }}
+          transition={{ duration: 1.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
+          <img src={logo} alt="" className="w-[500px] h-[500px] md:w-[700px] md:h-[700px] object-contain" />
+        </motion.div>
+
         <div className="container mx-auto px-4 relative z-10 pt-24 pb-12">
           <motion.div className="max-w-4xl mx-auto text-center" initial="hidden" animate="visible">
             <motion.div variants={fadeUp} custom={0} className="mb-8">
@@ -70,7 +81,7 @@ export default function Index() {
             >
               <span className="text-gradient-animated">HOLYNEX</span>
               <br />
-              <span className="text-foreground">LABS</span>
+              <span className="text-gradient-animated">LABS</span>
             </motion.h1>
             <motion.div variants={fadeUp} custom={2} className="text-xl md:text-3xl font-display text-foreground/80 mb-6 h-[40px] md:h-[48px]">
               <Typewriter
