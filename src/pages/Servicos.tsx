@@ -1,10 +1,6 @@
 import { motion, type Variants } from "framer-motion";
-import { Code2, Cpu, Building2, Globe } from "lucide-react";
-
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } }),
-};
+import { Code2, Cpu, Building2, Globe, ArrowRight } from "lucide-react";
+import RevealBox from "@/components/RevealBox";
 
 const servicos = [
   {
@@ -35,30 +31,31 @@ const servicos = [
 
 export default function Servicos() {
   return (
-    <div className="min-h-screen pt-24 pb-16">
+    <div className="min-h-screen pt-28 pb-16 relative z-10">
       <div className="container mx-auto px-4">
-        <motion.div className="text-center max-w-2xl mx-auto mb-16" initial="hidden" animate="visible">
-          <motion.span variants={fadeUp} custom={0} className="text-primary text-sm font-medium uppercase tracking-wider">Serviços</motion.span>
-          <motion.h1 variants={fadeUp} custom={1} className="font-display text-4xl md:text-5xl font-bold mt-3 mb-4">O que podemos fazer por você</motion.h1>
-          <motion.p variants={fadeUp} custom={2} className="text-muted-foreground">Soluções completas de tecnologia para acelerar o crescimento do seu negócio.</motion.p>
-        </motion.div>
+        <RevealBox className="text-center max-w-2xl mx-auto mb-16">
+          <span className="text-primary text-sm font-medium uppercase tracking-widest">Serviços</span>
+          <h1 className="font-display text-4xl md:text-5xl font-bold mt-3 mb-4">O que podemos fazer por você</h1>
+          <p className="text-muted-foreground">Soluções completas de tecnologia para acelerar o crescimento do seu negócio.</p>
+        </RevealBox>
         <div className="grid md:grid-cols-2 gap-8">
           {servicos.map((s, i) => (
-            <motion.div key={s.title} className="glass rounded-xl p-8 hover:card-glow transition-all" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <s.icon className="h-6 w-6 text-primary" />
+            <RevealBox key={s.title} delay={i * 0.1} direction={i % 2 === 0 ? "left" : "right"} className="card-animated glass rounded-2xl p-8 group">
+              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+                <s.icon className="h-7 w-7 text-primary" />
               </div>
               <h2 className="font-display text-xl font-semibold mb-2">{s.title}</h2>
-              <p className="text-muted-foreground mb-4">{s.desc}</p>
-              <ul className="space-y-2">
+              <p className="text-muted-foreground mb-5">{s.desc}</p>
+              <ul className="space-y-2.5">
                 {s.items.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-sm text-foreground/80">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <li key={item} className="flex items-center gap-2.5 text-sm text-foreground/80">
+                    <span className="w-2 h-2 rounded-full bg-gradient-purple flex-shrink-0" />
                     {item}
                   </li>
                 ))}
               </ul>
-            </motion.div>
+              <div className="h-[2px] w-0 group-hover:w-full bg-gradient-purple mt-6 transition-all duration-500 rounded-full" />
+            </RevealBox>
           ))}
         </div>
       </div>
