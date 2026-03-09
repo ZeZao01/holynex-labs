@@ -1,20 +1,58 @@
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
 export default function WhatsAppFloat() {
+  const [hovered, setHovered] = useState(false);
+
   return (
-    <a
+    <motion.a
       href="https://wa.me/554861360234"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="WhatsApp"
-      className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-lg btn-glow-filled animate-[pulse-glow_2s_ease-in-out_infinite]"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-2"
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20, delay: 1 }}
     >
-      <svg
-        viewBox="0 0 32 32"
-        className="h-7 w-7"
-        fill="hsl(var(--primary-foreground))"
-        xmlns="http://www.w3.org/2000/svg"
+      <AnimatePresence>
+        {hovered && (
+          <motion.span
+            initial={{ opacity: 0, x: 10, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 10, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            className="rounded-full px-4 py-2 text-sm font-medium glass text-foreground shadow-lg whitespace-nowrap"
+          >
+            Fale conosco
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        className="relative flex items-center justify-center w-14 h-14 rounded-full btn-glow-filled shadow-lg"
+        animate={{
+          boxShadow: [
+            "0 0 10px hsl(262, 98%, 71%, 0.3)",
+            "0 0 25px hsl(262, 98%, 71%, 0.6), 0 0 50px hsl(262, 98%, 71%, 0.2)",
+            "0 0 10px hsl(262, 98%, 71%, 0.3)",
+          ],
+        }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
       >
-        <path d="M16.004 2.667A13.26 13.26 0 0 0 2.74 15.93a13.16 13.16 0 0 0 1.885 6.79L2.667 29.333l6.82-1.924A13.29 13.29 0 0 0 16.004 29.333 13.334 13.334 0 1 0 16.004 2.667Zm0 24.266a10.87 10.87 0 0 1-5.57-1.528l-.398-.238-4.13 1.165 1.1-4.065-.26-.415a10.87 10.87 0 0 1-1.68-5.82 10.934 10.934 0 1 1 10.938 10.9Zm5.995-8.184c-.328-.165-1.942-.959-2.244-1.069-.302-.109-.522-.164-.742.165-.22.33-.852 1.07-1.045 1.29-.192.22-.385.247-.714.082-.328-.164-1.387-.511-2.642-1.63-.977-.87-1.636-1.944-1.828-2.273-.192-.33-.02-.508.145-.672.148-.148.328-.385.493-.577.164-.192.22-.33.328-.549.11-.22.055-.412-.027-.577-.082-.164-.742-1.789-1.017-2.449-.268-.643-.54-.556-.742-.566l-.632-.011a1.213 1.213 0 0 0-.878.412c-.302.33-1.152 1.126-1.152 2.75 0 1.622 1.18 3.19 1.344 3.41.165.22 2.322 3.546 5.626 4.973.786.34 1.4.543 1.879.695.79.25 1.508.215 2.076.13.633-.094 1.942-.794 2.216-1.561.274-.768.274-1.426.192-1.562-.082-.137-.302-.22-.632-.384Z" />
-      </svg>
-    </a>
+        <svg
+          viewBox="0 0 32 32"
+          className="h-7 w-7"
+          fill="hsl(var(--primary-foreground))"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M16.004 2.667A13.26 13.26 0 0 0 2.74 15.93a13.16 13.16 0 0 0 1.885 6.79L2.667 29.333l6.82-1.924A13.29 13.29 0 0 0 16.004 29.333 13.334 13.334 0 1 0 16.004 2.667Zm0 24.266a10.87 10.87 0 0 1-5.57-1.528l-.398-.238-4.13 1.165 1.1-4.065-.26-.415a10.87 10.87 0 0 1-1.68-5.82 10.934 10.934 0 1 1 10.938 10.9Zm5.995-8.184c-.328-.165-1.942-.959-2.244-1.069-.302-.109-.522-.164-.742.165-.22.33-.852 1.07-1.045 1.29-.192.22-.385.247-.714.082-.328-.164-1.387-.511-2.642-1.63-.977-.87-1.636-1.944-1.828-2.273-.192-.33-.02-.508.145-.672.148-.148.328-.385.493-.577.164-.192.22-.33.328-.549.11-.22.055-.412-.027-.577-.082-.164-.742-1.789-1.017-2.449-.268-.643-.54-.556-.742-.566l-.632-.011a1.213 1.213 0 0 0-.878.412c-.302.33-1.152 1.126-1.152 2.75 0 1.622 1.18 3.19 1.344 3.41.165.22 2.322 3.546 5.626 4.973.786.34 1.4.543 1.879.695.79.25 1.508.215 2.076.13.633-.094 1.942-.794 2.216-1.561.274-.768.274-1.426.192-1.562-.082-.137-.302-.22-.632-.384Z" />
+        </svg>
+      </motion.div>
+    </motion.a>
   );
 }
