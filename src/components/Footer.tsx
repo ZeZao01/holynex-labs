@@ -54,15 +54,6 @@ export default function Footer() {
             >
               contato@holynexlabs.com.br
             </a>
-            <a
-              href="https://wa.me/554861360234"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-glow inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-foreground mt-3 w-fit"
-            >
-              <MessageCircle className="h-4 w-4 text-primary" />
-              WhatsApp
-            </a>
           </div>
         </div>
         <div className="border-t border-border/50 mt-8 sm:mt-10 pt-6 text-center text-xs text-muted-foreground">
