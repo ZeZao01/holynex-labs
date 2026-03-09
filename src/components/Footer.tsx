@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { MessageCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useLanguage } from "@/i18n/LanguageContext";
 
