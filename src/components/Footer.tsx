@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useLanguage } from "@/i18n/LanguageContext";
 
@@ -48,7 +49,21 @@ export default function Footer() {
           </div>
           <div>
             <h4 className="font-display font-semibold mb-3 sm:mb-4 text-sm">{t("footer.contact")}</h4>
-            <p className="text-sm text-muted-foreground">contato@holynexlabs.com</p>
+            <a
+              href="mailto:contato@holynexlabs.com.br"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              contato@holynexlabs.com.br
+            </a>
+            <a
+              href="https://wa.me/554861360234"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-glow inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-foreground mt-3 w-fit"
+            >
+              <MessageCircle className="h-4 w-4 text-primary" />
+              WhatsApp
+            </a>
           </div>
         </div>
         <div className="border-t border-border/50 mt-8 sm:mt-10 pt-6 text-center text-xs text-muted-foreground">
