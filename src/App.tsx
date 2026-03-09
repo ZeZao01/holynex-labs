@@ -7,7 +7,7 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
+
 import Index from "./pages/Index";
 import Servicos from "./pages/Servicos";
 import Solucoes from "./pages/Solucoes";
@@ -39,7 +39,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer />
-          <WhatsAppFloat />
+          
         </BrowserRouter>
       </LanguageProvider>
     </TooltipProvider>
