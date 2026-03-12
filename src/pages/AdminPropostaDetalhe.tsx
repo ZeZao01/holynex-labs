@@ -78,6 +78,7 @@ export default function AdminPropostaDetalhe() {
     } finally {
       setRegenerating(false);
     }
+  };
 
   const handleExportPDF = async () => {
     if (!proposta || !id) return;
