@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FilePlus,
   LogOut,
+  Palette,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +31,7 @@ const mainItems = [
   { title: "Painel de Controle", url: "/admin/orcamentos", icon: LayoutDashboard },
   { title: "Propostas", url: "/admin/propostas", icon: ClipboardList },
   { title: "Nova Proposta", url: "/admin/propostas/nova", icon: FilePlus },
+  { title: "Modelos PDF", url: "/admin/templates", icon: Palette },
 ];
 
 const managementItems = [

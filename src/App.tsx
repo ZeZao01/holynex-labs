@@ -21,6 +21,7 @@ import AdminOrcamentos from "./pages/AdminOrcamentos";
 import AdminPropostas from "./pages/AdminPropostas";
 import AdminNovaProposta from "./pages/AdminNovaProposta";
 import AdminPropostaDetalhe from "./pages/AdminPropostaDetalhe";
+import AdminTemplates from "./pages/AdminTemplates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ function AppRoutes() {
           <Route path="/admin/propostas" element={<AdminPropostas />} />
           <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
           <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
+          <Route path="/admin/templates" element={<AdminTemplates />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AdminLayout>
