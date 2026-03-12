@@ -85,19 +85,17 @@ export default function AdminPropostaDetalhe() {
         currentY += heightMM + SECTION_GAP_MM;
       }
 
-      // Footer on each page
-      const totalPages = pdf.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i);
-        pdf.setFontSize(8);
-        pdf.setTextColor(150);
-        pdf.text("HolyNex Labs — Inovação em Desenvolvimento de Software — holynexlabs.com.br", A4_WIDTH_MM / 2, A4_HEIGHT_MM - 8, { align: "center" });
-        pdf.text(`Página ${i} de ${totalPages}`, A4_WIDTH_MM - MARGIN_MM, A4_HEIGHT_MM - 8, { align: "right" });
-      }
-
+      // Generate blob instead of saving directly
+      const pdfBlob = pdf.output("blob");
+      
+      // Upload to storage
+      await uploadPdf(id!, proposta.nome_cliente, pdfBlob);
+      setPdfRefreshKey((k) => k + 1);
+      
+      // Also trigger download
       const clientName = proposta.nome_cliente.replace(/\s+/g, "_");
       pdf.save(`Proposta_HolyNex_${clientName}.pdf`);
-      toast.success("PDF exportado com sucesso!");
+      toast.success("PDF gerado e salvo com sucesso!");
     } catch (err) {
       console.error("PDF export error:", err);
       toast.error("Erro ao exportar PDF");
