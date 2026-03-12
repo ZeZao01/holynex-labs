@@ -797,7 +797,7 @@ export async function generatePropostaPdf(proposta: Proposta): Promise<Blob> {
 
       // Button
       const btnY = py + ph - 14;
-      pdf.setFillColor(plan.featured ? ...C.magenta : 255, 255, 255);
+      { const fc = plan.featured ? C.magenta : [255, 255, 255] as RGB; pdf.setFillColor(...fc); }
       pdf.saveGraphicsState();
       (pdf as any).setGState(new (pdf as any).GState({ opacity: plan.featured ? 0.2 : 0.05 }));
       pdf.roundedRect(px + 5, btnY, pricingW - 10, 8, 3, 3, "F");
