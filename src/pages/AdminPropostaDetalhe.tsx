@@ -24,7 +24,6 @@ export default function AdminPropostaDetalhe() {
   const [loading, setLoading] = useState(true);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
-  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
