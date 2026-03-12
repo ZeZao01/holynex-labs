@@ -45,128 +45,21 @@ export default function AdminPropostaDetalhe() {
   };
 
   const handleExportPDF = async () => {
-    if (!proposta) return;
+    if (!proposta || !id) return;
     setExportingPdf(true);
     try {
-      const pj = proposta.proposta_json;
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWidth = 210;
-      const pageHeight = 297;
-      const margin = 20;
-      const contentWidth = pageWidth - margin * 2;
-      let y = margin;
-
-      const addPageIfNeeded = (needed: number) => {
-        if (y + needed > pageHeight - margin) {
-          pdf.addPage();
-          y = margin;
-        }
-      };
-
-      const addTitle = (text: string, size = 14) => {
-        addPageIfNeeded(12);
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(size);
-        pdf.setTextColor(100, 80, 200);
-        pdf.text(text, margin, y);
-        y += size * 0.5 + 3;
-      };
-
-      const addText = (text: string, size = 10) => {
-        if (!text) return;
-        pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(size);
-        pdf.setTextColor(60, 60, 60);
-        const lines = pdf.splitTextToSize(text, contentWidth);
-        for (const line of lines) {
-          addPageIfNeeded(6);
-          pdf.text(line, margin, y);
-          y += 5;
-        }
-        y += 3;
-      };
-
-      const addList = (items: string[]) => {
-        if (!items?.length) return;
-        pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(10);
-        pdf.setTextColor(60, 60, 60);
-        for (const item of items) {
-          const lines = pdf.splitTextToSize(`• ${item}`, contentWidth - 5);
-          for (const line of lines) {
-            addPageIfNeeded(6);
-            pdf.text(line, margin + 3, y);
-            y += 5;
-          }
-        }
-        y += 3;
-      };
-
-      // === COVER ===
-      pdf.setFillColor(15, 15, 30);
-      pdf.rect(0, 0, pageWidth, pageHeight, "F");
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(28);
-      pdf.setTextColor(100, 80, 200);
-      pdf.text("HolyNex Labs", pageWidth / 2, 80, { align: "center" });
-      pdf.setFontSize(12);
-      pdf.setTextColor(180, 180, 180);
-      pdf.text("Inovação em Desenvolvimento de Software", pageWidth / 2, 92, { align: "center" });
-      pdf.setFontSize(20);
-      pdf.setTextColor(255, 255, 255);
-      pdf.text("Proposta Comercial", pageWidth / 2, 130, { align: "center" });
-      pdf.setFontSize(14);
-      pdf.setTextColor(200, 200, 200);
-      pdf.text(`Para: ${proposta.nome_cliente}`, pageWidth / 2, 148, { align: "center" });
-      if (proposta.empresa_cliente) {
-        pdf.text(proposta.empresa_cliente, pageWidth / 2, 158, { align: "center" });
-      }
-      pdf.setFontSize(10);
-      pdf.setTextColor(150, 150, 150);
-      pdf.text(new Date(proposta.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }), pageWidth / 2, 180, { align: "center" });
-
-      // === CONTENT PAGES ===
-      pdf.addPage();
-      y = margin;
-      pdf.setFillColor(255, 255, 255);
-
-      // Financial summary
-      addTitle("Investimento", 16);
-      addText(`Valor Mínimo: R$ ${proposta.valor_minimo.toLocaleString("pt-BR")}`);
-      addText(`Valor Ideal: R$ ${proposta.valor_ideal.toLocaleString("pt-BR")}`);
-      addText(`Valor Premium: R$ ${proposta.valor_premium.toLocaleString("pt-BR")}`);
-      y += 5;
-
-      if (pj) {
-        if (pj.resumo_executivo) { addTitle("Resumo Executivo"); addText(pj.resumo_executivo); }
-        if (pj.diagnostico) { addTitle("Diagnóstico"); addText(pj.diagnostico); }
-        if (pj.solucao_proposta) { addTitle("Solução Proposta"); addText(pj.solucao_proposta); }
-        if (pj.escopo?.length) { addTitle("Escopo do Projeto"); addList(pj.escopo); }
-        if (pj.funcionalidades?.length) { addTitle("Funcionalidades Principais"); addList(pj.funcionalidades); }
-        if (pj.funcionalidades_recomendadas?.length) { addTitle("Funcionalidades Recomendadas"); addList(pj.funcionalidades_recomendadas); }
-        if (pj.analise_estrategica) { addTitle("Análise Estratégica"); addText(pj.analise_estrategica); }
-        if (pj.estimativa_esforco) { addTitle("Estimativa de Esforço"); addText(pj.estimativa_esforco); }
-        if (pj.cronograma) { addTitle("Cronograma Estimado"); addText(pj.cronograma); }
-        if (pj.manutencao) { addTitle("Manutenção Mensal"); addText(pj.manutencao); }
-        if (pj.riscos?.length) { addTitle("Riscos e Premissas"); addList(pj.riscos); }
-        if (pj.proximos_passos?.length) { addTitle("Próximos Passos"); addList(pj.proximos_passos); }
-      }
-
-      // Footer on last page
-      addPageIfNeeded(20);
-      y = pageHeight - 25;
-      pdf.setFontSize(8);
-      pdf.setTextColor(150, 150, 150);
-      pdf.text("HolyNex Labs — Inovação em Desenvolvimento de Software — holynexlabs.com.br", pageWidth / 2, y, { align: "center" });
-      pdf.text("Este documento é confidencial e destinado exclusivamente ao destinatário.", pageWidth / 2, y + 5, { align: "center" });
-
-      // Generate blob and upload
-      const pdfBlob = pdf.output("blob");
-      await uploadPdf(id!, proposta.nome_cliente, pdfBlob);
+      const pdfBlob = await generatePropostaPdf(proposta);
+      await uploadPdf(id, proposta.nome_cliente, pdfBlob);
       setPdfRefreshKey((k) => k + 1);
 
-      const clientName = proposta.nome_cliente.replace(/\s+/g, "_");
-      pdf.save(`Proposta_HolyNex_${clientName}.pdf`);
+      // Trigger local download
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Proposta_HolyNex_${proposta.nome_cliente.replace(/\s+/g, "_")}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+
       toast.success("PDF gerado e salvo com sucesso!");
     } catch (err) {
       console.error("PDF export error:", err);
