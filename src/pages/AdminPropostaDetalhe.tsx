@@ -53,6 +53,7 @@ export default function AdminPropostaDetalhe() {
 
   const handleRegenerate = async () => {
     if (!proposta || !id) return;
+    setShowRegenDialog(false);
     setRegenerating(true);
     try {
       const input: PropostaInput = {
@@ -71,12 +72,13 @@ export default function AdminPropostaDetalhe() {
         orcamento_cliente: "",
         nivel_urgencia: "medio",
         link_referencia: "",
-        observacoes: "",
+        observacoes: orientacoes || "",
         orcamento_id: proposta.orcamento_id || undefined,
       };
       const novaProposta = await gerarPropostaIA(input);
       await atualizarProposta(id, novaProposta);
       toast.success("Proposta regenerada com sucesso!");
+      setOrientacoes("");
       loadProposta();
     } catch (err: any) {
       console.error("Regenerate error:", err);
