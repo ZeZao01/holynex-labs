@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, ArrowLeft } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, Zap } from "lucide-react";
 import RevealBox from "@/components/RevealBox";
 import { gerarPropostaIA, salvarProposta, type PropostaInput, type PropostaJSON } from "@/lib/propostas";
-import { getOrcamentos, type Orcamento } from "@/lib/orcamentos";
-import { useEffect } from "react";
+import { getOrcamentos } from "@/lib/orcamentos";
+import { supabase } from "@/integrations/supabase/client";
 
 const tiposProjeto = [
   "Landing Page", "Site institucional", "Sistema interno", "Sistema administrativo",
