@@ -24,6 +24,8 @@ export default function AdminNovaProposta() {
 
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [filling, setFilling] = useState(false);
+  const [quickDesc, setQuickDesc] = useState("");
   const [result, setResult] = useState<PropostaJSON | null>(null);
   const [formData, setFormData] = useState<PropostaInput>({
     nome_cliente: "", empresa_cliente: "", segmento: "", email_cliente: "",
