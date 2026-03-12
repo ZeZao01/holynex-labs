@@ -144,6 +144,14 @@ export default function AdminPropostaDetalhe() {
               </button>
             ))}
             <button
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+            >
+              {regenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              {regenerating ? "Regenerando..." : "Regenerar Proposta"}
+            </button>
+            <button
               onClick={handleExportPDF}
               disabled={exportingPdf}
               className="btn-glow inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium text-foreground disabled:opacity-50"
