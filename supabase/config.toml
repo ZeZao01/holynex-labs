@@ -1,1 +1,4 @@
 project_id = "aeulestxwyhzsrltiwum"
+
+[functions.gerar-proposta]
+verify_jwt = false

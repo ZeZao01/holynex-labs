@@ -42,6 +42,9 @@ const App = () => (
             <Route path="/contato" element={<Contato />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
+            <Route path="/admin/propostas" element={<AdminPropostas />} />
+            <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
+            <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer />
