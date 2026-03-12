@@ -8,6 +8,10 @@ import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Cl
 import { toast } from "@/components/ui/sonner";
 import RevealBox from "@/components/RevealBox";
 import PdfHistorico from "@/components/PdfHistorico";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const statusActions = [
   { status: "gerada", label: "Gerada", icon: Sparkles, color: "text-primary" },
@@ -25,6 +29,8 @@ export default function AdminPropostaDetalhe() {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
+  const [showRegenDialog, setShowRegenDialog] = useState(false);
+  const [orientacoes, setOrientacoes] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
@@ -47,6 +53,7 @@ export default function AdminPropostaDetalhe() {
 
   const handleRegenerate = async () => {
     if (!proposta || !id) return;
+    setShowRegenDialog(false);
     setRegenerating(true);
     try {
       const input: PropostaInput = {
@@ -65,12 +72,13 @@ export default function AdminPropostaDetalhe() {
         orcamento_cliente: "",
         nivel_urgencia: "medio",
         link_referencia: "",
-        observacoes: "",
+        observacoes: orientacoes || "",
         orcamento_id: proposta.orcamento_id || undefined,
       };
       const novaProposta = await gerarPropostaIA(input);
       await atualizarProposta(id, novaProposta);
       toast.success("Proposta regenerada com sucesso!");
+      setOrientacoes("");
       loadProposta();
     } catch (err: any) {
       console.error("Regenerate error:", err);
@@ -144,7 +152,7 @@ export default function AdminPropostaDetalhe() {
               </button>
             ))}
             <button
-              onClick={handleRegenerate}
+              onClick={() => setShowRegenDialog(true)}
               disabled={regenerating}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
             >
@@ -247,6 +255,43 @@ export default function AdminPropostaDetalhe() {
         <div className="mt-8">
           <PdfHistorico propostaId={proposta.id} refreshKey={pdfRefreshKey} />
         </div>
+
+        {/* Regenerate Dialog */}
+        <Dialog open={showRegenDialog} onOpenChange={setShowRegenDialog}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-primary" />
+                Regenerar Proposta
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">
+                Insira orientações e parâmetros adicionais para a IA considerar ao regenerar esta proposta. Deixe em branco para usar apenas os dados originais.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="orientacoes">Novas orientações</Label>
+                <Textarea
+                  id="orientacoes"
+                  placeholder="Ex: Foque em MVP com prazo de 30 dias, priorize funcionalidades de automação, ajuste os valores para faixa de R$ 5.000 a R$ 15.000..."
+                  value={orientacoes}
+                  onChange={(e) => setOrientacoes(e.target.value)}
+                  rows={5}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRegenDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleRegenerate} className="gap-2">
+                <Sparkles className="h-4 w-4" />
+                Regenerar com IA
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
