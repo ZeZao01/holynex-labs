@@ -164,7 +164,7 @@ export default function AdminPropostaDetalhe() {
               {regenerating ? "Regenerando..." : "Regenerar Proposta"}
             </button>
             <button
-              onClick={handleExportPDF}
+              onClick={() => setShowTemplateSelector(true)}
               disabled={exportingPdf}
               className="btn-glow inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium text-foreground disabled:opacity-50"
             >
