@@ -23,18 +23,18 @@ function loadImageAsBase64(url: string): Promise<string> {
 // ── Build color palette from template ──
 function buildColors(t: PdfTemplate) {
   return {
-    bg: t.colors.bg,
-    bgCard: t.colors.bgCard,
-    magenta: t.colors.primary,
-    cyan: t.colors.secondary,
-    purple: t.colors.accent,
-    purpleDark: t.colors.accent.map((v) => Math.floor(v * 0.5)) as RGB,
-    green: t.colors.accent2,
-    white: t.colors.white,
-    lightGray: t.colors.lightGray,
-    midGray: t.colors.midGray,
-    darkGray: t.colors.darkGray,
-    yellow: t.colors.highlight,
+    bg: t.colors.bg as RGB,
+    bgCard: t.colors.bgCard as RGB,
+    magenta: t.colors.primary as RGB,
+    cyan: t.colors.secondary as RGB,
+    purple: t.colors.accent as RGB,
+    purpleDark: [Math.floor(t.colors.accent[0] * 0.5), Math.floor(t.colors.accent[1] * 0.5), Math.floor(t.colors.accent[2] * 0.5)] as RGB,
+    green: t.colors.accent2 as RGB,
+    white: t.colors.white as RGB,
+    lightGray: t.colors.lightGray as RGB,
+    midGray: t.colors.midGray as RGB,
+    darkGray: t.colors.darkGray as RGB,
+    yellow: t.colors.highlight as RGB,
   };
 }
 
