@@ -29,6 +29,8 @@ export default function AdminPropostaDetalhe() {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
+  const [showRegenDialog, setShowRegenDialog] = useState(false);
+  const [orientacoes, setOrientacoes] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
