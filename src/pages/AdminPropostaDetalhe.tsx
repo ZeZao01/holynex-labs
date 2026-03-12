@@ -23,6 +23,7 @@ export default function AdminPropostaDetalhe() {
   const [proposta, setProposta] = useState<Proposta | null>(null);
   const [loading, setLoading] = useState(true);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
 
   useEffect(() => {
