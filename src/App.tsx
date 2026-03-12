@@ -2,12 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Navbar from "@/components/Navbar";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import Footer from "@/components/Footer";
+import AdminLayout from "@/components/AdminLayout";
 
 import Index from "./pages/Index";
 import Servicos from "./pages/Servicos";
@@ -24,6 +25,44 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function AppRoutes() {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/admin") && location.pathname !== "/admin/login";
+
+  if (isAdmin) {
+    return (
+      <AdminLayout>
+        <Routes>
+          <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
+          <Route path="/admin/propostas" element={<AdminPropostas />} />
+          <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
+          <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <>
+      <AnimatedBackground />
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/servicos" element={<Servicos />} />
+        <Route path="/solucoes" element={<Solucoes />} />
+        <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="/sobre" element={<Sobre />} />
+        <Route path="/contato" element={<Contato />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Footer />
+      <WhatsAppFloat />
+    </>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -31,24 +70,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AnimatedBackground />
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/servicos" element={<Servicos />} />
-            <Route path="/solucoes" element={<Solucoes />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/sobre" element={<Sobre />} />
-            <Route path="/contato" element={<Contato />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
-            <Route path="/admin/propostas" element={<AdminPropostas />} />
-            <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
-            <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Footer />
-          <WhatsAppFloat />
+          <AppRoutes />
         </BrowserRouter>
       </LanguageProvider>
     </TooltipProvider>
