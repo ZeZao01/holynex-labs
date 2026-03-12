@@ -17,6 +17,9 @@ import Sobre from "./pages/Sobre";
 import Contato from "./pages/Contato";
 import AdminLogin from "./pages/AdminLogin";
 import AdminOrcamentos from "./pages/AdminOrcamentos";
+import AdminPropostas from "./pages/AdminPropostas";
+import AdminNovaProposta from "./pages/AdminNovaProposta";
+import AdminPropostaDetalhe from "./pages/AdminPropostaDetalhe";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +42,9 @@ const App = () => (
             <Route path="/contato" element={<Contato />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
+            <Route path="/admin/propostas" element={<AdminPropostas />} />
+            <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
+            <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer />

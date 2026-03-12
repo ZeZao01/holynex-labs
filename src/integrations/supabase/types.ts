@@ -50,6 +50,107 @@ export type Database = {
         }
         Relationships: []
       }
+      propostas: {
+        Row: {
+          atualizado_em: string
+          classificacao_margem: string | null
+          complexidade: string | null
+          criado_em: string
+          descricao_projeto: string
+          email_cliente: string | null
+          empresa_cliente: string | null
+          funcionalidades_desejadas: string[] | null
+          id: string
+          integracoes: string[] | null
+          link_referencia: string | null
+          nivel_urgencia: string | null
+          nome_cliente: string
+          numero_usuarios: string | null
+          objetivo_cliente: string | null
+          observacoes: string | null
+          orcamento_cliente: string | null
+          orcamento_id: string | null
+          prazo_desejado: string | null
+          problema_cliente: string | null
+          proposta_json: Json | null
+          proposta_texto: string | null
+          segmento: string | null
+          status: string
+          tipo_projeto: string
+          valor_ideal: number | null
+          valor_minimo: number | null
+          valor_premium: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          classificacao_margem?: string | null
+          complexidade?: string | null
+          criado_em?: string
+          descricao_projeto: string
+          email_cliente?: string | null
+          empresa_cliente?: string | null
+          funcionalidades_desejadas?: string[] | null
+          id?: string
+          integracoes?: string[] | null
+          link_referencia?: string | null
+          nivel_urgencia?: string | null
+          nome_cliente: string
+          numero_usuarios?: string | null
+          objetivo_cliente?: string | null
+          observacoes?: string | null
+          orcamento_cliente?: string | null
+          orcamento_id?: string | null
+          prazo_desejado?: string | null
+          problema_cliente?: string | null
+          proposta_json?: Json | null
+          proposta_texto?: string | null
+          segmento?: string | null
+          status?: string
+          tipo_projeto?: string
+          valor_ideal?: number | null
+          valor_minimo?: number | null
+          valor_premium?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          classificacao_margem?: string | null
+          complexidade?: string | null
+          criado_em?: string
+          descricao_projeto?: string
+          email_cliente?: string | null
+          empresa_cliente?: string | null
+          funcionalidades_desejadas?: string[] | null
+          id?: string
+          integracoes?: string[] | null
+          link_referencia?: string | null
+          nivel_urgencia?: string | null
+          nome_cliente?: string
+          numero_usuarios?: string | null
+          objetivo_cliente?: string | null
+          observacoes?: string | null
+          orcamento_cliente?: string | null
+          orcamento_id?: string | null
+          prazo_desejado?: string | null
+          problema_cliente?: string | null
+          proposta_json?: Json | null
+          proposta_texto?: string | null
+          segmento?: string | null
+          status?: string
+          tipo_projeto?: string
+          valor_ideal?: number | null
+          valor_minimo?: number | null
+          valor_premium?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

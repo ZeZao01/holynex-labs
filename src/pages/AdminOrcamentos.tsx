@@ -5,7 +5,7 @@ import { getOrcamentos, atualizarStatus, removerOrcamento, type Orcamento, type 
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Clock, CheckCircle2, XCircle, Trash2, ArrowUpCircle, ArrowDownCircle, MinusCircle, Mail, Building2, FileText, Sparkles, LogOut, Loader2 } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, Trash2, ArrowUpCircle, ArrowDownCircle, MinusCircle, Mail, Building2, FileText, Sparkles, LogOut, Loader2, FileBarChart } from "lucide-react";
 import RevealBox from "@/components/RevealBox";
 
 const statusConfig: Record<OrcamentoStatus, { label: string; icon: typeof Clock; color: string; badgeClass: string }> = {
@@ -91,7 +91,14 @@ export default function AdminOrcamentos() {
           <p className="text-muted-foreground">Acompanhe e gerencie todos os pedidos de orçamento.</p>
         </RevealBox>
 
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center gap-3 mb-8">
+          <button
+            onClick={() => navigate("/admin/propostas")}
+            className="btn-glow inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium text-foreground"
+          >
+            <FileBarChart className="h-3.5 w-3.5" />
+            Propostas IA
+          </button>
           <button
             onClick={signOut}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
@@ -153,6 +160,7 @@ export default function AdminOrcamentos() {
                             orcamento={orc}
                             onStatusChange={handleStatus}
                             onRemove={handleRemove}
+                            onGenerateProposal={(id) => navigate(`/admin/propostas/nova?orcamento=${id}`)}
                           />
                         ))}
                       </div>
@@ -172,10 +180,12 @@ function OrcamentoCard({
   orcamento: orc,
   onStatusChange,
   onRemove,
+  onGenerateProposal,
 }: {
   orcamento: Orcamento;
   onStatusChange: (id: string, status: OrcamentoStatus) => void;
   onRemove: (id: string) => void;
+  onGenerateProposal: (id: string) => void;
 }) {
   const sc = statusConfig[orc.status];
   const StatusIcon = sc.icon;
@@ -244,6 +254,9 @@ function OrcamentoCard({
           )}
           <button onClick={() => onRemove(orc.id)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
             <Trash2 className="h-3.5 w-3.5" /> Remover
+          </button>
+          <button onClick={() => onGenerateProposal(orc.id)} className="btn-glow inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-foreground">
+            <FileBarChart className="h-3.5 w-3.5" /> Proposta
           </button>
         </div>
       </div>
