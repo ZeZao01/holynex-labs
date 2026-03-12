@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FilePlus,
   LogOut,
+  Palette,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
