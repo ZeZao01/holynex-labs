@@ -252,6 +252,9 @@ function OrcamentoCard({
           <button onClick={() => onRemove(orc.id)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
             <Trash2 className="h-3.5 w-3.5" /> Remover
           </button>
+          <button onClick={() => onGenerateProposal(orc.id)} className="btn-glow inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-foreground">
+            <FileBarChart className="h-3.5 w-3.5" /> Proposta
+          </button>
         </div>
       </div>
     </motion.div>
