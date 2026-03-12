@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getProposta, atualizarStatusProposta, type Proposta } from "@/lib/propostas";
@@ -8,7 +8,6 @@ import { toast } from "@/components/ui/sonner";
 import RevealBox from "@/components/RevealBox";
 import PdfHistorico from "@/components/PdfHistorico";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 
 const statusActions = [
   { status: "gerada", label: "Gerada", icon: Sparkles, color: "text-primary" },
