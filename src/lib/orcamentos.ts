@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export type OrcamentoStatus = "pendente" | "recebido" | "rejeitado";
 
 export interface Orcamento {
@@ -12,59 +14,74 @@ export interface Orcamento {
   resumoIA?: string;
 }
 
-const STORAGE_KEY = "holynex_orcamentos";
-
-export function getOrcamentos(): Orcamento[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
+function classificarPrioridade(descricao: string): "alta" | "media" | "baixa" {
+  const lower = descricao.toLowerCase();
+  if (lower.includes("urgente") || lower.includes("rápido") || lower.includes("imediato") || lower.includes("prazo curto")) {
+    return "alta";
   }
+  if (lower.includes("futuro") || lower.includes("sem pressa") || lower.includes("avaliar")) {
+    return "baixa";
+  }
+  return "media";
 }
 
-export function salvarOrcamento(data: Omit<Orcamento, "id" | "status" | "criadoEm" | "prioridade" | "resumoIA">): Orcamento {
-  const orcamentos = getOrcamentos();
+function gerarResumo(descricao: string): string {
+  const palavras = descricao.split(" ");
+  return palavras.length > 15 ? palavras.slice(0, 15).join(" ") + "..." : descricao;
+}
 
-  // Simple AI-like classification
-  const descLower = data.descricao.toLowerCase();
-  let prioridade: Orcamento["prioridade"] = "media";
-  if (descLower.includes("urgente") || descLower.includes("rápido") || descLower.includes("imediato") || descLower.includes("prazo curto")) {
-    prioridade = "alta";
-  } else if (descLower.includes("futuro") || descLower.includes("sem pressa") || descLower.includes("avaliar")) {
-    prioridade = "baixa";
-  }
+export async function salvarOrcamento(data: { nome: string; email: string; empresa: string; descricao: string }) {
+  const prioridade = classificarPrioridade(data.descricao);
+  const resumo_ia = gerarResumo(data.descricao);
 
-  // Generate AI summary
-  const palavras = data.descricao.split(" ");
-  const resumoIA = palavras.length > 15
-    ? palavras.slice(0, 15).join(" ") + "..."
-    : data.descricao;
-
-  const novo: Orcamento = {
-    id: crypto.randomUUID(),
-    ...data,
+  const { error } = await supabase.from("orcamentos").insert({
+    nome: data.nome,
+    email: data.email,
+    empresa: data.empresa,
+    descricao: data.descricao,
     status: "pendente",
-    criadoEm: new Date().toISOString(),
     prioridade,
-    resumoIA,
-  };
+    resumo_ia,
+  });
 
-  orcamentos.unshift(novo);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(orcamentos));
-  return novo;
+  if (error) throw error;
 }
 
-export function atualizarStatus(id: string, status: OrcamentoStatus): void {
-  const orcamentos = getOrcamentos();
-  const idx = orcamentos.findIndex((o) => o.id === id);
-  if (idx !== -1) {
-    orcamentos[idx].status = status;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(orcamentos));
-  }
+export async function getOrcamentos(): Promise<Orcamento[]> {
+  const { data, error } = await supabase
+    .from("orcamentos")
+    .select("*")
+    .order("criado_em", { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    nome: row.nome,
+    email: row.email,
+    empresa: row.empresa || "",
+    descricao: row.descricao,
+    status: row.status as OrcamentoStatus,
+    criadoEm: row.criado_em,
+    prioridade: row.prioridade as Orcamento["prioridade"],
+    resumoIA: row.resumo_ia,
+  }));
 }
 
-export function removerOrcamento(id: string): void {
-  const orcamentos = getOrcamentos().filter((o) => o.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(orcamentos));
+export async function atualizarStatus(id: string, status: OrcamentoStatus) {
+  const { error } = await supabase
+    .from("orcamentos")
+    .update({ status })
+    .eq("id", id);
+
+  if (error) throw error;
+}
+
+export async function removerOrcamento(id: string) {
+  const { error } = await supabase
+    .from("orcamentos")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
 }
