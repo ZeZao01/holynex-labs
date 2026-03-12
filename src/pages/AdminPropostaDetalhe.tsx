@@ -226,7 +226,7 @@ export default function AdminPropostaDetalhe() {
         </div>
 
         {/* PDF Content */}
-        <div ref={pdfRef}>
+        <div>
           {/* Cover / Header */}
           <div data-pdf-section>
             <RevealBox className="glass rounded-2xl p-8 mb-6 text-center">
