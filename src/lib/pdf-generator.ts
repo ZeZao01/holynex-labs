@@ -809,7 +809,7 @@ export async function generatePropostaPdf(proposta: Proposta): Promise<Blob> {
       pdf.restoreGraphicsState();
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(6.5);
-      pdf.setTextColor(plan.featured ? ...C.white : ...C.lightGray);
+      { const tc = plan.featured ? C.white : C.lightGray; pdf.setTextColor(...tc); }
       pdf.text(plan.btn.toUpperCase(), px + pricingW / 2, btnY + 5.5, { align: "center" });
     });
   }
