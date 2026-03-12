@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getProposta, atualizarStatusProposta, type Proposta } from "@/lib/propostas";
+import { getProposta, atualizarStatusProposta, atualizarProposta, gerarPropostaIA, type Proposta, type PropostaInput } from "@/lib/propostas";
 import { uploadPdf } from "@/lib/pdf-storage";
 import { generatePropostaPdf } from "@/lib/pdf-generator";
-import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Clock } from "lucide-react";
+import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Clock, RefreshCw } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import RevealBox from "@/components/RevealBox";
 import PdfHistorico from "@/components/PdfHistorico";
@@ -23,6 +23,7 @@ export default function AdminPropostaDetalhe() {
   const [proposta, setProposta] = useState<Proposta | null>(null);
   const [loading, setLoading] = useState(true);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -42,6 +43,41 @@ export default function AdminPropostaDetalhe() {
     await atualizarStatusProposta(id, status);
     toast.success(`Status atualizado para ${status}`);
     loadProposta();
+  };
+
+  const handleRegenerate = async () => {
+    if (!proposta || !id) return;
+    setRegenerating(true);
+    try {
+      const input: PropostaInput = {
+        nome_cliente: proposta.nome_cliente,
+        empresa_cliente: proposta.empresa_cliente,
+        segmento: proposta.segmento,
+        email_cliente: proposta.email_cliente,
+        tipo_projeto: proposta.tipo_projeto,
+        descricao_projeto: proposta.descricao_projeto,
+        problema_cliente: "",
+        objetivo_cliente: "",
+        funcionalidades_desejadas: [],
+        integracoes: [],
+        numero_usuarios: "",
+        prazo_desejado: "",
+        orcamento_cliente: "",
+        nivel_urgencia: "medio",
+        link_referencia: "",
+        observacoes: "",
+        orcamento_id: proposta.orcamento_id || undefined,
+      };
+      const novaProposta = await gerarPropostaIA(input);
+      await atualizarProposta(id, novaProposta);
+      toast.success("Proposta regenerada com sucesso!");
+      loadProposta();
+    } catch (err: any) {
+      console.error("Regenerate error:", err);
+      toast.error(err.message || "Erro ao regenerar proposta");
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const handleExportPDF = async () => {
@@ -107,6 +143,14 @@ export default function AdminPropostaDetalhe() {
                 <sa.icon className="h-3 w-3" /> {sa.label}
               </button>
             ))}
+            <button
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+            >
+              {regenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              {regenerating ? "Regenerando..." : "Regenerar Proposta"}
+            </button>
             <button
               onClick={handleExportPDF}
               disabled={exportingPdf}
