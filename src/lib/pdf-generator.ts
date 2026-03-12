@@ -788,7 +788,7 @@ export async function generatePropostaPdf(proposta: Proposta): Promise<Blob> {
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7);
       for (const feat of plan.features) {
-        pdf.setFillColor(plan.featured ? ...C.magenta : ...C.cyan);
+        { const fc = plan.featured ? C.magenta : C.cyan; pdf.setFillColor(...fc); }
         pdf.circle(px + 7, fy - 0.8, 0.8, "F");
         pdf.setTextColor(...C.lightGray);
         pdf.text(feat.substring(0, 30), px + 11, fy);
