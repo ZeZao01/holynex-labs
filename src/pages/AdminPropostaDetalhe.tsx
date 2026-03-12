@@ -152,7 +152,7 @@ export default function AdminPropostaDetalhe() {
               </button>
             ))}
             <button
-              onClick={handleRegenerate}
+              onClick={() => setShowRegenDialog(true)}
               disabled={regenerating}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
             >
