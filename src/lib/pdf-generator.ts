@@ -468,7 +468,7 @@ export async function generatePropostaPdf(proposta: Proposta): Promise<Blob> {
       let ty = cardY + 14;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(10);
-      pdf.setTextColor(isHighlighted ? ...C.cyan : ...C.white);
+      { const tc = isHighlighted ? C.cyan : C.white; pdf.setTextColor(...tc); }
       pdf.text(card.title, cx + 5, ty);
       ty += 8;
 
