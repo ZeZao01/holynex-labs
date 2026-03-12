@@ -233,6 +233,11 @@ export default function AdminPropostaDetalhe() {
             </div>
           </div>
         </div>
+
+        {/* PDF History */}
+        <div className="mt-8">
+          <PdfHistorico propostaId={proposta.id} refreshKey={pdfRefreshKey} />
+        </div>
       </div>
     </div>
   );
