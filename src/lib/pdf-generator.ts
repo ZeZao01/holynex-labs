@@ -38,7 +38,9 @@ function buildColors(t: PdfTemplate) {
   };
 }
 
-export async function generatePropostaPdf(proposta: Proposta): Promise<Blob> {
+export async function generatePropostaPdf(proposta: Proposta, templateId?: string): Promise<Blob> {
+  const template = getTemplateById(templateId || "cyber-magenta");
+  const C = buildColors(template);
   const logoBase64 = await loadImageAsBase64(logoUrl);
   const pj = proposta.proposta_json as any;
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
