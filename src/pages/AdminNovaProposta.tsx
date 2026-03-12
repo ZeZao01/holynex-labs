@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, ArrowLeft } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, Zap } from "lucide-react";
 import RevealBox from "@/components/RevealBox";
 import { gerarPropostaIA, salvarProposta, type PropostaInput, type PropostaJSON } from "@/lib/propostas";
-import { getOrcamentos, type Orcamento } from "@/lib/orcamentos";
-import { useEffect } from "react";
+import { getOrcamentos } from "@/lib/orcamentos";
+import { supabase } from "@/integrations/supabase/client";
 
 const tiposProjeto = [
   "Landing Page", "Site institucional", "Sistema interno", "Sistema administrativo",
@@ -24,6 +24,8 @@ export default function AdminNovaProposta() {
 
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [filling, setFilling] = useState(false);
+  const [quickDesc, setQuickDesc] = useState("");
   const [result, setResult] = useState<PropostaJSON | null>(null);
   const [formData, setFormData] = useState<PropostaInput>({
     nome_cliente: "", empresa_cliente: "", segmento: "", email_cliente: "",
@@ -59,6 +61,46 @@ export default function AdminNovaProposta() {
         }));
       }
     } catch {}
+  };
+
+  const handleQuickFill = async () => {
+    if (!quickDesc.trim()) {
+      toast.error("Digite uma descrição rápida do projeto.");
+      return;
+    }
+    setFilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("preencher-formulario", {
+        body: { descricao_rapida: quickDesc },
+      });
+      if (error) throw new Error(error.message || "Erro ao preencher");
+      if (data?.error) throw new Error(data.error);
+      const campos = data.campos;
+      setFormData((prev) => ({
+        ...prev,
+        nome_cliente: campos.nome_cliente || prev.nome_cliente,
+        empresa_cliente: campos.empresa_cliente || prev.empresa_cliente,
+        segmento: campos.segmento || prev.segmento,
+        email_cliente: campos.email_cliente || prev.email_cliente,
+        tipo_projeto: campos.tipo_projeto || prev.tipo_projeto,
+        descricao_projeto: campos.descricao_projeto || prev.descricao_projeto,
+        problema_cliente: campos.problema_cliente || prev.problema_cliente,
+        objetivo_cliente: campos.objetivo_cliente || prev.objetivo_cliente,
+        funcionalidades_desejadas: campos.funcionalidades_desejadas?.length ? campos.funcionalidades_desejadas : prev.funcionalidades_desejadas,
+        integracoes: campos.integracoes?.length ? campos.integracoes : prev.integracoes,
+        numero_usuarios: campos.numero_usuarios || prev.numero_usuarios,
+        prazo_desejado: campos.prazo_desejado || prev.prazo_desejado,
+        orcamento_cliente: campos.orcamento_cliente || prev.orcamento_cliente,
+        nivel_urgencia: campos.nivel_urgencia || prev.nivel_urgencia,
+        link_referencia: campos.link_referencia || prev.link_referencia,
+        observacoes: campos.observacoes || prev.observacoes,
+      }));
+      toast.success("Campos preenchidos pela IA!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao preencher campos");
+    } finally {
+      setFilling(false);
+    }
   };
 
   const handleChange = (field: keyof PropostaInput, value: string) => {
@@ -118,6 +160,30 @@ export default function AdminNovaProposta() {
             Nova <span className="text-gradient-animated">Proposta</span>
           </h1>
           <p className="text-muted-foreground text-sm">Preencha os dados e a IA gerará a proposta comercial completa.</p>
+        </RevealBox>
+
+        {/* Quick Fill with AI */}
+        <RevealBox delay={0.05} className="glass rounded-2xl p-6 sm:p-8 mb-6 border border-primary/20">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-5 w-5 text-primary" />
+            <h2 className="font-display text-lg font-bold">Preenchimento Rápido com IA</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Descreva o projeto em poucas palavras e a IA preencherá todos os campos automaticamente.</p>
+          <Textarea
+            value={quickDesc}
+            onChange={(e) => setQuickDesc(e.target.value)}
+            placeholder="Ex: João da Silva, empresa TechCorp, quer um ERP para gestão de estoque com 50 usuários, orçamento de R$80mil, prazo 4 meses, urgente"
+            rows={3}
+            className="bg-muted/50 border-border/50 mb-3"
+          />
+          <button
+            onClick={handleQuickFill}
+            disabled={filling}
+            className="btn-glow inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-foreground disabled:opacity-50"
+          >
+            {filling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            {filling ? "Preenchendo com IA..." : "Preencher com IA"}
+          </button>
         </RevealBox>
 
         {/* Form */}
