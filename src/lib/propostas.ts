@@ -186,3 +186,20 @@ export async function removerProposta(id: string) {
     .eq("id", id);
   if (error) throw error;
 }
+
+export async function atualizarProposta(id: string, proposta: PropostaJSON) {
+  const { error } = await supabase
+    .from("propostas" as any)
+    .update({
+      proposta_json: proposta as any,
+      proposta_texto: proposta.proposta_comercial,
+      valor_minimo: proposta.financeiro.valor_minimo,
+      valor_ideal: proposta.financeiro.valor_ideal,
+      valor_premium: proposta.financeiro.valor_premium,
+      classificacao_margem: proposta.financeiro.classificacao_margem,
+      complexidade: proposta.complexidade,
+      atualizado_em: new Date().toISOString(),
+    } as any)
+    .eq("id", id);
+  if (error) throw error;
+}
