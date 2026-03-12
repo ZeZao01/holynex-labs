@@ -63,6 +63,46 @@ export default function AdminNovaProposta() {
     } catch {}
   };
 
+  const handleQuickFill = async () => {
+    if (!quickDesc.trim()) {
+      toast.error("Digite uma descrição rápida do projeto.");
+      return;
+    }
+    setFilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("preencher-formulario", {
+        body: { descricao_rapida: quickDesc },
+      });
+      if (error) throw new Error(error.message || "Erro ao preencher");
+      if (data?.error) throw new Error(data.error);
+      const campos = data.campos;
+      setFormData((prev) => ({
+        ...prev,
+        nome_cliente: campos.nome_cliente || prev.nome_cliente,
+        empresa_cliente: campos.empresa_cliente || prev.empresa_cliente,
+        segmento: campos.segmento || prev.segmento,
+        email_cliente: campos.email_cliente || prev.email_cliente,
+        tipo_projeto: campos.tipo_projeto || prev.tipo_projeto,
+        descricao_projeto: campos.descricao_projeto || prev.descricao_projeto,
+        problema_cliente: campos.problema_cliente || prev.problema_cliente,
+        objetivo_cliente: campos.objetivo_cliente || prev.objetivo_cliente,
+        funcionalidades_desejadas: campos.funcionalidades_desejadas?.length ? campos.funcionalidades_desejadas : prev.funcionalidades_desejadas,
+        integracoes: campos.integracoes?.length ? campos.integracoes : prev.integracoes,
+        numero_usuarios: campos.numero_usuarios || prev.numero_usuarios,
+        prazo_desejado: campos.prazo_desejado || prev.prazo_desejado,
+        orcamento_cliente: campos.orcamento_cliente || prev.orcamento_cliente,
+        nivel_urgencia: campos.nivel_urgencia || prev.nivel_urgencia,
+        link_referencia: campos.link_referencia || prev.link_referencia,
+        observacoes: campos.observacoes || prev.observacoes,
+      }));
+      toast.success("Campos preenchidos pela IA!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao preencher campos");
+    } finally {
+      setFilling(false);
+    }
+  };
+
   const handleChange = (field: keyof PropostaInput, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
