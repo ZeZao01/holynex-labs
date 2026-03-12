@@ -45,6 +45,40 @@ export default function AdminPropostaDetalhe() {
     loadProposta();
   };
 
+  const handleRegenerate = async () => {
+    if (!proposta || !id) return;
+    setRegenerating(true);
+    try {
+      const input: PropostaInput = {
+        nome_cliente: proposta.nome_cliente,
+        empresa_cliente: proposta.empresa_cliente,
+        segmento: proposta.segmento,
+        email_cliente: proposta.email_cliente,
+        tipo_projeto: proposta.tipo_projeto,
+        descricao_projeto: proposta.descricao_projeto,
+        problema_cliente: "",
+        objetivo_cliente: "",
+        funcionalidades_desejadas: [],
+        integracoes: [],
+        numero_usuarios: "",
+        prazo_desejado: "",
+        orcamento_cliente: "",
+        nivel_urgencia: "medio",
+        link_referencia: "",
+        observacoes: "",
+        orcamento_id: proposta.orcamento_id || undefined,
+      };
+      const novaProposta = await gerarPropostaIA(input);
+      await atualizarProposta(id, novaProposta);
+      toast.success("Proposta regenerada com sucesso!");
+      loadProposta();
+    } catch (err: any) {
+      console.error("Regenerate error:", err);
+      toast.error(err.message || "Erro ao regenerar proposta");
+    } finally {
+      setRegenerating(false);
+    }
+
   const handleExportPDF = async () => {
     if (!proposta || !id) return;
     setExportingPdf(true);
