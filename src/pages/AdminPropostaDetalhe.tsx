@@ -3,11 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getProposta, atualizarStatusProposta, type Proposta } from "@/lib/propostas";
 import { uploadPdf } from "@/lib/pdf-storage";
+import { generatePropostaPdf } from "@/lib/pdf-generator";
 import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Clock } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import RevealBox from "@/components/RevealBox";
 import PdfHistorico from "@/components/PdfHistorico";
-import { jsPDF } from "jspdf";
 
 const statusActions = [
   { status: "gerada", label: "Gerada", icon: Sparkles, color: "text-primary" },
