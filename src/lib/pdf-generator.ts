@@ -436,7 +436,7 @@ export async function generatePropostaPdf(proposta: Proposta): Promise<Blob> {
       const isHighlighted = i === 2; // Solution card
 
       // Card background
-      pdf.setFillColor(...(isHighlighted ? [0, 255, 255] : [255, 255, 255]));
+      { const fc: RGB = isHighlighted ? [0, 255, 255] : [255, 255, 255]; pdf.setFillColor(...fc); }
       pdf.saveGraphicsState();
       (pdf as any).setGState(new (pdf as any).GState({ opacity: isHighlighted ? 0.05 : 0.03 }));
       pdf.roundedRect(cx, cardY, cardW, cardH, 4, 4, "F");
