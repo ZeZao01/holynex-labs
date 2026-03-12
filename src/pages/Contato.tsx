@@ -11,23 +11,26 @@ export default function Contato() {
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
 
-    setTimeout(() => {
-      salvarOrcamento({
+    try {
+      await salvarOrcamento({
         nome: (formData.get("nome") as string) || "",
         email: (formData.get("email") as string) || "",
         empresa: (formData.get("empresa") as string) || "",
         descricao: (formData.get("descricao") as string) || "",
       });
-      setLoading(false);
       toast.success(t("contact.success"));
       form.reset();
-    }, 1000);
+    } catch {
+      toast.error("Erro ao enviar. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
