@@ -356,6 +356,117 @@ export const pdfTemplates: PdfTemplate[] = [
       highlight: [200, 240, 255],
     },
   },
+  // ── PREMIUM (Inspired by top presentation design trends) ──
+  {
+    id: "premium-sapphire",
+    name: "Safira Premium",
+    category: "Premium",
+    colors: {
+      bg: [8, 12, 38], bgCard: [14, 20, 55],
+      primary: [60, 100, 255], secondary: [120, 180, 255], accent: [255, 200, 60], accent2: [0, 220, 180],
+      white: [255, 255, 255], lightGray: [200, 210, 235], midGray: [130, 145, 175], darkGray: [80, 95, 125],
+      highlight: [255, 210, 80],
+    },
+  },
+  {
+    id: "premium-obsidian",
+    name: "Obsidiana",
+    category: "Premium",
+    colors: {
+      bg: [12, 12, 14], bgCard: [22, 22, 26],
+      primary: [255, 90, 60], secondary: [255, 160, 100], accent: [255, 60, 120], accent2: [60, 200, 255],
+      white: [255, 255, 255], lightGray: [225, 220, 218], midGray: [165, 158, 155], darkGray: [105, 100, 98],
+      highlight: [255, 180, 60],
+    },
+  },
+  {
+    id: "premium-jade",
+    name: "Jade Imperial",
+    category: "Premium",
+    colors: {
+      bg: [5, 18, 18], bgCard: [10, 30, 30],
+      primary: [0, 220, 160], secondary: [80, 255, 200], accent: [255, 200, 80], accent2: [0, 160, 255],
+      white: [255, 255, 255], lightGray: [210, 235, 230], midGray: [145, 175, 170], darkGray: [90, 120, 115],
+      highlight: [255, 220, 100],
+    },
+  },
+  {
+    id: "premium-titanium",
+    name: "Titânio",
+    category: "Premium",
+    colors: {
+      bg: [22, 24, 28], bgCard: [35, 38, 45],
+      primary: [180, 190, 210], secondary: [220, 225, 240], accent: [100, 160, 255], accent2: [255, 180, 100],
+      white: [255, 255, 255], lightGray: [210, 215, 225], midGray: [150, 155, 170], darkGray: [95, 100, 115],
+      highlight: [100, 170, 255],
+    },
+  },
+  {
+    id: "premium-amethyst",
+    name: "Ametista",
+    category: "Premium",
+    colors: {
+      bg: [18, 8, 28], bgCard: [30, 15, 45],
+      primary: [160, 80, 255], secondary: [200, 140, 255], accent: [255, 100, 180], accent2: [80, 220, 255],
+      white: [255, 255, 255], lightGray: [225, 215, 240], midGray: [162, 148, 180], darkGray: [108, 95, 125],
+      highlight: [255, 180, 200],
+    },
+  },
+  {
+    id: "premium-coral",
+    name: "Coral Reef",
+    category: "Premium",
+    colors: {
+      bg: [20, 10, 12], bgCard: [35, 18, 22],
+      primary: [255, 110, 100], secondary: [255, 170, 130], accent: [255, 80, 150], accent2: [80, 200, 220],
+      white: [255, 255, 255], lightGray: [240, 220, 218], midGray: [180, 155, 152], darkGray: [122, 100, 98],
+      highlight: [255, 200, 120],
+    },
+  },
+  {
+    id: "premium-carbon",
+    name: "Fibra de Carbono",
+    category: "Premium",
+    colors: {
+      bg: [15, 15, 18], bgCard: [25, 25, 30],
+      primary: [0, 200, 255], secondary: [100, 220, 255], accent: [255, 60, 60], accent2: [0, 255, 150],
+      white: [255, 255, 255], lightGray: [215, 220, 230], midGray: [150, 158, 170], darkGray: [95, 100, 112],
+      highlight: [0, 230, 255],
+    },
+  },
+  {
+    id: "premium-ivory",
+    name: "Marfim Luxo",
+    category: "Premium",
+    colors: {
+      bg: [252, 248, 240], bgCard: [255, 253, 248],
+      primary: [45, 35, 25], secondary: [90, 70, 50], accent: [180, 140, 60], accent2: [60, 100, 140],
+      white: [35, 28, 20], lightGray: [65, 55, 45], midGray: [130, 118, 105], darkGray: [195, 185, 175],
+      highlight: [190, 150, 70],
+    },
+  },
+  {
+    id: "premium-mercury",
+    name: "Mercúrio",
+    category: "Premium",
+    colors: {
+      bg: [16, 18, 24], bgCard: [26, 30, 40],
+      primary: [200, 210, 230], secondary: [160, 175, 200], accent: [255, 200, 80], accent2: [80, 200, 200],
+      white: [255, 255, 255], lightGray: [210, 215, 228], midGray: [148, 155, 172], darkGray: [92, 98, 115],
+      highlight: [255, 215, 100],
+    },
+  },
+  {
+    id: "premium-eclipse",
+    name: "Eclipse Solar",
+    category: "Premium",
+    colors: {
+      bg: [8, 5, 15], bgCard: [15, 10, 28],
+      primary: [255, 180, 0], secondary: [255, 220, 80], accent: [255, 100, 50], accent2: [100, 50, 255],
+      white: [255, 255, 255], lightGray: [240, 230, 210], midGray: [178, 168, 148], darkGray: [118, 110, 95],
+      highlight: [255, 200, 50],
+    },
+  },
 ];
 
 export const templateCategories = [...new Set(pdfTemplates.map((t) => t.category))];
