@@ -8,6 +8,10 @@ import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Cl
 import { toast } from "@/components/ui/sonner";
 import RevealBox from "@/components/RevealBox";
 import PdfHistorico from "@/components/PdfHistorico";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const statusActions = [
   { status: "gerada", label: "Gerada", icon: Sparkles, color: "text-primary" },
