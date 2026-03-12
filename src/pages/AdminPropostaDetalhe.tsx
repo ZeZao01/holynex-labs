@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getProposta, atualizarStatusProposta, type Proposta } from "@/lib/propostas";
+import { getProposta, atualizarStatusProposta, atualizarProposta, gerarPropostaIA, type Proposta, type PropostaInput } from "@/lib/propostas";
 import { uploadPdf } from "@/lib/pdf-storage";
 import { generatePropostaPdf } from "@/lib/pdf-generator";
-import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Clock } from "lucide-react";
+import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Clock, RefreshCw } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import RevealBox from "@/components/RevealBox";
 import PdfHistorico from "@/components/PdfHistorico";
