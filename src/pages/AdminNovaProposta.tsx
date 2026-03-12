@@ -162,6 +162,30 @@ export default function AdminNovaProposta() {
           <p className="text-muted-foreground text-sm">Preencha os dados e a IA gerará a proposta comercial completa.</p>
         </RevealBox>
 
+        {/* Quick Fill with AI */}
+        <RevealBox delay={0.05} className="glass rounded-2xl p-6 sm:p-8 mb-6 border border-primary/20">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-5 w-5 text-primary" />
+            <h2 className="font-display text-lg font-bold">Preenchimento Rápido com IA</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Descreva o projeto em poucas palavras e a IA preencherá todos os campos automaticamente.</p>
+          <Textarea
+            value={quickDesc}
+            onChange={(e) => setQuickDesc(e.target.value)}
+            placeholder="Ex: João da Silva, empresa TechCorp, quer um ERP para gestão de estoque com 50 usuários, orçamento de R$80mil, prazo 4 meses, urgente"
+            rows={3}
+            className="bg-muted/50 border-border/50 mb-3"
+          />
+          <button
+            onClick={handleQuickFill}
+            disabled={filling}
+            className="btn-glow inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-foreground disabled:opacity-50"
+          >
+            {filling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            {filling ? "Preenchendo com IA..." : "Preencher com IA"}
+          </button>
+        </RevealBox>
+
         {/* Form */}
         <RevealBox delay={0.1} className="glass rounded-2xl p-6 sm:p-8 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
