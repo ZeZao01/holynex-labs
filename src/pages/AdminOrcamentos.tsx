@@ -160,6 +160,7 @@ export default function AdminOrcamentos() {
                             orcamento={orc}
                             onStatusChange={handleStatus}
                             onRemove={handleRemove}
+                            onGenerateProposal={(id) => navigate(`/admin/propostas/nova?orcamento=${id}`)}
                           />
                         ))}
                       </div>
