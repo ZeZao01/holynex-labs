@@ -8,6 +8,8 @@ import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Cl
 import { toast } from "@/components/ui/sonner";
 import RevealBox from "@/components/RevealBox";
 import PdfHistorico from "@/components/PdfHistorico";
+import TemplateSelector from "@/components/TemplateSelector";
+import { type PdfTemplate } from "@/lib/pdf-templates";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +32,7 @@ export default function AdminPropostaDetalhe() {
   const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
   const [showRegenDialog, setShowRegenDialog] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [orientacoes, setOrientacoes] = useState("");
 
   useEffect(() => {
@@ -88,11 +91,12 @@ export default function AdminPropostaDetalhe() {
     }
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (template?: PdfTemplate) => {
     if (!proposta || !id) return;
+    setShowTemplateSelector(false);
     setExportingPdf(true);
     try {
-      const pdfBlob = await generatePropostaPdf(proposta);
+      const pdfBlob = await generatePropostaPdf(proposta, template?.id);
       await uploadPdf(id, proposta.nome_cliente, pdfBlob);
       setPdfRefreshKey((k) => k + 1);
 
@@ -160,7 +164,7 @@ export default function AdminPropostaDetalhe() {
               {regenerating ? "Regenerando..." : "Regenerar Proposta"}
             </button>
             <button
-              onClick={handleExportPDF}
+              onClick={() => setShowTemplateSelector(true)}
               disabled={exportingPdf}
               className="btn-glow inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium text-foreground disabled:opacity-50"
             >
@@ -292,6 +296,13 @@ export default function AdminPropostaDetalhe() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Template Selector */}
+        <TemplateSelector
+          open={showTemplateSelector}
+          onOpenChange={setShowTemplateSelector}
+          onSelect={handleExportPDF}
+        />
       </div>
     </div>
   );

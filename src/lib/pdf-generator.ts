@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { Proposta } from "@/lib/propostas";
+import { type PdfTemplate, type RGB, getTemplateById } from "@/lib/pdf-templates";
 import logoUrl from "@/assets/logo.png";
 
 // ── Image loader ──
@@ -19,24 +20,27 @@ function loadImageAsBase64(url: string): Promise<string> {
   });
 }
 
-// ── Color palette matching the HTML model ──
-type RGB = [number, number, number];
-const C = {
-  bg: [10, 0, 21] as RGB,         // #0a0015
-  bgCard: [17, 5, 32] as RGB,     // #110520
-  magenta: [255, 0, 255] as RGB,
-  cyan: [0, 255, 255] as RGB,
-  purple: [157, 0, 255] as RGB,
-  purpleDark: [76, 0, 128] as RGB,
-  green: [0, 255, 153] as RGB,
-  white: [255, 255, 255] as RGB,
-  lightGray: [226, 232, 240] as RGB,
-  midGray: [148, 163, 175] as RGB,
-  darkGray: [100, 116, 139] as RGB,
-  yellow: [255, 200, 50] as RGB,
-};
+// ── Build color palette from template ──
+function buildColors(t: PdfTemplate) {
+  return {
+    bg: t.colors.bg as RGB,
+    bgCard: t.colors.bgCard as RGB,
+    magenta: t.colors.primary as RGB,
+    cyan: t.colors.secondary as RGB,
+    purple: t.colors.accent as RGB,
+    purpleDark: [Math.floor(t.colors.accent[0] * 0.5), Math.floor(t.colors.accent[1] * 0.5), Math.floor(t.colors.accent[2] * 0.5)] as RGB,
+    green: t.colors.accent2 as RGB,
+    white: t.colors.white as RGB,
+    lightGray: t.colors.lightGray as RGB,
+    midGray: t.colors.midGray as RGB,
+    darkGray: t.colors.darkGray as RGB,
+    yellow: t.colors.highlight as RGB,
+  };
+}
 
-export async function generatePropostaPdf(proposta: Proposta): Promise<Blob> {
+export async function generatePropostaPdf(proposta: Proposta, templateId?: string): Promise<Blob> {
+  const template = getTemplateById(templateId || "cyber-magenta");
+  const C = buildColors(template);
   const logoBase64 = await loadImageAsBase64(logoUrl);
   const pj = proposta.proposta_json as any;
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
