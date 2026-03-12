@@ -50,6 +50,44 @@ export type Database = {
         }
         Relationships: []
       }
+      pdf_versoes: {
+        Row: {
+          criado_em: string
+          id: string
+          nome_arquivo: string
+          proposta_id: string
+          storage_path: string
+          tamanho_bytes: number | null
+          versao: number
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          nome_arquivo: string
+          proposta_id: string
+          storage_path: string
+          tamanho_bytes?: number | null
+          versao?: number
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          nome_arquivo?: string
+          proposta_id?: string
+          storage_path?: string
+          tamanho_bytes?: number | null
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_versoes_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       propostas: {
         Row: {
           atualizado_em: string
