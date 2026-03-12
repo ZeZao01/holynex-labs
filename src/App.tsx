@@ -21,6 +21,7 @@ import AdminOrcamentos from "./pages/AdminOrcamentos";
 import AdminPropostas from "./pages/AdminPropostas";
 import AdminNovaProposta from "./pages/AdminNovaProposta";
 import AdminPropostaDetalhe from "./pages/AdminPropostaDetalhe";
+import AdminTemplates from "./pages/AdminTemplates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
