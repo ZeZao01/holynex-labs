@@ -762,7 +762,7 @@ export async function generatePropostaPdf(proposta: Proposta): Promise<Blob> {
       let fy = py + 14;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(8);
-      pdf.setTextColor(plan.featured ? ...C.magenta : ...C.midGray);
+      { const tc = plan.featured ? C.magenta : C.midGray; pdf.setTextColor(...tc); }
       pdf.text(plan.name.toUpperCase(), px + pricingW / 2, fy, { align: "center" });
       fy += 10;
 
