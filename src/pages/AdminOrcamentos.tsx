@@ -180,10 +180,12 @@ function OrcamentoCard({
   orcamento: orc,
   onStatusChange,
   onRemove,
+  onGenerateProposal,
 }: {
   orcamento: Orcamento;
   onStatusChange: (id: string, status: OrcamentoStatus) => void;
   onRemove: (id: string) => void;
+  onGenerateProposal: (id: string) => void;
 }) {
   const sc = statusConfig[orc.status];
   const StatusIcon = sc.icon;
