@@ -8,6 +8,8 @@ import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Cl
 import { toast } from "@/components/ui/sonner";
 import RevealBox from "@/components/RevealBox";
 import PdfHistorico from "@/components/PdfHistorico";
+import TemplateSelector from "@/components/TemplateSelector";
+import { type PdfTemplate } from "@/lib/pdf-templates";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
