@@ -5,7 +5,7 @@ import { getOrcamentos, atualizarStatus, removerOrcamento, type Orcamento, type 
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Clock, CheckCircle2, XCircle, Trash2, ArrowUpCircle, ArrowDownCircle, MinusCircle, Mail, Building2, FileText, Sparkles, LogOut, Loader2 } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, Trash2, ArrowUpCircle, ArrowDownCircle, MinusCircle, Mail, Building2, FileText, Sparkles, LogOut, Loader2, FileBarChart } from "lucide-react";
 import RevealBox from "@/components/RevealBox";
 
 const statusConfig: Record<OrcamentoStatus, { label: string; icon: typeof Clock; color: string; badgeClass: string }> = {
