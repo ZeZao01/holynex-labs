@@ -91,7 +91,14 @@ export default function AdminOrcamentos() {
           <p className="text-muted-foreground">Acompanhe e gerencie todos os pedidos de orçamento.</p>
         </RevealBox>
 
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center gap-3 mb-8">
+          <button
+            onClick={() => navigate("/admin/propostas")}
+            className="btn-glow inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium text-foreground"
+          >
+            <FileBarChart className="h-3.5 w-3.5" />
+            Propostas IA
+          </button>
           <button
             onClick={signOut}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
