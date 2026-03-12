@@ -296,6 +296,13 @@ export default function AdminPropostaDetalhe() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Template Selector */}
+        <TemplateSelector
+          open={showTemplateSelector}
+          onOpenChange={setShowTemplateSelector}
+          onSelect={handleExportPDF}
+        />
       </div>
     </div>
   );
