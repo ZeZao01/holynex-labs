@@ -91,11 +91,12 @@ export default function AdminPropostaDetalhe() {
     }
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (template?: PdfTemplate) => {
     if (!proposta || !id) return;
+    setShowTemplateSelector(false);
     setExportingPdf(true);
     try {
-      const pdfBlob = await generatePropostaPdf(proposta);
+      const pdfBlob = await generatePropostaPdf(proposta, template?.id);
       await uploadPdf(id, proposta.nome_cliente, pdfBlob);
       setPdfRefreshKey((k) => k + 1);
 
