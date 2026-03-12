@@ -6,15 +6,91 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface AIProvider {
+  name: string;
+  url: string;
+  apiKey: string;
+  model: string;
+  headers?: Record<string, string>;
+}
+
+function getProviders(): AIProvider[] {
+  const providers: AIProvider[] = [];
+
+  const groqKey = Deno.env.get("GROQ_API_KEY");
+  if (groqKey) {
+    providers.push({
+      name: "Groq",
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      apiKey: groqKey,
+      model: "llama-3.3-70b-versatile",
+    });
+  }
+
+  const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
+  if (openrouterKey) {
+    providers.push({
+      name: "OpenRouter",
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      apiKey: openrouterKey,
+      model: "google/gemini-2.5-flash",
+      headers: {
+        "HTTP-Referer": "https://holynexlabs.com.br",
+        "X-Title": "HolyNex Labs",
+      },
+    });
+  }
+
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (lovableKey) {
+    providers.push({
+      name: "Lovable AI",
+      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
+      apiKey: lovableKey,
+      model: "google/gemini-2.5-flash",
+    });
+  }
+
+  return providers;
+}
+
+async function callProvider(provider: AIProvider, messages: any[]): Promise<string> {
+  console.log(`Trying provider: ${provider.name}`);
+  const response = await fetch(provider.url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${provider.apiKey}`,
+      "Content-Type": "application/json",
+      ...(provider.headers || {}),
+    },
+    body: JSON.stringify({ model: provider.model, messages, temperature: 0.3 }),
+  });
+
+  if (!response.ok) {
+    const t = await response.text();
+    throw new Error(`${provider.name} [${response.status}]: ${t}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error(`${provider.name}: empty response`);
+  return content;
+}
+
+function cleanJson(content: string): any {
+  let cleaned = content.trim().replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+  if (first !== -1 && last !== -1) cleaned = cleaned.slice(first, last + 1);
+  return JSON.parse(cleaned);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const { descricao_rapida } = await req.json();
     if (!descricao_rapida?.trim()) {
       return new Response(
@@ -58,63 +134,45 @@ REGRAS:
 - Sempre preencha descricao_projeto com uma versão expandida e profissional
 - Sem markdown, sem texto extra, apenas JSON`;
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: descricao_rapida },
-          ],
-        }),
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: descricao_rapida },
+    ];
+
+    const providers = getProviders();
+    if (providers.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Nenhum provedor de IA configurado." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    let lastError: Error | null = null;
+    for (const provider of providers) {
+      try {
+        const content = await callProvider(provider, messages);
+        const parsed = cleanJson(content);
+        console.log(`Success with: ${provider.name}`);
+        return new Response(
+          JSON.stringify({ campos: parsed }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (err) {
+        console.error(`${provider.name} failed:`, err);
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (err instanceof Error && (err.message.includes("429") || err.message.includes("402"))) {
+          return new Response(
+            JSON.stringify({ error: `${provider.name}: Limite excedido. Tente novamente.` }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       }
+    }
+
+    return new Response(
+      JSON.stringify({ error: `Todos os provedores falharam: ${lastError?.message}` }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos insuficientes." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(
-        JSON.stringify({ error: "Erro no gateway de IA" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
-
-    let parsed;
-    try {
-      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      parsed = JSON.parse(cleaned);
-    } catch {
-      console.error("Failed to parse AI response:", content);
-      return new Response(
-        JSON.stringify({ error: "Erro ao processar resposta da IA" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    return new Response(JSON.stringify({ campos: parsed }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (e) {
     console.error("preencher-formulario error:", e);
     return new Response(
