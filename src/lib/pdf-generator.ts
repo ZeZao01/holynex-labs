@@ -696,7 +696,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setFillColor(...C.cyan);
     pdf.circle(W - mx - 41, my + 4, 1, "F");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(6.5);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.white);
     pdf.text("PAGAMENTO ÚNICO", W - mx - 37, my + 5.5);
 
