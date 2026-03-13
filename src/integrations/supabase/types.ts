@@ -962,6 +962,92 @@ export type Database = {
           },
         ]
       }
+      project_model_events: {
+        Row: {
+          criado_em: string | null
+          descricao: string | null
+          evento: string
+          id: string
+          model_id: string
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento: string
+          id?: string
+          model_id: string
+        }
+        Update: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento?: string
+          id?: string
+          model_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_model_events_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "project_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_model_modules: {
+        Row: {
+          category: string | null
+          criado_em: string | null
+          display_order: number | null
+          id: string
+          is_required: boolean | null
+          model_id: string
+          name: string
+          notes: string | null
+          scope_in_tier: string | null
+          tier_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          criado_em?: string | null
+          display_order?: number | null
+          id?: string
+          is_required?: boolean | null
+          model_id: string
+          name: string
+          notes?: string | null
+          scope_in_tier?: string | null
+          tier_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          criado_em?: string | null
+          display_order?: number | null
+          id?: string
+          is_required?: boolean | null
+          model_id?: string
+          name?: string
+          notes?: string | null
+          scope_in_tier?: string | null
+          tier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_model_modules_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "project_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_model_modules_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "project_model_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_model_performance_metrics: {
         Row: {
           atualizado_em: string
@@ -1017,6 +1103,170 @@ export type Database = {
             foreignKeyName: "project_model_performance_metrics_portfolio_item_id_fkey"
             columns: ["portfolio_item_id"]
             isOneToOne: true
+            referencedRelation: "portfolio_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_model_tiers: {
+        Row: {
+          criado_em: string | null
+          description: string | null
+          display_order: number | null
+          estimated_days: number | null
+          id: string
+          ideal_client_profile: string | null
+          is_recommended: boolean | null
+          model_id: string
+          name: string
+          price_range: string | null
+          tier_type: string
+        }
+        Insert: {
+          criado_em?: string | null
+          description?: string | null
+          display_order?: number | null
+          estimated_days?: number | null
+          id?: string
+          ideal_client_profile?: string | null
+          is_recommended?: boolean | null
+          model_id: string
+          name: string
+          price_range?: string | null
+          tier_type?: string
+        }
+        Update: {
+          criado_em?: string | null
+          description?: string | null
+          display_order?: number | null
+          estimated_days?: number | null
+          id?: string
+          ideal_client_profile?: string | null
+          is_recommended?: boolean | null
+          model_id?: string
+          name?: string
+          price_range?: string | null
+          tier_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_model_tiers_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "project_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_models: {
+        Row: {
+          atualizado_em: string | null
+          availability_status: string | null
+          badges: string[] | null
+          base_deadline: string | null
+          category: string | null
+          commercial_description: string | null
+          cover_image_url: string | null
+          criado_em: string | null
+          cta_primary_label: string | null
+          cta_primary_url: string | null
+          cta_secondary_label: string | null
+          cta_secondary_url: string | null
+          delivered_system_id: string | null
+          display_order: number | null
+          gallery_urls: string[] | null
+          how_it_works: string | null
+          id: string
+          investment_range: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          niche: string | null
+          portfolio_item_id: string | null
+          problem_solved: string | null
+          slug: string | null
+          subtitle: string | null
+          target_audience: string | null
+          thumbnail_url: string | null
+          title: string
+          value_proposition: string | null
+          video_url: string | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          availability_status?: string | null
+          badges?: string[] | null
+          base_deadline?: string | null
+          category?: string | null
+          commercial_description?: string | null
+          cover_image_url?: string | null
+          criado_em?: string | null
+          cta_primary_label?: string | null
+          cta_primary_url?: string | null
+          cta_secondary_label?: string | null
+          cta_secondary_url?: string | null
+          delivered_system_id?: string | null
+          display_order?: number | null
+          gallery_urls?: string[] | null
+          how_it_works?: string | null
+          id?: string
+          investment_range?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          niche?: string | null
+          portfolio_item_id?: string | null
+          problem_solved?: string | null
+          slug?: string | null
+          subtitle?: string | null
+          target_audience?: string | null
+          thumbnail_url?: string | null
+          title: string
+          value_proposition?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          availability_status?: string | null
+          badges?: string[] | null
+          base_deadline?: string | null
+          category?: string | null
+          commercial_description?: string | null
+          cover_image_url?: string | null
+          criado_em?: string | null
+          cta_primary_label?: string | null
+          cta_primary_url?: string | null
+          cta_secondary_label?: string | null
+          cta_secondary_url?: string | null
+          delivered_system_id?: string | null
+          display_order?: number | null
+          gallery_urls?: string[] | null
+          how_it_works?: string | null
+          id?: string
+          investment_range?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          niche?: string | null
+          portfolio_item_id?: string | null
+          problem_solved?: string | null
+          slug?: string | null
+          subtitle?: string | null
+          target_audience?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          value_proposition?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_models_delivered_system_id_fkey"
+            columns: ["delivered_system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_models_portfolio_item_id_fkey"
+            columns: ["portfolio_item_id"]
+            isOneToOne: false
             referencedRelation: "portfolio_items"
             referencedColumns: ["id"]
           },
