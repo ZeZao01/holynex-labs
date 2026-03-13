@@ -40,13 +40,19 @@ export default function ChangeForm({ change, onSave, onCancel, loading }: Props)
     internal_notes: "",
     commercial_notes: "",
     opportunity_tag: "",
+    project_id: null,
     delivered_system_id: null,
+    project_module_id: null,
   });
   const [systems, setSystems] = useState<{ id: string; nome: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: string; nome: string }[]>([]);
+  const [modules, setModules] = useState<{ id: string; nome: string }[]>([]);
 
   useEffect(() => {
     if (change) setForm(change);
     supabase.from("delivered_systems").select("id, nome").order("nome").then(({ data }) => setSystems(data || []));
+    supabase.from("projects").select("id, nome").order("nome").then(({ data }) => setProjects(data || []));
+    supabase.from("project_modules").select("id, nome").order("nome").then(({ data }) => setModules(data || []));
   }, [change]);
 
   const set = (key: string, value: any) => setForm((p) => ({ ...p, [key]: value }));
@@ -107,12 +113,32 @@ export default function ChangeForm({ change, onSave, onCancel, loading }: Props)
               </Select>
             </div>
             <div>
+              <Label>Projeto</Label>
+              <Select value={form.project_id || "none"} onValueChange={(v) => set("project_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Sistema Entregue</Label>
               <Select value={form.delivered_system_id || "none"} onValueChange={(v) => set("delivered_system_id", v === "none" ? null : v)}>
                 <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhum</SelectItem>
                   {systems.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Módulo</Label>
+              <Select value={form.project_module_id || "none"} onValueChange={(v) => set("project_module_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {modules.map((m) => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/admin/PageHeader";
 import FilterToolbar from "@/components/admin/FilterToolbar";
 import StatsGrid from "@/components/admin/StatsGrid";
@@ -14,9 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import {
   Wrench, Plus, AlertCircle, Play, CheckCircle, DollarSign, FileText, Clock,
-  Edit, Copy, ThumbsUp, ThumbsDown, MoreHorizontal, Eye,
+  Edit, Copy, ThumbsUp, ThumbsDown, MoreHorizontal,
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -25,15 +27,23 @@ import {
   getLabel, getStatusMeta, getPriorityMeta,
   CHANGE_TYPES, CHANGE_STATUSES, PRIORITIES, URGENCIES, BILLING_MODES, REQUEST_ORIGINS,
 } from "@/lib/project-changes";
+import { getProjects, Project } from "@/lib/projects";
+import { getDeliveredSystems, DeliveredSystem } from "@/lib/delivered-systems";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function AdminManutencao() {
+  const navigate = useNavigate();
   const [changes, setChanges] = useState<ProjectChange[]>([]);
-  const [filtered, setFiltered] = useState<ProjectChange[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [systems, setSystems] = useState<DeliveredSystem[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [typeFilter, setTypeFilter] = useState("todos");
   const [priorityFilter, setPriorityFilter] = useState("todos");
+  const [urgencyFilter, setUrgencyFilter] = useState("todos");
+  const [billingFilter, setBillingFilter] = useState("todos");
+  const [projectFilter, setProjectFilter] = useState("todos");
+  const [systemFilter, setSystemFilter] = useState("todos");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<ProjectChange | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -41,25 +51,35 @@ export default function AdminManutencao() {
   const [events, setEvents] = useState<ProjectChangeEvent[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const loadCb = useCallback(() => load(), []);
   useEffect(() => { load(); }, []);
-
-  useEffect(() => {
-    let list = changes;
-    if (search) list = list.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()));
-    if (statusFilter !== "todos") list = list.filter((c) => c.status === statusFilter);
-    if (typeFilter !== "todos") list = list.filter((c) => c.change_type === typeFilter);
-    if (priorityFilter !== "todos") list = list.filter((c) => c.priority === priorityFilter);
-    setFiltered(list);
-  }, [changes, search, statusFilter, typeFilter, priorityFilter]);
+  useRealtimeSubscription("project_changes", loadCb);
 
   async function load() {
     try {
-      const data = await listChanges();
+      const [data, p, s] = await Promise.all([listChanges(), getProjects(), getDeliveredSystems()]);
       setChanges(data);
+      setProjects(p);
+      setSystems(s);
     } catch {
       toast({ title: "Erro ao carregar solicitações", variant: "destructive" });
     }
   }
+
+  const projectMap = Object.fromEntries(projects.map(p => [p.id, p.nome]));
+  const systemMap = Object.fromEntries(systems.map(s => [s.id, s.nome]));
+
+  const filtered = changes.filter(c => {
+    if (search && !c.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statusFilter !== "todos" && c.status !== statusFilter) return false;
+    if (typeFilter !== "todos" && c.change_type !== typeFilter) return false;
+    if (priorityFilter !== "todos" && c.priority !== priorityFilter) return false;
+    if (urgencyFilter !== "todos" && c.urgency !== urgencyFilter) return false;
+    if (billingFilter !== "todos" && c.billing_mode !== billingFilter) return false;
+    if (projectFilter !== "todos" && c.project_id !== projectFilter) return false;
+    if (systemFilter !== "todos" && c.delivered_system_id !== systemFilter) return false;
+    return true;
+  });
 
   async function handleSave(data: Partial<ProjectChange>) {
     setLoading(true);
@@ -151,26 +171,58 @@ export default function AdminManutencao() {
           <FilterToolbar searchPlaceholder="Buscar solicitação..." searchValue={search} onSearchChange={setSearch} />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos Status</SelectItem>
             {CHANGE_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos Tipos</SelectItem>
             {CHANGE_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+          <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Prioridade" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todas</SelectItem>
             {PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
+          <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Urgência" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas</SelectItem>
+            {URGENCIES.map((u) => <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={billingFilter} onValueChange={setBillingFilter}>
+          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Cobrança" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas</SelectItem>
+            {BILLING_MODES.map((b) => <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {projects.length > 0 && (
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Projeto" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos Projetos</SelectItem>
+              {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        {systems.length > 0 && (
+          <Select value={systemFilter} onValueChange={setSystemFilter}>
+            <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Sistema" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos Sistemas</SelectItem>
+              {systems.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
         <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
           <Plus className="h-4 w-4 mr-1" /> Nova Solicitação
         </Button>
@@ -191,6 +243,7 @@ export default function AdminManutencao() {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Tipo</TableHead>
+                <TableHead>Projeto/Sistema</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead>Urgência</TableHead>
@@ -205,10 +258,12 @@ export default function AdminManutencao() {
               {filtered.map((c) => {
                 const sm = getStatusMeta(c.status);
                 const pm = getPriorityMeta(c.priority);
+                const context = c.project_id ? projectMap[c.project_id] : c.delivered_system_id ? systemMap[c.delivered_system_id] : "—";
                 return (
                   <TableRow key={c.id} className="cursor-pointer" onClick={() => openDetail(c)}>
                     <TableCell className="font-medium max-w-[200px] truncate">{c.title}</TableCell>
                     <TableCell><Badge variant="secondary" className="text-xs">{getLabel(CHANGE_TYPES, c.change_type)}</Badge></TableCell>
+                    <TableCell className="text-xs max-w-[120px] truncate">{context}</TableCell>
                     <TableCell><StatusBadge status={sm.color} label={sm.label} /></TableCell>
                     <TableCell><StatusBadge status={pm.color} label={pm.label} /></TableCell>
                     <TableCell className="text-xs">{getLabel(URGENCIES, c.urgency)}</TableCell>
@@ -264,6 +319,8 @@ export default function AdminManutencao() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="text-muted-foreground">Projeto:</span> {selected.project_id ? projectMap[selected.project_id] || "—" : "—"}</div>
+                  <div><span className="text-muted-foreground">Sistema:</span> {selected.delivered_system_id ? systemMap[selected.delivered_system_id] || "—" : "—"}</div>
                   <div><span className="text-muted-foreground">Solicitante:</span> {selected.requested_by_name || "—"}</div>
                   <div><span className="text-muted-foreground">Responsável:</span> {selected.assigned_to_name || "—"}</div>
                   <div><span className="text-muted-foreground">Cobrança:</span> {getLabel(BILLING_MODES, selected.billing_mode || "")}</div>
