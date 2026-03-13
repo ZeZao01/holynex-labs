@@ -2,13 +2,20 @@ import {
   LayoutDashboard,
   Users,
   FileText,
+  FolderKanban,
+  PackageCheck,
+  KeyRound,
+  Blocks,
+  Wrench,
+  Globe,
+  LayoutTemplate,
+  DollarSign,
+  ShieldCheck,
   Settings,
-  BarChart3,
-  HelpCircle,
-  ClipboardList,
-  FilePlus,
   LogOut,
   Palette,
+  FilePlus,
+  ClipboardList,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,22 +34,31 @@ import {
 } from "@/components/ui/sidebar";
 import logo from "@/assets/logo.png";
 
-const mainItems = [
-  { title: "Painel de Controle", url: "/admin/orcamentos", icon: LayoutDashboard },
-  { title: "Propostas", url: "/admin/propostas", icon: ClipboardList },
+const operacionalItems = [
+  { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
+  { title: "Leads & Orçamentos", url: "/admin/orcamentos", icon: Users },
+  { title: "Propostas & PDFs", url: "/admin/propostas", icon: ClipboardList },
   { title: "Nova Proposta", url: "/admin/propostas/nova", icon: FilePlus },
   { title: "Modelos PDF", url: "/admin/templates", icon: Palette },
 ];
 
-const managementItems = [
-  { title: "Usuários", url: "/admin/usuarios", icon: Users },
-  { title: "Conteúdo", url: "/admin/conteudo", icon: FileText },
-  { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3 },
+const projetosItems = [
+  { title: "Projetos em Andamento", url: "/admin/projetos", icon: FolderKanban },
+  { title: "Sistemas Entregues", url: "/admin/sistemas", icon: PackageCheck },
+  { title: "Acessos & Admins", url: "/admin/acessos", icon: KeyRound },
+  { title: "Módulos por Projeto", url: "/admin/modulos", icon: Blocks },
+  { title: "Alterações & Manutenção", url: "/admin/manutencao", icon: Wrench },
 ];
 
-const systemItems = [
+const comercialItems = [
+  { title: "Portfólio Público", url: "/admin/portfolio-admin", icon: Globe },
+  { title: "Projetos Modelo", url: "/admin/modelos", icon: LayoutTemplate },
+  { title: "Financeiro", url: "/admin/financeiro", icon: DollarSign },
+];
+
+const sistemaItems = [
+  { title: "Segurança & Auditoria", url: "/admin/seguranca", icon: ShieldCheck },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
-  { title: "Suporte", url: "/admin/suporte", icon: HelpCircle },
 ];
 
 export default function AdminSidebar() {
@@ -54,7 +70,7 @@ export default function AdminSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const renderItems = (items: typeof mainItems) => (
+  const renderItems = (items: typeof operacionalItems) => (
     <SidebarMenu>
       {items.map((item) => (
         <SidebarMenuItem key={item.title}>
@@ -74,7 +90,7 @@ export default function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-border/40">
       <SidebarHeader className="border-b border-border/40 px-4 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/admin/dashboard")}>
           <img src={logo} alt="HolyNex" className="h-8 w-8 rounded-md" />
           {!collapsed && (
             <span className="text-sm font-bold text-foreground tracking-tight">
@@ -86,18 +102,23 @@ export default function AdminSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(mainItems)}</SidebarGroupContent>
+          <SidebarGroupLabel>Operacional</SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(operacionalItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Gestão</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(managementItems)}</SidebarGroupContent>
+          <SidebarGroupLabel>Projetos</SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(projetosItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Comercial</SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(comercialItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(systemItems)}</SidebarGroupContent>
+          <SidebarGroupContent>{renderItems(sistemaItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
