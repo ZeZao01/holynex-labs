@@ -996,7 +996,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     drawCard(mx, tlY, W - mx * 2, 70, C.cyan);
 
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.cyan);
     pdf.text("LINHA DO TEMPO DE EXECUÇÃO", mx + 8, tlY + 8);
 
