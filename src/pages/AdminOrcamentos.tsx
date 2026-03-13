@@ -46,10 +46,10 @@ export default function AdminOrcamentos() {
     }
     if (user) {
       refresh();
-      const interval = setInterval(refresh, 5000);
-      return () => clearInterval(interval);
     }
   }, [user, authLoading, navigate, refresh]);
+
+  useRealtimeSubscription("orcamentos", refresh, !!user);
 
   const filtered = useMemo(() => {
     if (tab === "todos") return orcamentos;
