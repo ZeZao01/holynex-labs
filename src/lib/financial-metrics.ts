@@ -52,13 +52,13 @@ export const STRATEGIC_FLAGS = [
 ] as const;
 
 export const FLAG_LABELS: Record<string, { label: string; color: string }> = {
-  estrategico: { label: "Estratégico", color: "bg-primary/20 text-primary" },
-  vender_mais: { label: "Vender Mais", color: "bg-emerald-500/20 text-emerald-400" },
-  destacar_site: { label: "Destacar no Site", color: "bg-blue-500/20 text-blue-400" },
-  alta_margem: { label: "Alta Margem", color: "bg-amber-500/20 text-amber-400" },
-  muito_procurado: { label: "Muito Procurado", color: "bg-pink-500/20 text-pink-400" },
-  gera_recorrencia: { label: "Gera Recorrência", color: "bg-cyan-500/20 text-cyan-400" },
-  evitar_escalar: { label: "Evitar Escalar", color: "bg-red-500/20 text-red-400" },
+  estrategico: { label: "Estratégico", color: "bg-primary/15 text-primary border-primary/30" },
+  vender_mais: { label: "Vender Mais", color: "bg-secondary/70 text-secondary-foreground border-border" },
+  destacar_site: { label: "Destacar no Site", color: "bg-accent text-accent-foreground border-border" },
+  alta_margem: { label: "Alta Margem", color: "bg-primary/10 text-primary border-primary/30" },
+  muito_procurado: { label: "Muito Procurado", color: "bg-muted text-foreground border-border" },
+  gera_recorrencia: { label: "Gera Recorrência", color: "bg-secondary text-secondary-foreground border-border" },
+  evitar_escalar: { label: "Evitar Escalar", color: "bg-destructive/10 text-destructive border-destructive/30" },
 };
 
 export const RISK_ALERTS = [
