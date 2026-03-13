@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
 import { getModulesByProject, ProjectModule, MODULE_STATUS, MODULE_CATEGORIES } from "@/lib/project-modules";
+import { listChanges, ProjectChange, getStatusMeta, getPriorityMeta, getLabel, CHANGE_TYPES } from "@/lib/project-changes";
 import {
   getAccessesByProject, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
 } from "@/lib/project-accesses";
