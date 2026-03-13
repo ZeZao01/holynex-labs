@@ -18,6 +18,8 @@ import {
   maskSecret, getAccessAlerts,
 } from "@/lib/project-accesses";
 import { getDeliveredSystems, DeliveredSystem } from "@/lib/delivered-systems";
+import { getProjects, Project } from "@/lib/projects";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import {
   KeyRound, Plus, Copy, ExternalLink, Eye, EyeOff, CheckCircle2, Edit, Trash2,
   AlertTriangle, Clock, Shield,
