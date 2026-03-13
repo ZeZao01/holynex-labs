@@ -12,6 +12,7 @@ import AdminLayout from "@/components/AdminLayout";
 
 import Index from "./pages/Index";
 import Servicos from "./pages/Servicos";
+import PortfolioDetalhe from "./pages/PortfolioDetalhe";
 import Solucoes from "./pages/Solucoes";
 import Portfolio from "./pages/Portfolio";
 import Sobre from "./pages/Sobre";
