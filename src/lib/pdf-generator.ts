@@ -1187,7 +1187,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.roundedRect(bx + 5, by + bCardH - 12, bCardW - 10, 7, 2, 2, "F");
       pdf.restoreGraphicsState();
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(6.5);
+      pdf.setFontSize(7);
       pdf.setTextColor(...b.color);
       pdf.text(b.badge.toUpperCase(), bx + bCardW / 2, by + bCardH - 7, { align: "center" });
     });
