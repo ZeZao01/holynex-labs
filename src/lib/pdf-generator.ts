@@ -1424,7 +1424,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.roundedRect(ctaX + (ctaW - webW) / 2, contactY + 26, webW, 7, 3, 3, "S");
     pdf.restoreGraphicsState();
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.magenta);
     pdf.text("holynexlabs.com.br", ctaX + ctaW / 2, contactY + 31, { align: "center" });
 
