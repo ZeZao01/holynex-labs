@@ -238,6 +238,32 @@ export default function AdminSistemaDetalhe() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Módulos do sistema */}
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold flex items-center gap-2"><Blocks className="h-4 w-4" /> Módulos ({sysModules.length})</h3>
+              <Button size="sm" variant="ghost" onClick={() => navigate("/admin/modulos")} className="text-xs">Gerenciar</Button>
+            </div>
+            {sysModules.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum módulo vinculado.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-2 mb-3 text-center">
+                  <div className="rounded bg-muted/30 p-2"><p className="text-sm font-bold">{sysModules.filter(m => m.status === "entregue" || m.status === "concluido").length}/{sysModules.length}</p><p className="text-[10px] text-muted-foreground">Entregues</p></div>
+                  <div className="rounded bg-muted/30 p-2"><p className="text-sm font-bold">{sysModules.filter(m => m.reusability_type === "sim").length}</p><p className="text-[10px] text-muted-foreground">Reutilizáveis</p></div>
+                </div>
+                <div className="space-y-1.5">
+                  {sysModules.slice(0, 6).map(m => (
+                    <div key={m.id} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/30">
+                      <span className="font-medium truncate">{m.nome}</span>
+                      <StatusBadge status={MODULE_STATUS[m.status]?.color || "pending"} label={MODULE_STATUS[m.status]?.label || m.status} />
+                    </div>
+                  ))}
+                  {sysModules.length > 6 && <p className="text-[10px] text-muted-foreground text-center">+ {sysModules.length - 6} módulos</p>}
+                </div>
+              </>
+            )}
+          </div>
           {/* Acessos vinculados */}
           <div className="rounded-xl border border-border bg-card p-6">
             <div className="flex items-center justify-between mb-3">
