@@ -79,9 +79,9 @@ export async function getProjectAccess(id: string) {
     .from("project_accesses")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  return data as ProjectAccess;
+  return data as ProjectAccess | null;
 }
 
 export async function saveProjectAccess(access: Partial<ProjectAccess>) {
