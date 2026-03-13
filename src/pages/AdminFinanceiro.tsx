@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import {
   DollarSign, TrendingUp, Repeat, BarChart3, AlertTriangle, Award,
-  Target, Zap, ArrowUpRight, Star, Shield, Flame,
+  Target, Zap, Flame,
 } from "lucide-react";
 import {
   getAllProfitabilityMetrics, getNicheMetrics, getPortfolioPerformance,
