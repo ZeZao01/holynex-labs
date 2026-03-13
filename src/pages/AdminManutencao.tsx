@@ -148,7 +148,7 @@ export default function AdminManutencao() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[200px]">
-          <FilterToolbar searchPlaceholder="Buscar solicitação..." onSearch={setSearch} />
+          <FilterToolbar searchPlaceholder="Buscar solicitação..." searchValue={search} onSearchChange={setSearch} />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
