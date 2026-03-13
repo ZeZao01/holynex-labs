@@ -347,6 +347,34 @@ export default function AdminProjetoDetalhe() {
         )}
       </SectionCard>
 
+      {/* Alterações & Manutenção */}
+      <SectionCard title={`Alterações & Manutenção (${projectChanges.length})`} action={<Button size="sm" variant="outline" onClick={() => navigate("/admin/manutencao")}><Wrench className="h-4 w-4 mr-1" /> Ver Todas</Button>}>
+        {projectChanges.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma solicitação vinculada a este projeto</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectChanges.filter(c => c.status === "aberta" || c.status === "em_analise").length}</p><p className="text-xs text-muted-foreground">Abertas</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectChanges.filter(c => c.status === "em_execucao").length}</p><p className="text-xs text-muted-foreground">Em Execução</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectChanges.filter(c => c.status === "concluida").length}</p><p className="text-xs text-muted-foreground">Concluídas</p></div>
+            </div>
+            <div className="space-y-2">
+              {projectChanges.slice(0, 6).map(c => (
+                <div key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium truncate max-w-[180px]">{c.title}</span>
+                    <span className="text-xs text-muted-foreground">{getLabel(CHANGE_TYPES, c.change_type)}</span>
+                  </div>
+                  <StatusBadge status={getStatusMeta(c.status).color} label={getStatusMeta(c.status).label} />
+                </div>
+              ))}
+              {projectChanges.length > 6 && <p className="text-xs text-muted-foreground text-center">+ {projectChanges.length - 6} solicitações</p>}
+            </div>
+          </>
+        )}
+      </SectionCard>
+
       {/* Acessos vinculados */}
       <SectionCard title={`Acessos & Credenciais (${accesses.length})`} action={<Button size="sm" variant="outline" onClick={() => navigate("/admin/acessos")}><KeyRound className="h-4 w-4 mr-1" /> Ver Todos</Button>}>
         {accesses.length === 0 ? (
