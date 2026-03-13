@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ProposalTier, ProposalAddon, CommercialNotes } from "@/lib/proposal-tiers";
+import { normalizePropostaJSON } from "@/lib/proposal-normalizer";
+import { logProposalEvent } from "@/lib/proposal-events";
 
 export interface PropostaInput {
   nome_cliente: string;
@@ -76,10 +78,42 @@ export interface Proposta {
 }
 
 export async function gerarPropostaIA(input: PropostaInput): Promise<PropostaJSON> {
-  const { data, error } = await supabase.functions.invoke("gerar-proposta", { body: input });
-  if (error) throw new Error(error.message || "Erro ao gerar proposta");
-  if (data?.error) throw new Error(data.error);
-  return data.proposta as PropostaJSON;
+  // Log AI request event
+  const requestId = crypto.randomUUID();
+  await logProposalEvent("proposal_ai_requested", requestId, {
+    prompt_version: "v3.0-structured",
+  });
+
+  const startTime = Date.now();
+
+  try {
+    const { data, error } = await supabase.functions.invoke("gerar-proposta", { body: input });
+    if (error) throw new Error(error.message || "Erro ao gerar proposta");
+    if (data?.error) throw new Error(data.error);
+
+    // Normalize the AI output
+    const normResult = normalizePropostaJSON(data.proposta);
+    const meta = data._meta || {};
+
+    // Log AI completion
+    await logProposalEvent("proposal_ai_completed", requestId, {
+      provider_used: meta.provider_used,
+      model_used: meta.model_used,
+      prompt_version: meta.prompt_version || "v3.0-structured",
+      schema_valid: normResult.schema_valid,
+      output_size: normResult.output_size,
+      duration_ms: Date.now() - startTime,
+      warnings: normResult.warnings,
+    });
+
+    return normResult.data;
+  } catch (err) {
+    await logProposalEvent("proposal_ai_failed", requestId, {
+      render_error: err instanceof Error ? err.message : "Unknown error",
+      duration_ms: Date.now() - startTime,
+    });
+    throw err;
+  }
 }
 
 export async function salvarProposta(
