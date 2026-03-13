@@ -195,17 +195,18 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   const drawBulletList = (items: string[], x: number, y: number, maxW: number, dotColor: RGB = C.cyan): number => {
     if (!items?.length) return y;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
+    pdf.setFontSize(9.5);
     pdf.setTextColor(...C.lightGray);
     for (const item of items) {
       const lines = pdf.splitTextToSize(item, maxW - 6);
+      if (y + lines.length * 5 > H - 18) { newPage(); y = 24; }
       pdf.setFillColor(...dotColor);
-      pdf.circle(x + 1.5, y - 1.2, 0.8, "F");
+      pdf.circle(x + 1.5, y - 1.2, 1, "F");
       for (let i = 0; i < lines.length; i++) {
         pdf.text(lines[i], x + 5, y);
-        y += 4.5;
+        y += 5;
       }
-      y += 1;
+      y += 1.5;
     }
     return y;
   };
