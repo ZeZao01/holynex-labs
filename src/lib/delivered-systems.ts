@@ -102,9 +102,9 @@ export async function getDeliveredSystem(id: string) {
     .from("delivered_systems")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  return data as DeliveredSystem;
+  return data as DeliveredSystem | null;
 }
 
 export async function saveDeliveredSystem(system: Partial<DeliveredSystem>) {
