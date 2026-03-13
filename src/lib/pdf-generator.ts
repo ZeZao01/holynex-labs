@@ -839,7 +839,127 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   }
 
   // ══════════════════════════════════════════════
-  // SLIDE 6 — CRONOGRAMA E DETALHES
+  // SLIDE 5B — FAIXAS COMERCIAIS (TIERS)
+  // ══════════════════════════════════════════════
+  if (tiers.length > 0) {
+    newPage();
+    const mx = 20, my = 18;
+    drawSectionBadge("Faixas Comerciais", mx, my);
+    drawTitle("Planos Disponíveis", mx, my + 16, 22);
+    const tierW = Math.min((W - mx * 2 - (tiers.length - 1) * 6) / tiers.length, 65);
+    const tierStartX = (W - (tierW * tiers.length + (tiers.length - 1) * 6)) / 2;
+    const tierY = my + 30;
+    const tierH = H - tierY - 20;
+    tiers.forEach((tier, i) => {
+      const tx = tierStartX + i * (tierW + 6);
+      const isRec = tier.is_recommended;
+      pdf.setFillColor(255, 255, 255);
+      pdf.saveGraphicsState();
+      (pdf as any).setGState(new (pdf as any).GState({ opacity: isRec ? 0.06 : 0.03 }));
+      pdf.roundedRect(tx, tierY, tierW, tierH, 4, 4, "F");
+      pdf.restoreGraphicsState();
+      const borderCol: RGB = isRec ? C.magenta : C.midGray;
+      pdf.setDrawColor(...borderCol);
+      pdf.setLineWidth(isRec ? 0.8 : 0.3);
+      pdf.saveGraphicsState();
+      (pdf as any).setGState(new (pdf as any).GState({ opacity: isRec ? 0.8 : 0.2 }));
+      pdf.roundedRect(tx, tierY, tierW, tierH, 4, 4, "S");
+      pdf.restoreGraphicsState();
+      if (isRec) {
+        const bw = 28;
+        pdf.setFillColor(...C.magenta);
+        pdf.roundedRect(tx + (tierW - bw) / 2, tierY - 4, bw, 8, 4, 4, "F");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(5.5);
+        pdf.setTextColor(...C.white);
+        pdf.text("RECOMENDADO", tx + tierW / 2, tierY, { align: "center" });
+      }
+      let ty = tierY + 12;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      { const nc: RGB = isRec ? C.magenta : C.white; pdf.setTextColor(...nc); }
+      pdf.text(tier.name.toUpperCase(), tx + tierW / 2, ty, { align: "center" });
+      ty += 10;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.cyan);
+      pdf.text("R$", tx + tierW / 2 - 10, ty);
+      pdf.setFontSize(16);
+      pdf.setTextColor(...C.white);
+      pdf.text(tier.price > 0 ? tier.price.toLocaleString("pt-BR") : "—", tx + tierW / 2 - 4, ty);
+      ty += 6;
+      if (tier.estimated_days > 0) {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(...C.midGray);
+        pdf.text(`${tier.estimated_days} dias`, tx + tierW / 2, ty, { align: "center" });
+      }
+      ty += 8;
+      pdf.setDrawColor(255, 255, 255);
+      pdf.saveGraphicsState();
+      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
+      pdf.line(tx + 5, ty, tx + tierW - 5, ty);
+      pdf.restoreGraphicsState();
+      ty += 5;
+      pdf.setFontSize(6.5);
+      for (const mod of tier.scope_modules.slice(0, 12)) {
+        if (ty > tierY + tierH - 8) break;
+        const statusSymbol = mod.status === "included" ? "+" : mod.status === "optional" ? "~" : "-";
+        const statusColor: RGB = mod.status === "included" ? C.green : mod.status === "optional" ? C.yellow : C.darkGray;
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(...statusColor);
+        pdf.text(statusSymbol, tx + 5, ty);
+        pdf.setFont("helvetica", "normal");
+        { const tc: RGB = mod.status === "not_included" ? C.darkGray : C.lightGray; pdf.setTextColor(...tc); }
+        pdf.text(mod.label.substring(0, 18), tx + 10, ty);
+        ty += 4.2;
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════
+  // SLIDE 5C — ADD-ONS
+  // ══════════════════════════════════════════════
+  if (addons.length > 0) {
+    newPage();
+    const mx = 20, my = 18;
+    drawSectionBadge("Serviços Adicionais", mx, my);
+    drawTitle("Add-ons Selecionados", mx, my + 16, 22);
+    let addonStartY = my + 32;
+    const addonW = (W - mx * 2 - 10) / 2;
+    addons.forEach((addon, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const ax = mx + col * (addonW + 10);
+      const aRowY = addonStartY + row * 28;
+      if (aRowY > H - 30) return;
+      drawCard(ax, aRowY, addonW, 22, C.cyan);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.white);
+      pdf.text(addon.name, ax + 5, aRowY + 8);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.lightGray);
+      pdf.text(addon.description.substring(0, 50), ax + 5, aRowY + 14);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.cyan);
+      pdf.text("R$ " + addon.price.toLocaleString("pt-BR"), ax + addonW - 5, aRowY + 8, { align: "right" });
+      pdf.setFontSize(5.5);
+      pdf.setTextColor(...C.midGray);
+      pdf.text(addon.category, ax + addonW - 5, aRowY + 14, { align: "right" });
+    });
+    const totalAddons = addons.reduce((s, a) => s + a.price, 0);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...C.white);
+    pdf.text("Total Add-ons:", mx, H - 25);
+    pdf.setTextColor(...C.cyan);
+    pdf.text("R$ " + totalAddons.toLocaleString("pt-BR"), mx + 50, H - 25);
+  }
+
+
   // ══════════════════════════════════════════════
   if (pj?.cronograma || pj?.estimativa_esforco) {
     newPage();
