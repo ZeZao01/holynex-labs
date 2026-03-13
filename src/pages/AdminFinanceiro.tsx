@@ -386,7 +386,7 @@ function ScoreBar({ value }: { value: number }) {
 }
 
 function ScorePill({ label, value }: { label: string; value: number }) {
-  const color = value >= 70 ? "text-emerald-400" : value >= 40 ? "text-amber-400" : "text-red-400";
+  const color = value >= 70 ? "text-primary" : value >= 40 ? "text-foreground" : "text-destructive";
   return (
     <div className="flex flex-col items-center">
       <span className={`text-[10px] font-bold ${color}`}>{value}</span>
