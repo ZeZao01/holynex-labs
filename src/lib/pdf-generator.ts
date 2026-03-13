@@ -503,12 +503,12 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       // Text
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7.5);
+      pdf.setFontSize(8);
       pdf.setTextColor(...C.lightGray);
       const lines = pdf.splitTextToSize(card.text, cardW - 10);
       for (const l of lines.slice(0, 8)) {
         pdf.text(l, cx + 5, ty);
-        ty += 3.8;
+        ty += 4;
       }
 
       // Tags
