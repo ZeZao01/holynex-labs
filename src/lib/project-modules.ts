@@ -191,5 +191,5 @@ export async function getModuleEvents(moduleId: string) {
     .eq("module_id", moduleId)
     .order("criado_em", { ascending: false });
   if (error) throw error;
-  return (data || []) as ModuleEvent[];
+  return (data || []) as unknown as ModuleEvent[];
 }
