@@ -1013,7 +1013,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setFillColor(...C.magenta);
     pdf.roundedRect(s1x + 5, s1y - 4, 25, 7, 3, 3, "F");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(6);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.white);
     pdf.text("FASE 01", s1x + 17.5, s1y, { align: "center" });
     pdf.setFont("helvetica", "bold");
