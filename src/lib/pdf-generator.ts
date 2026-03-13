@@ -181,12 +181,13 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   const drawParagraph = (text: string, x: number, y: number, maxW: number): number => {
     if (!text) return y;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
+    pdf.setFontSize(9.5);
     pdf.setTextColor(...C.lightGray);
     const lines = pdf.splitTextToSize(text, maxW);
     for (const line of lines) {
+      if (y > H - 18) { newPage(); y = 24; }
       pdf.text(line, x, y);
-      y += 4.5;
+      y += 5;
     }
     return y;
   };
