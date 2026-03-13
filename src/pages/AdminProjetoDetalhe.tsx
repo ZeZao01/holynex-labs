@@ -74,6 +74,7 @@ export default function AdminProjetoDetalhe() {
       setEvents(e);
       setAccesses(ac);
       setProjectModules(pm);
+      setProjectChanges(pc);
     } catch { toast({ title: "Erro ao carregar projeto", variant: "destructive" }); }
     finally { setLoading(false); }
   }
