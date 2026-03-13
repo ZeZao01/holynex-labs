@@ -53,29 +53,47 @@ export type Database = {
       pdf_versoes: {
         Row: {
           criado_em: string
+          document_code: string | null
+          document_hash: string | null
+          emissor_id: string | null
           id: string
           nome_arquivo: string
           proposta_id: string
+          snapshot: Json | null
+          status: string | null
           storage_path: string
           tamanho_bytes: number | null
+          template_used: string | null
           versao: number
         }
         Insert: {
           criado_em?: string
+          document_code?: string | null
+          document_hash?: string | null
+          emissor_id?: string | null
           id?: string
           nome_arquivo: string
           proposta_id: string
+          snapshot?: Json | null
+          status?: string | null
           storage_path: string
           tamanho_bytes?: number | null
+          template_used?: string | null
           versao?: number
         }
         Update: {
           criado_em?: string
+          document_code?: string | null
+          document_hash?: string | null
+          emissor_id?: string | null
           id?: string
           nome_arquivo?: string
           proposta_id?: string
+          snapshot?: Json | null
+          status?: string | null
           storage_path?: string
           tamanho_bytes?: number | null
+          template_used?: string | null
           versao?: number
         }
         Relationships: [
