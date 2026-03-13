@@ -20,6 +20,7 @@ import Contato from "./pages/Contato";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminOrcamentos from "./pages/AdminOrcamentos";
+import AdminLeadDetalhe from "./pages/AdminLeadDetalhe";
 import AdminPropostas from "./pages/AdminPropostas";
 import AdminNovaProposta from "./pages/AdminNovaProposta";
 import AdminPropostaDetalhe from "./pages/AdminPropostaDetalhe";
@@ -51,6 +52,7 @@ function AppRoutes() {
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
+          <Route path="/admin/orcamentos/:id" element={<AdminLeadDetalhe />} />
           <Route path="/admin/propostas" element={<AdminPropostas />} />
           <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
           <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
