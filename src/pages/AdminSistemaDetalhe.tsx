@@ -17,6 +17,7 @@ import {
   ArrowLeft, Edit, Copy, Recycle, Star, Archive, ExternalLink,
   Globe, Server, Github, FileText, Palette, BarChart3, Clock,
 } from "lucide-react";
+import FinancialSummary from "@/components/admin/FinancialSummary";
 import { format } from "date-fns";
 
 export default function AdminSistemaDetalhe() {
@@ -225,8 +226,9 @@ export default function AdminSistemaDetalhe() {
           )}
         </div>
 
-        {/* Sidebar: History */}
+        {/* Sidebar */}
         <div className="space-y-6">
+          <FinancialSummary systemId={id!} />
           <div className="rounded-xl border border-border bg-card p-6">
             <h3 className="font-semibold mb-3">Histórico</h3>
             {events.length === 0 ? (

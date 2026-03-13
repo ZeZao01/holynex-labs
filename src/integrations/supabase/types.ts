@@ -198,6 +198,51 @@ export type Database = {
         }
         Relationships: []
       }
+      niche_metrics: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          demand_score: number | null
+          id: string
+          margem_media: number | null
+          nicho: string
+          opportunity_score: number | null
+          qtd_leads: number | null
+          qtd_projetos: number | null
+          qtd_propostas: number | null
+          recorrencia_media: number | null
+          ticket_medio: number | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          demand_score?: number | null
+          id?: string
+          margem_media?: number | null
+          nicho: string
+          opportunity_score?: number | null
+          qtd_leads?: number | null
+          qtd_projetos?: number | null
+          qtd_propostas?: number | null
+          recorrencia_media?: number | null
+          ticket_medio?: number | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          demand_score?: number | null
+          id?: string
+          margem_media?: number | null
+          nicho?: string
+          opportunity_score?: number | null
+          qtd_leads?: number | null
+          qtd_projetos?: number | null
+          qtd_propostas?: number | null
+          recorrencia_media?: number | null
+          ticket_medio?: number | null
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           criado_em: string
@@ -441,6 +486,53 @@ export type Database = {
           },
         ]
       }
+      portfolio_performance_metrics: {
+        Row: {
+          atualizado_em: string | null
+          cliques: number | null
+          conversoes_lead: number | null
+          criado_em: string | null
+          ctas_acionados: number | null
+          demand_score: number | null
+          id: string
+          opportunity_score: number | null
+          portfolio_item_id: string | null
+          visualizacoes: number | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          cliques?: number | null
+          conversoes_lead?: number | null
+          criado_em?: string | null
+          ctas_acionados?: number | null
+          demand_score?: number | null
+          id?: string
+          opportunity_score?: number | null
+          portfolio_item_id?: string | null
+          visualizacoes?: number | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          cliques?: number | null
+          conversoes_lead?: number | null
+          criado_em?: string | null
+          ctas_acionados?: number | null
+          demand_score?: number | null
+          id?: string
+          opportunity_score?: number | null
+          portfolio_item_id?: string | null
+          visualizacoes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_performance_metrics_portfolio_item_id_fkey"
+            columns: ["portfolio_item_id"]
+            isOneToOne: true
+            referencedRelation: "portfolio_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_access_events: {
         Row: {
           access_id: string
@@ -678,6 +770,80 @@ export type Database = {
             foreignKeyName: "project_changes_delivered_system_id_fkey"
             columns: ["delivered_system_id"]
             isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_profitability_metrics: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          custo_entrega: number | null
+          custo_suporte: number | null
+          delivered_system_id: string | null
+          demand_score: number | null
+          flags: string[] | null
+          id: string
+          margem_estimada: number | null
+          notas: string | null
+          opportunity_score: number | null
+          override_manual: boolean | null
+          profitability_score: number | null
+          receita_manutencao: number | null
+          receita_recorrente: number | null
+          receita_setup: number | null
+          receita_total: number | null
+          recurrence_score: number | null
+          reuse_score: number | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          custo_entrega?: number | null
+          custo_suporte?: number | null
+          delivered_system_id?: string | null
+          demand_score?: number | null
+          flags?: string[] | null
+          id?: string
+          margem_estimada?: number | null
+          notas?: string | null
+          opportunity_score?: number | null
+          override_manual?: boolean | null
+          profitability_score?: number | null
+          receita_manutencao?: number | null
+          receita_recorrente?: number | null
+          receita_setup?: number | null
+          receita_total?: number | null
+          recurrence_score?: number | null
+          reuse_score?: number | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          custo_entrega?: number | null
+          custo_suporte?: number | null
+          delivered_system_id?: string | null
+          demand_score?: number | null
+          flags?: string[] | null
+          id?: string
+          margem_estimada?: number | null
+          notas?: string | null
+          opportunity_score?: number | null
+          override_manual?: boolean | null
+          profitability_score?: number | null
+          receita_manutencao?: number | null
+          receita_recorrente?: number | null
+          receita_setup?: number | null
+          receita_total?: number | null
+          recurrence_score?: number | null
+          reuse_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_profitability_metrics_delivered_system_id_fkey"
+            columns: ["delivered_system_id"]
+            isOneToOne: true
             referencedRelation: "delivered_systems"
             referencedColumns: ["id"]
           },
