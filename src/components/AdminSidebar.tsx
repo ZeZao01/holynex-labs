@@ -37,17 +37,17 @@ import logo from "@/assets/logo.png";
 const operacionalItems = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Leads & Orçamentos", url: "/admin/orcamentos", icon: Users },
-  { title: "Propostas & PDFs", url: "/admin/propostas", icon: ClipboardList },
+  { title: "Propostas", url: "/admin/propostas", icon: ClipboardList },
   { title: "Nova Proposta", url: "/admin/propostas/nova", icon: FilePlus },
-  { title: "Modelos PDF", url: "/admin/templates", icon: Palette },
+  { title: "Modelos de PDF", url: "/admin/templates", icon: Palette },
 ];
 
 const projetosItems = [
-  { title: "Projetos em Andamento", url: "/admin/projetos", icon: FolderKanban },
+  { title: "Projetos", url: "/admin/projetos", icon: FolderKanban },
   { title: "Sistemas Entregues", url: "/admin/sistemas", icon: PackageCheck },
-  { title: "Acessos & Admins", url: "/admin/acessos", icon: KeyRound },
-  { title: "Módulos por Projeto", url: "/admin/modulos", icon: Blocks },
-  { title: "Alterações & Manutenção", url: "/admin/manutencao", icon: Wrench },
+  { title: "Acessos & Credenciais", url: "/admin/acessos", icon: KeyRound },
+  { title: "Módulos", url: "/admin/modulos", icon: Blocks },
+  { title: "Manutenção", url: "/admin/manutencao", icon: Wrench },
 ];
 
 const comercialItems = [
@@ -68,7 +68,10 @@ export default function AdminSidebar() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === "/admin/dashboard") return location.pathname === path;
+    return location.pathname.startsWith(path);
+  };
 
   const renderItems = (items: typeof operacionalItems) => (
     <SidebarMenu>
@@ -93,26 +96,29 @@ export default function AdminSidebar() {
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/admin/dashboard")}>
           <img src={logo} alt="HolyNex" className="h-8 w-8 rounded-md" />
           {!collapsed && (
-            <span className="text-sm font-bold text-foreground tracking-tight">
-              HolyNex Admin
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-foreground tracking-tight leading-none">
+                HolyNex
+              </span>
+              <span className="text-[10px] text-muted-foreground leading-none mt-0.5">Painel Admin</span>
+            </div>
           )}
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Operacional</SidebarGroupLabel>
+          <SidebarGroupLabel>Comercial</SidebarGroupLabel>
           <SidebarGroupContent>{renderItems(operacionalItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Projetos</SidebarGroupLabel>
+          <SidebarGroupLabel>Operacional</SidebarGroupLabel>
           <SidebarGroupContent>{renderItems(projetosItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Comercial</SidebarGroupLabel>
+          <SidebarGroupLabel>Estratégico</SidebarGroupLabel>
           <SidebarGroupContent>{renderItems(comercialItems)}</SidebarGroupContent>
         </SidebarGroup>
 
