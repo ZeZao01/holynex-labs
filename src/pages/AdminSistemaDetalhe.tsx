@@ -234,6 +234,31 @@ export default function AdminSistemaDetalhe() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Acessos vinculados */}
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold flex items-center gap-2"><KeyRound className="h-4 w-4" /> Acessos ({accesses.length})</h3>
+              <Button size="sm" variant="ghost" onClick={() => navigate("/admin/acessos")} className="text-xs">Ver todos</Button>
+            </div>
+            {accesses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum acesso vinculado.</p>
+            ) : (
+              <div className="space-y-2">
+                {accesses.slice(0, 8).map(a => (
+                  <div key={a.id} className="flex items-center justify-between text-xs p-2 rounded bg-muted/30">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium">{a.friendly_name}</span>
+                      <span className="text-muted-foreground">{ACCESS_TYPES[a.access_type] || a.access_type}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {ACCESS_STATUS[a.status] && <StatusBadge status={ACCESS_STATUS[a.status].badge} label={ACCESS_STATUS[a.status].label} />}
+                      {a.access_url && <a href={a.access_url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3 w-3 text-muted-foreground hover:text-foreground" /></a>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <FinancialSummary systemId={id!} />
           <div className="rounded-xl border border-border bg-card p-6">
             <h3 className="font-semibold mb-3">Histórico</h3>
