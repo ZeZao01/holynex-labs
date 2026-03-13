@@ -61,6 +61,7 @@ export default function AdminSistemaDetalhe() {
       setEvents(e);
       setAccesses(ac);
       setSysModules(sm);
+      setSysChanges(sc);
     } catch {
       toast({ title: "Erro ao carregar sistema", variant: "destructive" });
     }
