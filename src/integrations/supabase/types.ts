@@ -14,6 +14,190 @@ export type Database = {
   }
   public: {
     Tables: {
+      delivered_system_events: {
+        Row: {
+          criado_em: string | null
+          descricao: string | null
+          evento: string
+          id: string
+          system_id: string
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento: string
+          id?: string
+          system_id: string
+        }
+        Update: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento?: string
+          id?: string
+          system_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivered_system_events_system_id_fkey"
+            columns: ["system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivered_system_tags: {
+        Row: {
+          id: string
+          system_id: string
+          tag: string
+          tipo: string | null
+        }
+        Insert: {
+          id?: string
+          system_id: string
+          tag: string
+          tipo?: string | null
+        }
+        Update: {
+          id?: string
+          system_id?: string
+          tag?: string
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivered_system_tags_system_id_fkey"
+            columns: ["system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivered_systems: {
+        Row: {
+          admin_url: string | null
+          analytics_url: string | null
+          ativo: boolean | null
+          atualizado_em: string | null
+          banco_dados: string | null
+          categoria: string | null
+          cliente: string
+          criado_em: string | null
+          data_entrega: string | null
+          descricao_interna: string | null
+          design_url: string | null
+          destaque_interno: boolean | null
+          docs_url: string | null
+          empresa_cliente: string | null
+          faixa_contratada: string | null
+          faixa_ticket: string | null
+          id: string
+          integracoes: string[] | null
+          live_url: string | null
+          nicho: string | null
+          nome: string
+          observacoes_comerciais: string | null
+          observacoes_tecnicas: string | null
+          potencial_reuso: string | null
+          projeto_origem_id: string | null
+          recorrencia_mensal: number | null
+          repo_url: string | null
+          resumo_curto: string | null
+          reutilizavel: boolean | null
+          stack_principal: string[] | null
+          staging_url: string | null
+          status_operacional: string | null
+          status_suporte: string | null
+          thumbnail_url: string | null
+          tipo_projeto: string | null
+          ultima_atualizacao: string | null
+          valor_fechado: number | null
+          versao_atual: string | null
+        }
+        Insert: {
+          admin_url?: string | null
+          analytics_url?: string | null
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          banco_dados?: string | null
+          categoria?: string | null
+          cliente?: string
+          criado_em?: string | null
+          data_entrega?: string | null
+          descricao_interna?: string | null
+          design_url?: string | null
+          destaque_interno?: boolean | null
+          docs_url?: string | null
+          empresa_cliente?: string | null
+          faixa_contratada?: string | null
+          faixa_ticket?: string | null
+          id?: string
+          integracoes?: string[] | null
+          live_url?: string | null
+          nicho?: string | null
+          nome: string
+          observacoes_comerciais?: string | null
+          observacoes_tecnicas?: string | null
+          potencial_reuso?: string | null
+          projeto_origem_id?: string | null
+          recorrencia_mensal?: number | null
+          repo_url?: string | null
+          resumo_curto?: string | null
+          reutilizavel?: boolean | null
+          stack_principal?: string[] | null
+          staging_url?: string | null
+          status_operacional?: string | null
+          status_suporte?: string | null
+          thumbnail_url?: string | null
+          tipo_projeto?: string | null
+          ultima_atualizacao?: string | null
+          valor_fechado?: number | null
+          versao_atual?: string | null
+        }
+        Update: {
+          admin_url?: string | null
+          analytics_url?: string | null
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          banco_dados?: string | null
+          categoria?: string | null
+          cliente?: string
+          criado_em?: string | null
+          data_entrega?: string | null
+          descricao_interna?: string | null
+          design_url?: string | null
+          destaque_interno?: boolean | null
+          docs_url?: string | null
+          empresa_cliente?: string | null
+          faixa_contratada?: string | null
+          faixa_ticket?: string | null
+          id?: string
+          integracoes?: string[] | null
+          live_url?: string | null
+          nicho?: string | null
+          nome?: string
+          observacoes_comerciais?: string | null
+          observacoes_tecnicas?: string | null
+          potencial_reuso?: string | null
+          projeto_origem_id?: string | null
+          recorrencia_mensal?: number | null
+          repo_url?: string | null
+          resumo_curto?: string | null
+          reutilizavel?: boolean | null
+          stack_principal?: string[] | null
+          staging_url?: string | null
+          status_operacional?: string | null
+          status_suporte?: string | null
+          thumbnail_url?: string | null
+          tipo_projeto?: string | null
+          ultima_atualizacao?: string | null
+          valor_fechado?: number | null
+          versao_atual?: string | null
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           criado_em: string
