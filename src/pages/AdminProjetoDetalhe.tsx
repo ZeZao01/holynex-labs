@@ -227,7 +227,7 @@ export default function AdminProjetoDetalhe() {
       </SectionCard>
 
       {/* Milestones */}
-      <SectionCard title="Marcos do Projeto" actions={<Button size="sm" variant="outline" onClick={() => { setMilestoneForm({ ...emptyMilestone }); setMilestoneOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Marco</Button>}>
+      <SectionCard title="Marcos do Projeto" action={<Button size="sm" variant="outline" onClick={() => { setMilestoneForm({ ...emptyMilestone }); setMilestoneOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Marco</Button>}>
         {milestones.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">Nenhum marco registrado</p>
         ) : (
