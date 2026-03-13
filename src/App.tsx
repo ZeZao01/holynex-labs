@@ -64,6 +64,7 @@ function AppRoutes() {
           <Route path="/admin/portfolio-admin" element={<AdminPortfolioAdmin />} />
           <Route path="/admin/modelos" element={<AdminModelos />} />
           <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
+          <Route path="/admin/ia" element={<AdminIA />} />
           <Route path="/admin/seguranca" element={<AdminSeguranca />} />
           <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
           <Route path="*" element={<NotFound />} />

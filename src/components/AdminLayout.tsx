@@ -18,6 +18,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/admin/portfolio-admin": "Portfólio",
   "/admin/modelos": "Projetos Modelo",
   "/admin/financeiro": "Financeiro",
+  "/admin/ia": "IA Assistiva",
   "/admin/seguranca": "Segurança",
   "/admin/configuracoes": "Configurações",
 };
