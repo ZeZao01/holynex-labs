@@ -35,6 +35,7 @@ import AdminModelos from "./pages/AdminModelos";
 import AdminFinanceiro from "./pages/AdminFinanceiro";
 import AdminSeguranca from "./pages/AdminSeguranca";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes";
+import AdminIA from "./pages/AdminIA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
