@@ -906,8 +906,8 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.line(tx + 5, ty, tx + tierW - 5, ty);
       pdf.restoreGraphicsState();
       ty += 5;
-      pdf.setFontSize(6.5);
-      for (const mod of tier.scope_modules.slice(0, 12)) {
+    pdf.setFontSize(7);
+    for (const mod of tier.scope_modules.slice(0, 12)) {
         if (ty > tierY + tierH - 8) break;
         const statusSymbol = mod.status === "included" ? "+" : mod.status === "optional" ? "~" : "-";
         const statusColor: RGB = mod.status === "included" ? C.green : mod.status === "optional" ? C.yellow : C.darkGray;
