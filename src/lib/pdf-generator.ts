@@ -113,7 +113,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
   const addFooterLogo = () => {
     pdf.addImage(logoBase64, "PNG", W - 22, H - 14, 8, 8);
-    pdf.setFontSize(6);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.darkGray);
     pdf.text("HolyNex Labs", W - 24, H - 8, { align: "right" });
   };
