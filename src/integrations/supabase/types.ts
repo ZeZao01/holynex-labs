@@ -290,6 +290,157 @@ export type Database = {
           },
         ]
       }
+      portfolio_item_events: {
+        Row: {
+          criado_em: string | null
+          descricao: string | null
+          evento: string
+          id: string
+          portfolio_item_id: string
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento: string
+          id?: string
+          portfolio_item_id: string
+        }
+        Update: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento?: string
+          id?: string
+          portfolio_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_item_events_portfolio_item_id_fkey"
+            columns: ["portfolio_item_id"]
+            isOneToOne: false
+            referencedRelation: "portfolio_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolio_items: {
+        Row: {
+          atualizado_em: string | null
+          badges: string[] | null
+          category: string | null
+          client_context: string | null
+          commercial_description: string | null
+          cover_image_url: string | null
+          criado_em: string | null
+          cta_label: string | null
+          cta_url: string | null
+          customization_notes: string | null
+          delivered_system_id: string | null
+          differentials: string[] | null
+          display_order: number | null
+          gallery_urls: string[] | null
+          highlight_section: string | null
+          hover_image_url: string | null
+          id: string
+          investment_range: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          is_highlighted: boolean | null
+          item_type: string | null
+          main_modules: string[] | null
+          niche: string | null
+          objective: string | null
+          problem_solved: string | null
+          public_url: string | null
+          short_description: string | null
+          solution_type: string | null
+          subtitle: string | null
+          target_audience: string | null
+          thumbnail_url: string | null
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          badges?: string[] | null
+          category?: string | null
+          client_context?: string | null
+          commercial_description?: string | null
+          cover_image_url?: string | null
+          criado_em?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          customization_notes?: string | null
+          delivered_system_id?: string | null
+          differentials?: string[] | null
+          display_order?: number | null
+          gallery_urls?: string[] | null
+          highlight_section?: string | null
+          hover_image_url?: string | null
+          id?: string
+          investment_range?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_highlighted?: boolean | null
+          item_type?: string | null
+          main_modules?: string[] | null
+          niche?: string | null
+          objective?: string | null
+          problem_solved?: string | null
+          public_url?: string | null
+          short_description?: string | null
+          solution_type?: string | null
+          subtitle?: string | null
+          target_audience?: string | null
+          thumbnail_url?: string | null
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          badges?: string[] | null
+          category?: string | null
+          client_context?: string | null
+          commercial_description?: string | null
+          cover_image_url?: string | null
+          criado_em?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          customization_notes?: string | null
+          delivered_system_id?: string | null
+          differentials?: string[] | null
+          display_order?: number | null
+          gallery_urls?: string[] | null
+          highlight_section?: string | null
+          hover_image_url?: string | null
+          id?: string
+          investment_range?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_highlighted?: boolean | null
+          item_type?: string | null
+          main_modules?: string[] | null
+          niche?: string | null
+          objective?: string | null
+          problem_solved?: string | null
+          public_url?: string | null
+          short_description?: string | null
+          solution_type?: string | null
+          subtitle?: string | null
+          target_audience?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_items_delivered_system_id_fkey"
+            columns: ["delivered_system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_access_events: {
         Row: {
           access_id: string
