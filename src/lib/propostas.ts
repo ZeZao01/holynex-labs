@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { ProposalTier, ProposalAddon, CommercialNotes } from "@/lib/proposal-tiers";
 
 export interface PropostaInput {
   nome_cliente: string;
@@ -64,19 +65,34 @@ export interface Proposta {
   complexidade: string;
   status: string;
   orcamento_id: string | null;
+  // Tier fields
+  proposal_tiers: ProposalTier[];
+  proposal_addons: ProposalAddon[];
+  recommended_tier: string;
+  commercial_notes: CommercialNotes | null;
+  proposal_validity: string;
+  is_phased: boolean;
+  closing_strategy: string;
 }
 
 export async function gerarPropostaIA(input: PropostaInput): Promise<PropostaJSON> {
-  const { data, error } = await supabase.functions.invoke("gerar-proposta", {
-    body: input,
-  });
-
+  const { data, error } = await supabase.functions.invoke("gerar-proposta", { body: input });
   if (error) throw new Error(error.message || "Erro ao gerar proposta");
   if (data?.error) throw new Error(data.error);
   return data.proposta as PropostaJSON;
 }
 
-export async function salvarProposta(input: PropostaInput, proposta: PropostaJSON): Promise<string> {
+export async function salvarProposta(
+  input: PropostaInput,
+  proposta: PropostaJSON,
+  tiers?: ProposalTier[],
+  addons?: ProposalAddon[],
+  recommendedTier?: string,
+  commercialNotes?: CommercialNotes,
+  validity?: string,
+  isPhased?: boolean,
+  closingStrategy?: string,
+): Promise<string> {
   const { data, error } = await supabase
     .from("propostas" as any)
     .insert({
@@ -105,6 +121,13 @@ export async function salvarProposta(input: PropostaInput, proposta: PropostaJSO
       complexidade: proposta.complexidade,
       status: "gerada",
       orcamento_id: input.orcamento_id || null,
+      proposal_tiers: tiers ? JSON.stringify(tiers) : "[]",
+      proposal_addons: addons ? JSON.stringify(addons) : "[]",
+      recommended_tier: recommendedTier || "",
+      commercial_notes: commercialNotes ? JSON.stringify(commercialNotes) : "{}",
+      proposal_validity: validity || "30 dias",
+      is_phased: isPhased || false,
+      closing_strategy: closingStrategy || "",
     } as any)
     .select("id")
     .single();
@@ -113,43 +136,14 @@ export async function salvarProposta(input: PropostaInput, proposta: PropostaJSO
   return (data as any).id;
 }
 
-export async function getPropostas(): Promise<Proposta[]> {
-  const { data, error } = await supabase
-    .from("propostas" as any)
-    .select("*")
-    .order("criado_em", { ascending: false });
+function parseRow(row: any): Proposta {
+  let tiers: ProposalTier[] = [];
+  let addons: ProposalAddon[] = [];
+  let notes: CommercialNotes | null = null;
+  try { tiers = typeof row.proposal_tiers === "string" ? JSON.parse(row.proposal_tiers) : (row.proposal_tiers || []); } catch {}
+  try { addons = typeof row.proposal_addons === "string" ? JSON.parse(row.proposal_addons) : (row.proposal_addons || []); } catch {}
+  try { notes = typeof row.commercial_notes === "string" ? JSON.parse(row.commercial_notes) : (row.commercial_notes || null); } catch {}
 
-  if (error) throw error;
-  return ((data as any[]) || []).map((row) => ({
-    id: row.id,
-    criado_em: row.criado_em,
-    nome_cliente: row.nome_cliente,
-    empresa_cliente: row.empresa_cliente || "",
-    segmento: row.segmento || "",
-    email_cliente: row.email_cliente || "",
-    tipo_projeto: row.tipo_projeto,
-    descricao_projeto: row.descricao_projeto,
-    proposta_json: row.proposta_json as PropostaJSON | null,
-    proposta_texto: row.proposta_texto,
-    valor_minimo: Number(row.valor_minimo) || 0,
-    valor_ideal: Number(row.valor_ideal) || 0,
-    valor_premium: Number(row.valor_premium) || 0,
-    classificacao_margem: row.classificacao_margem || "",
-    complexidade: row.complexidade || "media",
-    status: row.status,
-    orcamento_id: row.orcamento_id,
-  }));
-}
-
-export async function getProposta(id: string): Promise<Proposta | null> {
-  const { data, error } = await supabase
-    .from("propostas" as any)
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) return null;
-  const row = data as any;
   return {
     id: row.id,
     criado_em: row.criado_em,
@@ -168,13 +162,39 @@ export async function getProposta(id: string): Promise<Proposta | null> {
     complexidade: row.complexidade || "media",
     status: row.status,
     orcamento_id: row.orcamento_id,
+    proposal_tiers: tiers,
+    proposal_addons: addons,
+    recommended_tier: row.recommended_tier || "",
+    commercial_notes: notes,
+    proposal_validity: row.proposal_validity || "30 dias",
+    is_phased: row.is_phased || false,
+    closing_strategy: row.closing_strategy || "",
   };
+}
+
+export async function getPropostas(): Promise<Proposta[]> {
+  const { data, error } = await supabase
+    .from("propostas" as any)
+    .select("*")
+    .order("criado_em", { ascending: false });
+  if (error) throw error;
+  return ((data as any[]) || []).map(parseRow);
+}
+
+export async function getProposta(id: string): Promise<Proposta | null> {
+  const { data, error } = await supabase
+    .from("propostas" as any)
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) return null;
+  return parseRow(data);
 }
 
 export async function atualizarStatusProposta(id: string, status: string) {
   const { error } = await supabase
     .from("propostas" as any)
-    .update({ status } as any)
+    .update({ status, atualizado_em: new Date().toISOString() } as any)
     .eq("id", id);
   if (error) throw error;
 }
@@ -198,6 +218,32 @@ export async function atualizarProposta(id: string, proposta: PropostaJSON) {
       valor_premium: proposta.financeiro.valor_premium,
       classificacao_margem: proposta.financeiro.classificacao_margem,
       complexidade: proposta.complexidade,
+      atualizado_em: new Date().toISOString(),
+    } as any)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function atualizarPropostaTiers(
+  id: string,
+  tiers: ProposalTier[],
+  addons: ProposalAddon[],
+  recommendedTier: string,
+  commercialNotes: CommercialNotes | null,
+  validity: string,
+  isPhased: boolean,
+  closingStrategy: string,
+) {
+  const { error } = await supabase
+    .from("propostas" as any)
+    .update({
+      proposal_tiers: JSON.stringify(tiers),
+      proposal_addons: JSON.stringify(addons),
+      recommended_tier: recommendedTier,
+      commercial_notes: commercialNotes ? JSON.stringify(commercialNotes) : "{}",
+      proposal_validity: validity,
+      is_phased: isPhased,
+      closing_strategy: closingStrategy,
       atualizado_em: new Date().toISOString(),
     } as any)
     .eq("id", id);
