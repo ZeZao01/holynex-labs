@@ -17,8 +17,9 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import {
   Loader2, Pencil, ExternalLink, Flag, Clock, DollarSign, Target, Plus, Trash2, CheckCircle2,
-  FolderKanban, CalendarDays, Globe, Link2, FileText
+  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck
 } from "lucide-react";
+import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
 import {
   getProject, saveProject, Project, PROJECT_STATUS, PROJECT_PRIORITY,
   getMilestones, saveMilestone, deleteMilestone, ProjectMilestone, MILESTONE_STATUS,
