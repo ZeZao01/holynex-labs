@@ -17,6 +17,7 @@ import {
   ArrowLeft, Edit, Copy, Recycle, Star, Archive, ExternalLink,
   Globe, Server, Github, FileText, Palette, BarChart3, Clock,
 } from "lucide-react";
+import FinancialSummary from "@/components/admin/FinancialSummary";
 import { format } from "date-fns";
 
 export default function AdminSistemaDetalhe() {
