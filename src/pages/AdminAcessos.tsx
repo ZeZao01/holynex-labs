@@ -226,6 +226,13 @@ export default function AdminAcessos() {
               {Object.entries(ACCESS_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={filterProject} onValueChange={setFilterProject}>
+            <SelectTrigger className="w-40 h-9"><SelectValue placeholder="Projeto" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Projetos</SelectItem>
+              {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>
             <SelectTrigger className="w-36 h-9"><SelectValue placeholder="Agrupar" /></SelectTrigger>
             <SelectContent>
@@ -233,6 +240,9 @@ export default function AdminAcessos() {
               <SelectItem value="system">Por Sistema</SelectItem>
             </SelectContent>
           </Select>
+          <Button size="sm" variant={filterNoVerification ? "default" : "outline"} className="h-9" onClick={() => setFilterNoVerification(!filterNoVerification)}>
+            <AlertTriangle className="h-3 w-3 mr-1" /> Sem verificação
+          </Button>
         </FilterToolbar>
         <Button size="sm" onClick={() => setShowNew(true)}><Plus className="h-4 w-4 mr-1" /> Novo Acesso</Button>
       </div>
