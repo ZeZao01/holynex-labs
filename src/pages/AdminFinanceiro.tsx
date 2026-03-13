@@ -23,7 +23,14 @@ import {
 import { getDeliveredSystems, DeliveredSystem } from "@/lib/delivered-systems";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-const CHART_COLORS = ["hsl(262,98%,71%)", "hsl(180,70%,50%)", "hsl(40,95%,60%)", "hsl(340,80%,60%)", "hsl(120,60%,50%)", "hsl(200,80%,60%)"];
+const CHART_COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--accent))",
+  "hsl(var(--secondary))",
+  "hsl(var(--muted-foreground))",
+  "hsl(var(--foreground))",
+  "hsl(var(--border))",
+];
 
 export default function AdminFinanceiro() {
   const [metrics, setMetrics] = useState<ProfitabilityMetrics[]>([]);
