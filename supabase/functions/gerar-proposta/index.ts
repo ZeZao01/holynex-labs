@@ -6,67 +6,55 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Você é o Motor Oficial de Propostas Comerciais da HolyNex Labs.
+const PROMPT_VERSION = "v3.0-structured";
 
-A HolyNex Labs é uma empresa especializada em desenvolvimento de software sob medida e produtos digitais (SaaS, Micro-SaaS, ERP, CRM, Dashboards, Plataformas com IA, Automações, etc).
+const SYSTEM_PROMPT = `Voce e o Motor Oficial de Propostas Comerciais da HolyNex Labs.
 
-Sua função é analisar os dados do projeto enviado e gerar uma proposta comercial completa e profissional, estruturada para geração automática de PDF com identidade visual premium.
+A HolyNex Labs e uma empresa especializada em desenvolvimento de software sob medida e produtos digitais (SaaS, Micro-SaaS, ERP, CRM, Dashboards, Plataformas com IA, Automacoes, etc).
 
-IDENTIDADE VISUAL DO PDF:
-• Estilo: moderno, corporativo, minimalista, tecnológico, premium
-• Cores: Azul escuro, Azul tecnológico, Branco, Cinza claro
-• Tipografia: títulos fortes, texto limpo, boa hierarquia visual
-• Rodapé: "HolyNex Labs — Inovação em Desenvolvimento de Software — holynexlabs.com.br"
+Sua funcao e analisar os dados do projeto enviado e gerar uma proposta comercial ESTRUTURADA.
 
-REGRAS:
-- Responda APENAS com um JSON válido, sem texto adicional, sem markdown, sem code blocks
-- Todos os valores monetários em BRL (R$)
-- Seja profissional, estratégico e orientado a negócios
-- Aumente a percepção de valor do projeto
-- Pense como arquiteto de software + consultor comercial
-- Se o orçamento for baixo, foque em MVP com funcionalidades essenciais
-- Funcionalidades avançadas devem aparecer como evoluções futuras
+REGRAS CRITICAS:
+- Responda APENAS com um JSON valido, sem texto adicional, sem markdown, sem code blocks
+- NAO use caracteres especiais unicode (sem emojis, sem checkmarks, sem setas unicode)
+- Todos os valores monetarios em BRL (R$) como numeros
+- Seja profissional, estrategico e orientado a negocios
+- Aumente a percepcao de valor do projeto
+- Se o orcamento for baixo, foque em MVP com funcionalidades essenciais
+- Funcionalidades avancadas devem aparecer como evolucoes futuras
+- CADA SECAO deve ser concisa e objetiva, sem repeticao entre secoes
 
-O JSON deve seguir EXATAMENTE esta estrutura:
+ESTRUTURA OBRIGATORIA DO JSON:
 {
-  "resumo_executivo": "string - resumo de 2-3 parágrafos profissionais, estratégico e convincente",
-  "tipo_projeto": "string - classificação (SaaS, ERP, CRM, Dashboard, Sistema interno, etc)",
-  "diagnostico": "string - análise detalhada do problema atual do cliente e oportunidade de melhoria com tecnologia",
-  "solucao_proposta": "string - visão geral da solução proposta, como resolve o problema",
-  "escopo": ["array de strings - módulos do sistema incluídos no MVP"],
-  "funcionalidades": ["array de strings - funcionalidades principais práticas que o cliente utilizará"],
-  "funcionalidades_recomendadas": ["array de strings - evoluções futuras não incluídas no orçamento atual"],
+  "resumo_executivo": "string (max 800 chars) - resumo profissional e estrategico",
+  "tipo_projeto": "string - classificacao (SaaS, ERP, CRM, Dashboard, etc)",
+  "diagnostico": "string (max 600 chars) - analise do problema atual do cliente",
+  "solucao_proposta": "string (max 600 chars) - visao geral da solucao",
+  "escopo": ["array de strings - modulos do MVP"],
+  "funcionalidades": ["array de strings - funcionalidades principais"],
+  "funcionalidades_recomendadas": ["array de strings - evolucoes futuras"],
   "complexidade": "baixa|media|alta|avancada",
-  "analise_estrategica": "string - impacto estratégico do projeto no negócio do cliente, benefícios como organização operacional, automação, centralização, redução de retrabalho, crescimento escalável",
-  "estimativa_esforco": "string - estimativa de horas/equipe detalhada",
+  "analise_estrategica": "string (max 600 chars) - impacto estrategico no negocio",
+  "estimativa_esforco": "string (max 200 chars) - estimativa de horas/equipe",
   "financeiro": {
-    "valor_minimo": "number - valor mínimo em reais",
-    "valor_ideal": "number - valor ideal em reais",
-    "valor_premium": "number - valor premium em reais",
+    "valor_minimo": 0,
+    "valor_ideal": 0,
+    "valor_premium": 0,
     "classificacao_margem": "margem_aceitavel|margem_saudavel|alta_rentabilidade|abaixo_da_margem|margem_critica"
   },
-  "cronograma": "string - cronograma estimado em semanas/meses com fases",
-  "manutencao": "string - sugestão detalhada de manutenção mensal e suporte contínuo",
+  "cronograma": "string (max 300 chars) - cronograma estimado",
+  "manutencao": "string (max 300 chars) - sugestao de manutencao mensal",
   "riscos": ["array de strings - riscos identificados"],
-  "proximos_passos": ["array de strings - etapas para iniciar: aprovação, kickoff, início do desenvolvimento"],
-  "proposta_comercial": "string - texto COMPLETO da proposta comercial para o cliente, profissional e premium, seguindo a estrutura: 1-CAPA com apresentação da HolyNex Labs, 2-RESUMO EXECUTIVO, 3-DIAGNÓSTICO, 4-SOLUÇÃO PROPOSTA, 5-ESCOPO DO PROJETO (MVP), 6-FUNCIONALIDADES PRINCIPAIS, 7-FUNCIONALIDADES FUTURAS, 8-BENEFÍCIOS PARA O CLIENTE, 9-CRONOGRAMA, 10-INVESTIMENTO com faixas, 11-MANUTENÇÃO MENSAL, 12-PRÓXIMOS PASSOS. Use formatação clara com títulos, subtítulos e listas."
+  "proximos_passos": ["array de strings - etapas para iniciar"],
+  "proposta_comercial": "string - texto resumido da proposta para uso interno/historico"
 }
 
-DIFERENCIAIS DA HOLYNEX LABS para incluir na proposta:
-• Soluções sob medida
-• Arquitetura escalável
-• Automação de processos
-• Foco em eficiência operacional
-• Visão estratégica de crescimento
-• Experiência em sistemas empresariais
-
-GATILHOS COMERCIAIS para usar naturalmente:
-• Ganho de eficiência
-• Centralização de processos
-• Automação operacional
-• Escalabilidade
-• Profissionalização da operação
-• Crescimento sustentável`;
+DIFERENCIAIS DA HOLYNEX LABS:
+- Solucoes sob medida
+- Arquitetura escalavel
+- Automacao de processos
+- Foco em eficiencia operacional
+- Visao estrategica de crescimento`;
 
 function buildUserPrompt(body: Record<string, any>): string {
   const {
@@ -77,39 +65,27 @@ function buildUserPrompt(body: Record<string, any>): string {
     link_referencia, observacoes,
   } = body;
 
-  return `Gere uma proposta comercial completa e profissional para geração de PDF com identidade visual premium:
+  return `Gere a proposta comercial estruturada em JSON:
 
-CLIENTE: ${nome_cliente || "Não informado"}
-EMPRESA: ${empresa_cliente || "Não informado"}
-SEGMENTO: ${segmento || "Não informado"}
-TIPO DE PROJETO: ${tipo_projeto || "Não especificado"}
+CLIENTE: ${nome_cliente || "Nao informado"}
+EMPRESA: ${empresa_cliente || "Nao informado"}
+SEGMENTO: ${segmento || "Nao informado"}
+TIPO DE PROJETO: ${tipo_projeto || "Nao especificado"}
 
-DESCRIÇÃO DO PROJETO:
-${descricao_projeto || "Não informado"}
+DESCRICAO: ${descricao_projeto || "Nao informado"}
+PROBLEMA: ${problema_cliente || "Nao informado"}
+OBJETIVO: ${objetivo_cliente || "Nao informado"}
 
-PROBLEMA DO CLIENTE:
-${problema_cliente || "Não informado"}
+FUNCIONALIDADES DESEJADAS: ${Array.isArray(funcionalidades_desejadas) ? funcionalidades_desejadas.join(", ") : funcionalidades_desejadas || "Nao especificado"}
+INTEGRACOES: ${Array.isArray(integracoes) ? integracoes.join(", ") : integracoes || "Nenhuma"}
+NUMERO DE USUARIOS: ${numero_usuarios || "Nao informado"}
+PRAZO DESEJADO: ${prazo_desejado || "Nao informado"}
+ORCAMENTO DO CLIENTE: ${orcamento_cliente || "Nao informado"}
+NIVEL DE URGENCIA: ${nivel_urgencia || "medio"}
+LINK DE REFERENCIA: ${link_referencia || "Nenhum"}
+OBSERVACOES: ${observacoes || "Nenhuma"}
 
-OBJETIVO DO CLIENTE:
-${objetivo_cliente || "Não informado"}
-
-FUNCIONALIDADES DESEJADAS:
-${Array.isArray(funcionalidades_desejadas) ? funcionalidades_desejadas.join(", ") : funcionalidades_desejadas || "Não especificado"}
-
-INTEGRAÇÕES:
-${Array.isArray(integracoes) ? integracoes.join(", ") : integracoes || "Nenhuma especificada"}
-
-NÚMERO DE USUÁRIOS: ${numero_usuarios || "Não informado"}
-PRAZO DESEJADO: ${prazo_desejado || "Não informado"}
-ORÇAMENTO DO CLIENTE: ${orcamento_cliente || "Não informado"}
-NÍVEL DE URGÊNCIA: ${nivel_urgencia || "medio"}
-
-LINK DE REFERÊNCIA: ${link_referencia || "Nenhum"}
-
-OBSERVAÇÕES:
-${observacoes || "Nenhuma"}
-
-IMPORTANTE: Retorne APENAS o JSON estruturado conforme o formato especificado. Sem markdown, sem code blocks, sem texto adicional.`;
+IMPORTANTE: Retorne APENAS o JSON estruturado. Sem markdown, sem code blocks, sem texto adicional. Use apenas caracteres ASCII seguros.`;
 }
 
 function cleanJsonResponse(content: string): any {
@@ -122,6 +98,11 @@ function cleanJsonResponse(content: string): any {
   if (firstBrace !== -1 && lastBrace !== -1) {
     cleaned = cleaned.slice(firstBrace, lastBrace + 1);
   }
+  // Remove control characters that break JSON
+  cleaned = cleaned.replace(/[\x00-\x1F\x7F]/g, (match) => {
+    if (match === "\n" || match === "\r" || match === "\t") return match;
+    return "";
+  });
   return JSON.parse(cleaned);
 }
 
@@ -133,6 +114,7 @@ interface AIProvider {
   headers?: Record<string, string>;
 }
 
+// Provider policy: Groq (primary) > OpenRouter (fallback) > Lovable AI (last resort)
 function getProviders(): AIProvider[] {
   const providers: AIProvider[] = [];
 
@@ -147,7 +129,7 @@ function getProviders(): AIProvider[] {
     });
   }
 
-  // 2. OpenRouter (fallback - access to many models)
+  // 2. OpenRouter (fallback)
   const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
   if (openrouterKey) {
     providers.push({
@@ -183,7 +165,7 @@ async function callProvider(provider: AIProvider, messages: any[]): Promise<stri
     ...(provider.headers || {}),
   };
 
-  console.log(`Trying provider: ${provider.name} (${provider.model})`);
+  console.log(`[gerar-proposta] Trying provider: ${provider.name} (${provider.model})`);
 
   const response = await fetch(provider.url, {
     method: "POST",
@@ -191,8 +173,8 @@ async function callProvider(provider: AIProvider, messages: any[]): Promise<stri
     body: JSON.stringify({
       model: provider.model,
       messages,
-      temperature: 0.4,
-      max_tokens: 8000,
+      temperature: 0.3,
+      max_tokens: 6000,
     }),
   });
 
@@ -211,6 +193,8 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const startTime = Date.now();
 
   try {
     const body = await req.json();
@@ -235,19 +219,39 @@ serve(async (req) => {
         const content = await callProvider(provider, messages);
         const proposalJson = cleanJsonResponse(content);
         
-        console.log(`Success with provider: ${provider.name}`);
+        const durationMs = Date.now() - startTime;
+        console.log(`[gerar-proposta] Success with: ${provider.name} in ${durationMs}ms`);
+
+        // Return proposal with observability metadata
         return new Response(
-          JSON.stringify({ proposta: proposalJson, provider: provider.name }),
+          JSON.stringify({
+            proposta: proposalJson,
+            _meta: {
+              provider_used: provider.name,
+              model_used: provider.model,
+              prompt_version: PROMPT_VERSION,
+              duration_ms: durationMs,
+              output_size: JSON.stringify(proposalJson).length,
+            },
+          }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (err) {
-        console.error(`Provider ${provider.name} failed:`, err);
+        console.error(`[gerar-proposta] Provider ${provider.name} failed:`, err);
         lastError = err instanceof Error ? err : new Error(String(err));
 
-        // Don't fallback on rate limit - return immediately
+        // Don't fallback on rate limit / payment - return immediately
         if (err instanceof Error && (err.message.includes("429") || err.message.includes("402"))) {
           return new Response(
-            JSON.stringify({ error: `${provider.name}: Limite de requisições ou créditos excedidos. Tente novamente em alguns segundos.` }),
+            JSON.stringify({
+              error: `${provider.name}: Limite de requisicoes ou creditos excedidos. Tente novamente em alguns segundos.`,
+              _meta: {
+                provider_used: provider.name,
+                model_used: provider.model,
+                prompt_version: PROMPT_VERSION,
+                duration_ms: Date.now() - startTime,
+              },
+            }),
             { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -255,13 +259,22 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ error: `Todos os provedores falharam. Último erro: ${lastError?.message || "desconhecido"}` }),
+      JSON.stringify({
+        error: `Todos os provedores falharam. Ultimo erro: ${lastError?.message || "desconhecido"}`,
+        _meta: {
+          prompt_version: PROMPT_VERSION,
+          duration_ms: Date.now() - startTime,
+        },
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
-    console.error("gerar-proposta error:", e);
+    console.error("[gerar-proposta] error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }),
+      JSON.stringify({
+        error: e instanceof Error ? e.message : "Erro desconhecido",
+        _meta: { prompt_version: PROMPT_VERSION, duration_ms: Date.now() - startTime },
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
