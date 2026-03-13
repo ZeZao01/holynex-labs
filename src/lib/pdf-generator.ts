@@ -1024,7 +1024,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     const phase1Items = ["Kickoff e alinhamento de escopo", "Configuração de ambiente", "Design da interface (UI/UX)", "Estruturação do banco de dados"];
     let p1y = s1y + 18;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7.5);
+    pdf.setFontSize(8);
     for (const item of phase1Items) {
       pdf.setFillColor(...C.magenta);
       pdf.circle(s1x + 7, p1y - 0.5, 0.6, "F");
