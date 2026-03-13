@@ -139,7 +139,7 @@ export default function FinancialSummary({ systemId }: Props) {
       {risks.length > 0 && (
         <div className="space-y-1">
           {risks.map(r => (
-            <div key={r.key} className="text-xs text-amber-400 flex items-center gap-1">⚠️ {r.label}</div>
+            <div key={r.key} className="text-xs text-destructive flex items-center gap-1">⚠️ {r.label}</div>
           ))}
         </div>
       )}
