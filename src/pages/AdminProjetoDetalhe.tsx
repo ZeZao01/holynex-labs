@@ -58,11 +58,12 @@ export default function AdminProjetoDetalhe() {
 
   async function load() {
     try {
-      const [p, m, e, ac] = await Promise.all([
+      const [p, m, e, ac, pm] = await Promise.all([
         getProject(id!),
         getMilestones(id!),
         getProjectEvents(id!),
         getAccessesByProject(id!),
+        getModulesByProject(id!),
       ]);
       setProject(p);
       setForm(p || {});
