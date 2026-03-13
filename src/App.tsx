@@ -55,6 +55,7 @@ function AppRoutes() {
           <Route path="/admin/templates" element={<AdminTemplates />} />
           <Route path="/admin/projetos" element={<AdminProjetos />} />
           <Route path="/admin/sistemas" element={<AdminSistemas />} />
+          <Route path="/admin/sistemas/:id" element={<AdminSistemaDetalhe />} />
           <Route path="/admin/acessos" element={<AdminAcessos />} />
           <Route path="/admin/modulos" element={<AdminModulos />} />
           <Route path="/admin/manutencao" element={<AdminManutencao />} />
