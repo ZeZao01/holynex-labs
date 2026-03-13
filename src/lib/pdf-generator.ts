@@ -307,12 +307,12 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   pdf.restoreGraphicsState();
 
   // Confidential + Document code
-  pdf.setFontSize(6);
-  pdf.setTextColor(...C.darkGray);
-  pdf.text("Documento confidencial — destinado exclusivamente ao destinatário", W / 2, H - 14, { align: "center" });
-  if (docCode) {
-    pdf.text(`Código: ${docCode}`, W / 2, H - 8, { align: "center" });
-  }
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.darkGray);
+    pdf.text("Documento confidencial — destinado exclusivamente ao destinatário", W / 2, H - 14, { align: "center" });
+    if (docCode) {
+      pdf.text(`Código: ${docCode}`, W / 2, H - 8, { align: "center" });
+    }
 
   pageNum = 0;
 
