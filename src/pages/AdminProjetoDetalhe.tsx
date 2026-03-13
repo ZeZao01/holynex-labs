@@ -43,6 +43,7 @@ export default function AdminProjetoDetalhe() {
   const [events, setEvents] = useState<ProjectEvent[]>([]);
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [projectModules, setProjectModules] = useState<ProjectModule[]>([]);
+  const [projectChanges, setProjectChanges] = useState<ProjectChange[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Project>>({});
