@@ -951,7 +951,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.setFontSize(9);
       pdf.setTextColor(...C.cyan);
       pdf.text("R$ " + addon.price.toLocaleString("pt-BR"), ax + addonW - 5, aRowY + 8, { align: "right" });
-      pdf.setFontSize(5.5);
+      pdf.setFontSize(7);
       pdf.setTextColor(...C.midGray);
       pdf.text(addon.category, ax + addonW - 5, aRowY + 14, { align: "right" });
     });
