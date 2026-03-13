@@ -1,266 +1,197 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { getOrcamentos, atualizarStatus, removerOrcamento, type Orcamento, type OrcamentoStatus } from "@/lib/orcamentos";
+import { getOrcamentos, atualizarStatusComercial, removerOrcamento, type Orcamento, type StatusComercial, STATUS_COMERCIAL_MAP, ESTRATEGIAS_COMERCIAIS } from "@/lib/orcamentos";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Clock, CheckCircle2, XCircle, Trash2, ArrowUpCircle, ArrowDownCircle, MinusCircle, Mail, Building2, FileText, Sparkles, LogOut, Loader2, FileBarChart } from "lucide-react";
-import RevealBox from "@/components/RevealBox";
+import PageHeader from "@/components/admin/PageHeader";
+import FilterToolbar from "@/components/admin/FilterToolbar";
+import EmptyState from "@/components/admin/EmptyState";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Users, Trash2, Eye, FileBarChart, Plus, Flame, Snowflake, Sun } from "lucide-react";
 
-const statusConfig: Record<OrcamentoStatus, { label: string; icon: typeof Clock; color: string; badgeClass: string }> = {
-  pendente: { label: "Pendente", icon: Clock, color: "text-yellow-400", badgeClass: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-  recebido: { label: "Recebido", icon: CheckCircle2, color: "text-emerald-400", badgeClass: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-  rejeitado: { label: "Rejeitado", icon: XCircle, color: "text-red-400", badgeClass: "bg-red-500/20 text-red-400 border-red-500/30" },
-};
-
-const prioridadeConfig = {
-  alta: { label: "Alta", icon: ArrowUpCircle, color: "text-red-400" },
-  media: { label: "Média", icon: MinusCircle, color: "text-yellow-400" },
-  baixa: { label: "Baixa", icon: ArrowDownCircle, color: "text-emerald-400" },
-};
+const tempIcons: Record<string, typeof Flame> = { quente: Flame, morno: Sun, frio: Snowflake };
+const tempColors: Record<string, string> = { quente: "text-red-400", morno: "text-amber-400", frio: "text-sky-400" };
 
 export default function AdminOrcamentos() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
-  const [tab, setTab] = useState("todos");
   const [loadingData, setLoadingData] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("todos");
+  const [filterTipo, setFilterTipo] = useState("todos");
+  const [filterUrgencia, setFilterUrgencia] = useState("todos");
 
   const refresh = useCallback(async () => {
     try {
       const data = await getOrcamentos();
       setOrcamentos(data);
-    } catch {
-      // silently fail
-    } finally {
+    } catch { /* silent */ } finally {
       setLoadingData(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/admin/login");
-      return;
-    }
-    if (user) {
-      refresh();
-    }
+    if (!authLoading && !user) { navigate("/admin/login"); return; }
+    if (user) refresh();
   }, [user, authLoading, navigate, refresh]);
 
   useRealtimeSubscription("orcamentos", refresh, !!user);
 
   const filtered = useMemo(() => {
-    if (tab === "todos") return orcamentos;
-    return orcamentos.filter((o) => o.status === tab);
-  }, [orcamentos, tab]);
+    let list = orcamentos;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(o => o.nome.toLowerCase().includes(q) || o.empresa.toLowerCase().includes(q) || o.email.toLowerCase().includes(q));
+    }
+    if (filterStatus !== "todos") list = list.filter(o => o.status_comercial === filterStatus);
+    if (filterTipo !== "todos") list = list.filter(o => o.tipo_projeto === filterTipo);
+    if (filterUrgencia !== "todos") list = list.filter(o => o.urgencia === filterUrgencia);
+    return list;
+  }, [orcamentos, search, filterStatus, filterTipo, filterUrgencia]);
 
   const counts = useMemo(() => ({
-    todos: orcamentos.length,
-    pendente: orcamentos.filter((o) => o.status === "pendente").length,
-    recebido: orcamentos.filter((o) => o.status === "recebido").length,
-    rejeitado: orcamentos.filter((o) => o.status === "rejeitado").length,
+    total: orcamentos.length,
+    novos: orcamentos.filter(o => o.status_comercial === "novo").length,
+    qualificados: orcamentos.filter(o => o.status_comercial === "qualificado").length,
+    convertidos: orcamentos.filter(o => o.status_comercial === "convertido").length,
   }), [orcamentos]);
 
-  const handleStatus = async (id: string, status: OrcamentoStatus) => {
-    await atualizarStatus(id, status);
-    refresh();
-  };
+  if (authLoading || !user) return <div className="flex items-center justify-center py-20"><Skeleton className="h-8 w-8 rounded-full" /></div>;
 
-  const handleRemove = async (id: string) => {
-    await removerOrcamento(id);
-    refresh();
-  };
-
-  if (authLoading || (!user && !authLoading)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const tiposUnicos = [...new Set(orcamentos.map(o => o.tipo_projeto).filter(Boolean))];
 
   return (
-    <div className="min-h-screen pt-28 pb-16 relative z-10">
-      <div className="container mx-auto px-4">
-        <RevealBox className="text-center max-w-2xl mx-auto mb-6">
-          <span className="text-primary text-sm font-medium uppercase tracking-widest">Painel Interno</span>
-          <h1 className="font-display text-4xl md:text-5xl font-bold mt-3 mb-4">
-            Gestão de <span className="text-gradient-animated">Orçamentos</span>
-          </h1>
-          <p className="text-muted-foreground">Acompanhe e gerencie todos os pedidos de orçamento.</p>
-        </RevealBox>
+    <div className="space-y-6">
+      <PageHeader
+        title="Leads & Orçamentos"
+        subtitle="Pipeline comercial qualificado"
+        actions={
+          <Button onClick={() => navigate("/contato")} size="sm" className="gap-1.5">
+            <Plus className="h-4 w-4" /> Novo Lead
+          </Button>
+        }
+      />
 
-        <div className="flex justify-center gap-3 mb-8">
-          <button
-            onClick={() => navigate("/admin/propostas")}
-            className="btn-glow inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium text-foreground"
-          >
-            <FileBarChart className="h-3.5 w-3.5" />
-            Propostas IA
-          </button>
-          <button
-            onClick={signOut}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Sair
-          </button>
-        </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total", value: counts.total, color: "text-primary" },
+          { label: "Novos", value: counts.novos, color: "text-sky-400" },
+          { label: "Qualificados", value: counts.qualificados, color: "text-emerald-400" },
+          { label: "Convertidos", value: counts.convertidos, color: "text-purple-400" },
+        ].map(s => (
+          <div key={s.label} className="bg-card border border-border/40 rounded-xl p-4 text-center">
+            <div className={`font-display text-2xl font-bold ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
+          </div>
+        ))}
+      </div>
 
-        {/* Stats */}
-        <RevealBox delay={0.1} className="max-w-4xl mx-auto mb-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {([
-              { key: "todos", label: "Total", color: "text-primary" },
-              { key: "pendente", label: "Pendentes", color: "text-yellow-400" },
-              { key: "recebido", label: "Recebidos", color: "text-emerald-400" },
-              { key: "rejeitado", label: "Rejeitados", color: "text-red-400" },
-            ] as const).map((s) => (
-              <div key={s.key} className="glass rounded-xl p-4 text-center">
-                <div className={`font-display text-3xl font-bold ${s.color}`}>{counts[s.key]}</div>
-                <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
-              </div>
+      {/* Filters */}
+      <FilterToolbar searchPlaceholder="Buscar por nome, email ou empresa..." searchValue={search} onSearchChange={setSearch}>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[160px] h-9 text-sm"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os status</SelectItem>
+            {Object.entries(STATUS_COMERCIAL_MAP).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v.label}</SelectItem>
             ))}
-          </div>
-        </RevealBox>
+          </SelectContent>
+        </Select>
+        {tiposUnicos.length > 0 && (
+          <Select value={filterTipo} onValueChange={setFilterTipo}>
+            <SelectTrigger className="w-[160px] h-9 text-sm"><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os tipos</SelectItem>
+              {tiposUnicos.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        <Select value={filterUrgencia} onValueChange={setFilterUrgencia}>
+          <SelectTrigger className="w-[140px] h-9 text-sm"><SelectValue placeholder="Urgência" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Toda urgência</SelectItem>
+            <SelectItem value="critica">Crítica</SelectItem>
+            <SelectItem value="alta">Alta</SelectItem>
+            <SelectItem value="media">Média</SelectItem>
+            <SelectItem value="baixa">Baixa</SelectItem>
+            <SelectItem value="sem_urgencia">Sem urgência</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterToolbar>
 
-        {/* Tabs */}
-        <RevealBox delay={0.2} className="max-w-4xl mx-auto">
-          {loadingData ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <Tabs value={tab} onValueChange={setTab}>
-              <TabsList className="w-full bg-muted/50 rounded-xl mb-6">
-                <TabsTrigger value="todos" className="flex-1 rounded-lg">Todos ({counts.todos})</TabsTrigger>
-                <TabsTrigger value="pendente" className="flex-1 rounded-lg">Pendentes ({counts.pendente})</TabsTrigger>
-                <TabsTrigger value="recebido" className="flex-1 rounded-lg">Recebidos ({counts.recebido})</TabsTrigger>
-                <TabsTrigger value="rejeitado" className="flex-1 rounded-lg">Rejeitados ({counts.rejeitado})</TabsTrigger>
-              </TabsList>
-
-              {["todos", "pendente", "recebido", "rejeitado"].map((t) => (
-                <TabsContent key={t} value={t}>
-                  <AnimatePresence mode="popLayout">
-                    {filtered.length === 0 ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="glass rounded-2xl p-12 text-center"
-                      >
-                        <FileText className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                        <p className="text-muted-foreground">Nenhum orçamento encontrado.</p>
-                      </motion.div>
-                    ) : (
-                      <div className="space-y-4">
-                        {filtered.map((orc) => (
-                          <OrcamentoCard
-                            key={orc.id}
-                            orcamento={orc}
-                            onStatusChange={handleStatus}
-                            onRemove={handleRemove}
-                            onGenerateProposal={(id) => navigate(`/admin/propostas/nova?orcamento=${id}`)}
-                          />
-                        ))}
+      {/* Table */}
+      {loadingData ? (
+        <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}</div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Users} title="Nenhum lead encontrado" description="Ajuste os filtros ou aguarde novos orçamentos." />
+      ) : (
+        <div className="border border-border/40 rounded-xl overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30">
+                <TableHead className="text-xs">Nome</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Empresa</TableHead>
+                <TableHead className="text-xs hidden lg:table-cell">Tipo</TableHead>
+                <TableHead className="text-xs hidden lg:table-cell">Investimento</TableHead>
+                <TableHead className="text-xs">Score</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Temp.</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="text-xs text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((orc) => {
+                const sc = STATUS_COMERCIAL_MAP[orc.status_comercial || "novo"];
+                const TempIcon = tempIcons[orc.temperatura_lead || "morno"] || Sun;
+                const tempColor = tempColors[orc.temperatura_lead || "morno"] || "text-muted-foreground";
+                return (
+                  <TableRow key={orc.id} className="cursor-pointer hover:bg-muted/20" onClick={() => navigate(`/admin/orcamentos/${orc.id}`)}>
+                    <TableCell>
+                      <div className="font-medium text-sm">{orc.nome}</div>
+                      <div className="text-xs text-muted-foreground">{orc.email}</div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{orc.empresa || "—"}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{orc.tipo_projeto || "—"}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{orc.faixa_investimento || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center text-xs font-bold text-primary">
+                          {orc.score_qualificacao || 0}
+                        </div>
                       </div>
-                    )}
-                  </AnimatePresence>
-                </TabsContent>
-              ))}
-            </Tabs>
-          )}
-        </RevealBox>
-      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <TempIcon className={`h-4 w-4 ${tempColor}`} />
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={`text-[10px] ${sc?.color || ""}`}>{sc?.label || "Novo"}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/orcamentos/${orc.id}`)}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/propostas/nova?orcamento=${orc.id}`)}>
+                          <FileBarChart className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={async () => { await removerOrcamento(orc.id); refresh(); }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
-  );
-}
-
-function OrcamentoCard({
-  orcamento: orc,
-  onStatusChange,
-  onRemove,
-  onGenerateProposal,
-}: {
-  orcamento: Orcamento;
-  onStatusChange: (id: string, status: OrcamentoStatus) => void;
-  onRemove: (id: string) => void;
-  onGenerateProposal: (id: string) => void;
-}) {
-  const sc = statusConfig[orc.status];
-  const StatusIcon = sc.icon;
-  const pc = orc.prioridade ? prioridadeConfig[orc.prioridade] : null;
-  const PrioIcon = pc?.icon;
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="card-animated glass rounded-2xl p-6"
-    >
-      <div className="flex flex-col md:flex-row md:items-start gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-3 flex-wrap">
-            <h3 className="font-display font-semibold text-lg truncate">{orc.nome}</h3>
-            <Badge className={`${sc.badgeClass} border text-xs`}>
-              <StatusIcon className="h-3 w-3 mr-1" />
-              {sc.label}
-            </Badge>
-            {pc && PrioIcon && (
-              <span className={`inline-flex items-center gap-1 text-xs ${pc.color}`}>
-                <PrioIcon className="h-3.5 w-3.5" />
-                {pc.label}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
-            <span className="inline-flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5" /> {orc.email}
-            </span>
-            {orc.empresa && (
-              <span className="inline-flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5" /> {orc.empresa}
-              </span>
-            )}
-            <span className="text-xs">
-              {new Date(orc.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-            </span>
-          </div>
-          {orc.resumoIA && (
-            <div className="flex items-start gap-2 bg-primary/5 border border-primary/10 rounded-lg p-3 mb-3">
-              <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-foreground/80">{orc.resumoIA}</p>
-            </div>
-          )}
-          <p className="text-sm text-muted-foreground leading-relaxed">{orc.descricao}</p>
-        </div>
-        <div className="flex md:flex-col gap-2 flex-shrink-0">
-          {orc.status !== "recebido" && (
-            <button onClick={() => onStatusChange(orc.id, "recebido")} className="btn-glow inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-foreground">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Aceitar
-            </button>
-          )}
-          {orc.status !== "rejeitado" && (
-            <button onClick={() => onStatusChange(orc.id, "rejeitado")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors">
-              <XCircle className="h-3.5 w-3.5" /> Rejeitar
-            </button>
-          )}
-          {orc.status !== "pendente" && (
-            <button onClick={() => onStatusChange(orc.id, "pendente")} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 transition-colors">
-              <Clock className="h-3.5 w-3.5" /> Pendente
-            </button>
-          )}
-          <button onClick={() => onRemove(orc.id)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
-            <Trash2 className="h-3.5 w-3.5" /> Remover
-          </button>
-          <button onClick={() => onGenerateProposal(orc.id)} className="btn-glow inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium text-foreground">
-            <FileBarChart className="h-3.5 w-3.5" /> Proposta
-          </button>
-        </div>
-      </div>
-    </motion.div>
   );
 }
