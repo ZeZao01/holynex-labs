@@ -1,26 +1,30 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getProposta, atualizarStatusProposta, atualizarProposta, gerarPropostaIA, type Proposta, type PropostaInput } from "@/lib/propostas";
+import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropostaTiers, gerarPropostaIA, type Proposta, type PropostaInput } from "@/lib/propostas";
+import { createDefaultTiers, createDefaultAddons, PROPOSAL_STATUS_MAP, type ProposalTier, type ProposalAddon, type CommercialNotes } from "@/lib/proposal-tiers";
 import { uploadPdf } from "@/lib/pdf-storage";
 import { generatePropostaPdf } from "@/lib/pdf-generator";
-import { Loader2, ArrowLeft, Download, Sparkles, CheckCircle2, XCircle, Send, Clock, RefreshCw } from "lucide-react";
+import PageHeader from "@/components/admin/PageHeader";
+import SectionCard from "@/components/admin/SectionCard";
+import StatusBadge from "@/components/admin/StatusBadge";
+import TierCard from "@/components/admin/TierCard";
+import ScopeComparison from "@/components/admin/ScopeComparison";
+import AddonSelector from "@/components/admin/AddonSelector";
+import TierEditor from "@/components/admin/TierEditor";
+import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
-import RevealBox from "@/components/RevealBox";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import PdfHistorico from "@/components/PdfHistorico";
 import TemplateSelector from "@/components/TemplateSelector";
 import { type PdfTemplate } from "@/lib/pdf-templates";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-
-const statusActions = [
-  { status: "gerada", label: "Gerada", icon: Sparkles, color: "text-primary" },
-  { status: "enviada", label: "Enviada", icon: Send, color: "text-blue-400" },
-  { status: "aceita", label: "Aceita", icon: CheckCircle2, color: "text-emerald-400" },
-  { status: "recusada", label: "Recusada", icon: XCircle, color: "text-red-400" },
-];
+import RevealBox from "@/components/RevealBox";
 
 export default function AdminPropostaDetalhe() {
   const { user, loading: authLoading } = useAuth();
@@ -34,6 +38,13 @@ export default function AdminPropostaDetalhe() {
   const [showRegenDialog, setShowRegenDialog] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [orientacoes, setOrientacoes] = useState("");
+  const [editingTiers, setEditingTiers] = useState(false);
+  const [editTiers, setEditTiers] = useState<ProposalTier[]>([]);
+  const [editAddons, setEditAddons] = useState<ProposalAddon[]>([]);
+  const [editNotes, setEditNotes] = useState<CommercialNotes>({ general_note: "", recommendation_justification: "", closing_strategy: "", next_steps: "" });
+  const [editValidity, setEditValidity] = useState("30 dias");
+  const [editPhased, setEditPhased] = useState(false);
+  const [savingTiers, setSavingTiers] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
@@ -50,7 +61,7 @@ export default function AdminPropostaDetalhe() {
   const handleStatusChange = async (status: string) => {
     if (!id) return;
     await atualizarStatusProposta(id, status);
-    toast.success(`Status atualizado para ${status}`);
+    toast.success(`Status: ${PROPOSAL_STATUS_MAP[status]?.label || status}`);
     loadProposta();
   };
 
@@ -60,35 +71,22 @@ export default function AdminPropostaDetalhe() {
     setRegenerating(true);
     try {
       const input: PropostaInput = {
-        nome_cliente: proposta.nome_cliente,
-        empresa_cliente: proposta.empresa_cliente,
-        segmento: proposta.segmento,
-        email_cliente: proposta.email_cliente,
-        tipo_projeto: proposta.tipo_projeto,
-        descricao_projeto: proposta.descricao_projeto,
-        problema_cliente: "",
-        objetivo_cliente: "",
-        funcionalidades_desejadas: [],
-        integracoes: [],
-        numero_usuarios: "",
-        prazo_desejado: "",
-        orcamento_cliente: "",
-        nivel_urgencia: "medio",
-        link_referencia: "",
-        observacoes: orientacoes || "",
+        nome_cliente: proposta.nome_cliente, empresa_cliente: proposta.empresa_cliente,
+        segmento: proposta.segmento, email_cliente: proposta.email_cliente,
+        tipo_projeto: proposta.tipo_projeto, descricao_projeto: proposta.descricao_projeto,
+        problema_cliente: "", objetivo_cliente: "", funcionalidades_desejadas: [], integracoes: [],
+        numero_usuarios: "", prazo_desejado: "", orcamento_cliente: "",
+        nivel_urgencia: "medio", link_referencia: "", observacoes: orientacoes || "",
         orcamento_id: proposta.orcamento_id || undefined,
       };
-      const novaProposta = await gerarPropostaIA(input);
-      await atualizarProposta(id, novaProposta);
-      toast.success("Proposta regenerada com sucesso!");
+      const nova = await gerarPropostaIA(input);
+      await atualizarProposta(id, nova);
+      toast.success("Proposta regenerada!");
       setOrientacoes("");
       loadProposta();
     } catch (err: any) {
-      console.error("Regenerate error:", err);
-      toast.error(err.message || "Erro ao regenerar proposta");
-    } finally {
-      setRegenerating(false);
-    }
+      toast.error(err.message || "Erro ao regenerar");
+    } finally { setRegenerating(false); }
   };
 
   const handleExportPDF = async (template?: PdfTemplate) => {
@@ -98,243 +96,230 @@ export default function AdminPropostaDetalhe() {
     try {
       const pdfBlob = await generatePropostaPdf(proposta, template?.id);
       await uploadPdf(id, proposta.nome_cliente, pdfBlob);
-      setPdfRefreshKey((k) => k + 1);
-
-      // Trigger local download
+      setPdfRefreshKey(k => k + 1);
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `Proposta_HolyNex_${proposta.nome_cliente.replace(/\s+/g, "_")}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+      toast.success("PDF gerado!");
+    } catch { toast.error("Erro ao exportar PDF"); } finally { setExportingPdf(false); }
+  };
 
-      toast.success("PDF gerado e salvo com sucesso!");
-    } catch (err) {
-      console.error("PDF export error:", err);
-      toast.error("Erro ao exportar PDF");
-    } finally {
-      setExportingPdf(false);
-    }
+  const startEditTiers = () => {
+    if (!proposta) return;
+    setEditTiers(proposta.proposal_tiers.length > 0 ? [...proposta.proposal_tiers] : createDefaultTiers());
+    setEditAddons(proposta.proposal_addons.length > 0 ? [...proposta.proposal_addons] : createDefaultAddons());
+    setEditNotes(proposta.commercial_notes || { general_note: "", recommendation_justification: "", closing_strategy: "", next_steps: "" });
+    setEditValidity(proposta.proposal_validity || "30 dias");
+    setEditPhased(proposta.is_phased);
+    setEditingTiers(true);
+  };
+
+  const saveTiers = async () => {
+    if (!id) return;
+    setSavingTiers(true);
+    try {
+      const rec = editTiers.find(t => t.is_recommended)?.type || "";
+      await atualizarPropostaTiers(id, editTiers, editAddons, rec, editNotes, editValidity, editPhased, editNotes.closing_strategy);
+      toast.success("Faixas e add-ons salvos!");
+      setEditingTiers(false);
+      loadProposta();
+    } catch (err: any) { toast.error(err.message || "Erro ao salvar"); } finally { setSavingTiers(false); }
+  };
+
+  const setRecommended = (tierId: string) => {
+    setEditTiers(prev => prev.map(t => ({ ...t, is_recommended: t.id === tierId })));
+  };
+
+  const toggleAddon = (addonId: string) => {
+    setEditAddons(prev => prev.map(a => a.id === addonId ? { ...a, is_selected: !a.is_selected } : a));
   };
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
   if (!proposta) {
     return (
-      <div className="min-h-screen pt-28 flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center h-64">
         <p className="text-muted-foreground mb-4">Proposta não encontrada.</p>
-        <button onClick={() => navigate("/admin/propostas")} className="text-primary text-sm hover:underline">Voltar</button>
+        <Button variant="outline" onClick={() => navigate("/admin/propostas")}>Voltar</Button>
       </div>
     );
   }
 
   const pj = proposta.proposta_json;
+  const st = PROPOSAL_STATUS_MAP[proposta.status] || PROPOSAL_STATUS_MAP.rascunho;
+  const hasTiers = proposta.proposal_tiers.length > 0;
 
   return (
-    <div className="min-h-screen pt-28 pb-16 relative z-10">
-      <div className="container mx-auto px-4 max-w-4xl">
-        {/* Actions bar */}
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <button onClick={() => navigate("/admin/propostas")} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Voltar
-          </button>
-          <div className="flex gap-2 flex-wrap">
-            {statusActions.map((sa) => (
-              <button
-                key={sa.status}
-                onClick={() => handleStatusChange(sa.status)}
-                disabled={proposta.status === sa.status}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-border/50 transition-colors disabled:opacity-30 ${sa.color} hover:bg-muted/50`}
-              >
-                <sa.icon className="h-3 w-3" /> {sa.label}
-              </button>
-            ))}
-            <button
-              onClick={() => setShowRegenDialog(true)}
-              disabled={regenerating}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-            >
-              {regenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-              {regenerating ? "Regenerando..." : "Regenerar Proposta"}
-            </button>
-            <button
-              onClick={() => setShowTemplateSelector(true)}
-              disabled={exportingPdf}
-              className="btn-glow inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium text-foreground disabled:opacity-50"
-            >
-              {exportingPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-              {exportingPdf ? "Gerando..." : "Exportar PDF"}
-            </button>
+    <div className="space-y-6">
+      <PageHeader
+        title={proposta.nome_cliente}
+        description={`${proposta.tipo_projeto}${proposta.empresa_cliente ? ` — ${proposta.empresa_cliente}` : ""}`}
+        breadcrumbs={[{ label: "Propostas", href: "/admin/propostas" }, { label: proposta.nome_cliente }]}
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            {["gerada", "em_revisao", "pronta", "enviada", "aceita", "recusada"].map(s => {
+              const cfg = PROPOSAL_STATUS_MAP[s];
+              if (!cfg) return null;
+              return (
+                <Button key={s} variant={proposta.status === s ? "default" : "outline"} size="sm" onClick={() => handleStatusChange(s)} disabled={proposta.status === s} className="text-xs">
+                  {cfg.label}
+                </Button>
+              );
+            })}
           </div>
+        }
+      />
+
+      {/* Meta info */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Badge variant="outline" className={`${st.bgClass} ${st.color}`}>{st.label}</Badge>
+        {proposta.segmento && <Badge variant="outline">{proposta.segmento}</Badge>}
+        <span className="text-xs text-muted-foreground">{new Date(proposta.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</span>
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-2 flex-wrap">
+        <Button variant="outline" size="sm" onClick={() => setShowRegenDialog(true)} disabled={regenerating} className="gap-1">
+          {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerar
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setShowTemplateSelector(true)} disabled={exportingPdf} className="gap-1">
+          {exportingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Exportar PDF
+        </Button>
+        <Button variant="outline" size="sm" onClick={startEditTiers} className="gap-1">
+          <Edit3 className="h-3.5 w-3.5" /> Editar Faixas
+        </Button>
+      </div>
+
+      {/* Financial Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Mínimo</p>
+          <p className="font-display text-lg font-bold text-amber-400">R$ {proposta.valor_minimo.toLocaleString("pt-BR")}</p>
         </div>
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Ideal</p>
+          <p className="font-display text-lg font-bold text-primary">R$ {proposta.valor_ideal.toLocaleString("pt-BR")}</p>
+        </div>
+        <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Premium</p>
+          <p className="font-display text-lg font-bold text-emerald-400">R$ {proposta.valor_premium.toLocaleString("pt-BR")}</p>
+        </div>
+        <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Complexidade</p>
+          <p className="font-display text-lg font-bold capitalize">{proposta.complexidade}</p>
+        </div>
+      </div>
 
-        {/* PDF Content */}
-        <div>
-          {/* Cover / Header */}
-          <div data-pdf-section>
-            <RevealBox className="glass rounded-2xl p-8 mb-6 text-center">
-              <div className="font-display text-2xl font-bold text-primary mb-1">HolyNex Labs</div>
-              <p className="text-xs text-muted-foreground mb-6">Inovação em Desenvolvimento de Software</p>
-              <h1 className="font-display text-xl font-bold mt-4 mb-2">Proposta Comercial</h1>
-              <p className="text-muted-foreground text-sm">
-                Para: <strong>{proposta.nome_cliente}</strong>
-                {proposta.empresa_cliente && ` — ${proposta.empresa_cliente}`}
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                {new Date(proposta.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
-              </p>
-            </RevealBox>
-          </div>
+      {/* Tiers */}
+      {hasTiers && !editingTiers && (
+        <>
+          <SectionCard title="Faixas Comerciais" action={<Button variant="ghost" size="sm" onClick={startEditTiers}><Edit3 className="h-4 w-4" /></Button>}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {proposta.proposal_tiers.map(t => <TierCard key={t.id} tier={t} />)}
+            </div>
+          </SectionCard>
 
-          {/* Financial Summary */}
-          <div data-pdf-section>
-            <RevealBox delay={0.1} className="grid grid-cols-3 gap-4 mb-6">
-              <div className="glass rounded-xl p-4 text-center">
-                <div className="text-xs text-muted-foreground mb-1">Investimento Mínimo</div>
-                <div className="font-display text-lg font-bold text-yellow-400">
-                  R$ {proposta.valor_minimo.toLocaleString("pt-BR")}
-                </div>
-              </div>
-              <div className="glass rounded-xl p-4 text-center border-2 border-primary/30">
-                <div className="text-xs text-muted-foreground mb-1">Investimento Ideal</div>
-                <div className="font-display text-lg font-bold text-primary">
-                  R$ {proposta.valor_ideal.toLocaleString("pt-BR")}
-                </div>
-              </div>
-              <div className="glass rounded-xl p-4 text-center">
-                <div className="text-xs text-muted-foreground mb-1">Investimento Premium</div>
-                <div className="font-display text-lg font-bold text-emerald-400">
-                  R$ {proposta.valor_premium.toLocaleString("pt-BR")}
-                </div>
-              </div>
-            </RevealBox>
-          </div>
+          <SectionCard title="Comparativo de Escopo">
+            <ScopeComparison tiers={proposta.proposal_tiers} />
+          </SectionCard>
 
-          {/* Content Sections */}
-          {pj && (
-            <>
-              <PdfSection title="Resumo Executivo" content={pj.resumo_executivo} />
-              <PdfSection title="Diagnóstico" content={pj.diagnostico} />
-              <PdfSection title="Solução Proposta" content={pj.solucao_proposta} />
-              <PdfListSection title="Escopo do Projeto" items={pj.escopo} />
-              <PdfListSection title="Funcionalidades Principais" items={pj.funcionalidades} />
-              <PdfListSection title="Funcionalidades Recomendadas" items={pj.funcionalidades_recomendadas} />
-              <PdfSection title="Análise Estratégica" content={pj.analise_estrategica} />
-              <PdfSection title="Estimativa de Esforço" content={pj.estimativa_esforco} />
-              <PdfSection title="Cronograma Estimado" content={pj.cronograma} />
-              <PdfSection title="Manutenção Mensal" content={pj.manutencao} />
-              <PdfListSection title="Riscos e Premissas" items={pj.riscos} />
-              <PdfListSection title="Próximos Passos" items={pj.proximos_passos} />
-
-              {pj.proposta_comercial && (
-                <div data-pdf-section>
-                  <div className="glass rounded-2xl p-6 mb-6">
-                    <h3 className="font-display font-semibold text-primary mb-3">Proposta Comercial Completa</h3>
-                    <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                      {pj.proposta_comercial}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
+          {proposta.proposal_addons.length > 0 && (
+            <SectionCard title="Add-ons">
+              <AddonSelector addons={proposta.proposal_addons} readOnly />
+            </SectionCard>
           )}
 
-          {/* Footer */}
-          <div data-pdf-section>
-            <div className="mt-4 text-center text-xs text-muted-foreground py-4">
-              <p className="font-semibold">HolyNex Labs — Inovação em Desenvolvimento de Software</p>
-              <p>holynexlabs.com.br</p>
-              <p className="mt-1">Este documento é confidencial e destinado exclusivamente ao destinatário.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* PDF History */}
-        <div className="mt-8">
-          <PdfHistorico propostaId={proposta.id} refreshKey={pdfRefreshKey} />
-        </div>
-
-        {/* Regenerate Dialog */}
-        <Dialog open={showRegenDialog} onOpenChange={setShowRegenDialog}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <RefreshCw className="h-5 w-5 text-primary" />
-                Regenerar Proposta
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <p className="text-sm text-muted-foreground">
-                Insira orientações e parâmetros adicionais para a IA considerar ao regenerar esta proposta. Deixe em branco para usar apenas os dados originais.
-              </p>
-              <div className="space-y-2">
-                <Label htmlFor="orientacoes">Novas orientações</Label>
-                <Textarea
-                  id="orientacoes"
-                  placeholder="Ex: Foque em MVP com prazo de 30 dias, priorize funcionalidades de automação, ajuste os valores para faixa de R$ 5.000 a R$ 15.000..."
-                  value={orientacoes}
-                  onChange={(e) => setOrientacoes(e.target.value)}
-                  rows={5}
-                  className="resize-none"
-                />
+          {proposta.commercial_notes && proposta.commercial_notes.general_note && (
+            <SectionCard title="Observações Comerciais">
+              <div className="space-y-3 text-sm">
+                {proposta.commercial_notes.general_note && <div><Label className="text-xs text-muted-foreground">Observação geral</Label><p>{proposta.commercial_notes.general_note}</p></div>}
+                {proposta.commercial_notes.recommendation_justification && <div><Label className="text-xs text-muted-foreground">Justificativa</Label><p>{proposta.commercial_notes.recommendation_justification}</p></div>}
+                {proposta.commercial_notes.closing_strategy && <div><Label className="text-xs text-muted-foreground">Estratégia</Label><p>{proposta.commercial_notes.closing_strategy}</p></div>}
+                {proposta.commercial_notes.next_steps && <div><Label className="text-xs text-muted-foreground">Próximos passos</Label><p>{proposta.commercial_notes.next_steps}</p></div>}
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRegenDialog(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleRegenerate} className="gap-2">
-                <Sparkles className="h-4 w-4" />
-                Regenerar com IA
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </SectionCard>
+          )}
+        </>
+      )}
 
-        {/* Template Selector */}
-        <TemplateSelector
-          open={showTemplateSelector}
-          onOpenChange={setShowTemplateSelector}
-          onSelect={handleExportPDF}
-        />
-      </div>
-    </div>
-  );
-}
+      {/* Tier Editor Mode */}
+      {editingTiers && (
+        <SectionCard title="Editar Faixas Comerciais" action={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditingTiers(false)}><X className="h-4 w-4 mr-1" /> Cancelar</Button>
+            <Button size="sm" onClick={saveTiers} disabled={savingTiers}><Save className="h-4 w-4 mr-1" /> {savingTiers ? "Salvando..." : "Salvar"}</Button>
+          </div>
+        }>
+          <div className="space-y-4">
+            {editTiers.map((tier, i) => (
+              <TierEditor
+                key={tier.id}
+                tier={tier}
+                onChange={updated => setEditTiers(prev => prev.map((t, j) => j === i ? updated : t))}
+                onSetRecommended={() => setRecommended(tier.id)}
+              />
+            ))}
 
-function PdfSection({ title, content }: { title: string; content: string }) {
-  if (!content) return null;
-  return (
-    <div data-pdf-section>
-      <RevealBox className="glass rounded-2xl p-6 mb-6">
-        <h3 className="font-display font-semibold text-sm text-primary mb-2">{title}</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{content}</p>
-      </RevealBox>
-    </div>
-  );
-}
+            <SectionCard title="Add-ons">
+              <AddonSelector addons={editAddons} onToggle={toggleAddon} />
+            </SectionCard>
 
-function PdfListSection({ title, items }: { title: string; items: string[] }) {
-  if (!items?.length) return null;
-  return (
-    <div data-pdf-section>
-      <RevealBox className="glass rounded-2xl p-6 mb-6">
-        <h3 className="font-display font-semibold text-sm text-primary mb-2">{title}</h3>
-        <ul className="space-y-1.5">
-          {items.map((item, i) => (
-            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </RevealBox>
+            <SectionCard title="Observações Comerciais">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><Label className="text-xs">Observação geral</Label><Textarea value={editNotes.general_note} onChange={e => setEditNotes(n => ({ ...n, general_note: e.target.value }))} rows={2} /></div>
+                <div><Label className="text-xs">Justificativa da recomendação</Label><Textarea value={editNotes.recommendation_justification} onChange={e => setEditNotes(n => ({ ...n, recommendation_justification: e.target.value }))} rows={2} /></div>
+                <div><Label className="text-xs">Estratégia de fechamento</Label><Textarea value={editNotes.closing_strategy} onChange={e => setEditNotes(n => ({ ...n, closing_strategy: e.target.value }))} rows={2} /></div>
+                <div><Label className="text-xs">Próximos passos</Label><Textarea value={editNotes.next_steps} onChange={e => setEditNotes(n => ({ ...n, next_steps: e.target.value }))} rows={2} /></div>
+              </div>
+              <div className="flex items-center gap-6 mt-3">
+                <div><Label className="text-xs">Validade</Label><Input value={editValidity} onChange={e => setEditValidity(e.target.value)} className="h-8 w-32" /></div>
+                <div className="flex items-center gap-2"><Switch checked={editPhased} onCheckedChange={setEditPhased} /><Label className="text-xs">Proposta faseada</Label></div>
+              </div>
+            </SectionCard>
+          </div>
+        </SectionCard>
+      )}
+
+      {/* AI-generated content */}
+      {pj && (
+        <div className="space-y-4">
+          {pj.resumo_executivo && <SectionCard title="Resumo Executivo"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.resumo_executivo}</p></SectionCard>}
+          {pj.diagnostico && <SectionCard title="Diagnóstico"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.diagnostico}</p></SectionCard>}
+          {pj.solucao_proposta && <SectionCard title="Solução Proposta"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.solucao_proposta}</p></SectionCard>}
+          {pj.escopo?.length > 0 && <SectionCard title="Escopo"><ul className="space-y-1">{pj.escopo.map((s, i) => <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />{s}</li>)}</ul></SectionCard>}
+          {pj.funcionalidades?.length > 0 && <SectionCard title="Funcionalidades"><ul className="space-y-1">{pj.funcionalidades.map((f, i) => <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />{f}</li>)}</ul></SectionCard>}
+          {pj.analise_estrategica && <SectionCard title="Análise Estratégica"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.analise_estrategica}</p></SectionCard>}
+          {pj.cronograma && <SectionCard title="Cronograma"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.cronograma}</p></SectionCard>}
+          {pj.manutencao && <SectionCard title="Manutenção"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.manutencao}</p></SectionCard>}
+          {pj.riscos?.length > 0 && <SectionCard title="Riscos"><ul className="space-y-1">{pj.riscos.map((r, i) => <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-destructive mt-1.5 shrink-0" />{r}</li>)}</ul></SectionCard>}
+          {pj.proximos_passos?.length > 0 && <SectionCard title="Próximos Passos"><ul className="space-y-1">{pj.proximos_passos.map((p, i) => <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />{p}</li>)}</ul></SectionCard>}
+        </div>
+      )}
+
+      {/* PDF History */}
+      <PdfHistorico propostaId={proposta.id} refreshKey={pdfRefreshKey} />
+
+      {/* Dialogs */}
+      <Dialog open={showRegenDialog} onOpenChange={setShowRegenDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><RefreshCw className="h-5 w-5 text-primary" /> Regenerar Proposta</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">Orientações adicionais para a IA:</p>
+            <Textarea value={orientacoes} onChange={e => setOrientacoes(e.target.value)} rows={4} placeholder="Ex: Foque em MVP, ajuste valores..." />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRegenDialog(false)}>Cancelar</Button>
+            <Button onClick={handleRegenerate} className="gap-1"><Sparkles className="h-4 w-4" /> Regenerar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <TemplateSelector open={showTemplateSelector} onOpenChange={setShowTemplateSelector} onSelect={handleExportPDF} />
     </div>
   );
 }
