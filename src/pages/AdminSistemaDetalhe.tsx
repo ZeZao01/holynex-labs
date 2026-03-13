@@ -12,10 +12,13 @@ import {
   DeliveredSystem, SystemTag, SystemEvent,
   SUPPORT_STATUS_MAP, OPERATIONAL_STATUS_MAP, REUSE_MAP,
 } from "@/lib/delivered-systems";
+import {
+  getAccessesBySystem, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
+} from "@/lib/project-accesses";
 import SystemForm from "@/components/admin/SystemForm";
 import {
   ArrowLeft, Edit, Copy, Recycle, Star, Archive, ExternalLink,
-  Globe, Server, Github, FileText, Palette, BarChart3, Clock,
+  Globe, Server, Github, FileText, Palette, BarChart3, Clock, KeyRound,
 } from "lucide-react";
 import FinancialSummary from "@/components/admin/FinancialSummary";
 import { format } from "date-fns";
