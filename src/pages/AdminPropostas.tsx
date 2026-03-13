@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Plus, Trash2, Eye, FileText, TrendingUp, DollarSign, BarChart3, Copy } from "lucide-react";
+import { Loader2, Plus, Trash2, Eye, FileText, TrendingUp, DollarSign, BarChart3, Copy, FolderKanban } from "lucide-react";
+import { saveProject, addProjectEvent } from "@/lib/projects";
 import { toast } from "@/components/ui/sonner";
 
 export default function AdminPropostas() {
