@@ -33,6 +33,7 @@ export default function AdminSistemaDetalhe() {
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [sysModules, setSysModules] = useState<ProjectModule[]>([]);
+  const [sysChanges, setSysChanges] = useState<ProjectChange[]>([]);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
