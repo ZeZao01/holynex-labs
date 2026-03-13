@@ -16,9 +16,16 @@ import {
   Target, Zap, Flame,
 } from "lucide-react";
 import {
-  getAllProfitabilityMetrics, getNicheMetrics, getPortfolioPerformance,
-  ProfitabilityMetrics, NicheMetrics, PortfolioPerformance,
-  FLAG_LABELS, RISK_ALERTS,
+  getAllProfitabilityMetrics,
+  getNicheMetrics,
+  getPortfolioPerformance,
+  getProjectModelPerformance,
+  ProfitabilityMetrics,
+  NicheMetrics,
+  PortfolioPerformance,
+  ProjectModelPerformance,
+  FLAG_LABELS,
+  RISK_ALERTS,
 } from "@/lib/financial-metrics";
 import { getDeliveredSystems, DeliveredSystem } from "@/lib/delivered-systems";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
