@@ -314,6 +314,35 @@ export default function AdminProjetoDetalhe() {
         )}
       </SectionCard>
 
+      {/* Módulos do projeto */}
+      <SectionCard title={`Módulos (${projectModules.length})`} action={<Button size="sm" variant="outline" onClick={() => navigate("/admin/modulos")}><Blocks className="h-4 w-4 mr-1" /> Gerenciar</Button>}>
+        {projectModules.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Nenhum módulo vinculado a este projeto</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectModules.length}</p><p className="text-xs text-muted-foreground">Total</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectModules.filter(m => m.status === "entregue" || m.status === "concluido").length}</p><p className="text-xs text-muted-foreground">Entregues</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectModules.filter(m => m.reusability_type === "sim").length}</p><p className="text-xs text-muted-foreground">Reutilizáveis</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{new Set(projectModules.map(m => m.category)).size}</p><p className="text-xs text-muted-foreground">Categorias</p></div>
+            </div>
+            <div className="space-y-2">
+              {projectModules.slice(0, 8).map(m => (
+                <div key={m.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Blocks className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium">{m.nome}</span>
+                    <span className="text-xs text-muted-foreground">{MODULE_CATEGORIES[m.category] || m.category}</span>
+                  </div>
+                  <StatusBadge status={MODULE_STATUS[m.status]?.color || "pending"} label={MODULE_STATUS[m.status]?.label || m.status} />
+                </div>
+              ))}
+              {projectModules.length > 8 && <p className="text-xs text-muted-foreground text-center">+ {projectModules.length - 8} módulos</p>}
+            </div>
+          </>
+        )}
+      </SectionCard>
+
       {/* Acessos vinculados */}
       <SectionCard title={`Acessos & Credenciais (${accesses.length})`} action={<Button size="sm" variant="outline" onClick={() => navigate("/admin/acessos")}><KeyRound className="h-4 w-4 mr-1" /> Ver Todos</Button>}>
         {accesses.length === 0 ? (
