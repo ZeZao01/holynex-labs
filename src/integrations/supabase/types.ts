@@ -92,6 +92,8 @@ export type Database = {
         Row: {
           atualizado_em: string
           classificacao_margem: string | null
+          closing_strategy: string | null
+          commercial_notes: Json | null
           complexidade: string | null
           criado_em: string
           descricao_projeto: string
@@ -100,6 +102,7 @@ export type Database = {
           funcionalidades_desejadas: string[] | null
           id: string
           integracoes: string[] | null
+          is_phased: boolean | null
           link_referencia: string | null
           nivel_urgencia: string | null
           nome_cliente: string
@@ -110,8 +113,12 @@ export type Database = {
           orcamento_id: string | null
           prazo_desejado: string | null
           problema_cliente: string | null
+          proposal_addons: Json | null
+          proposal_tiers: Json | null
+          proposal_validity: string | null
           proposta_json: Json | null
           proposta_texto: string | null
+          recommended_tier: string | null
           segmento: string | null
           status: string
           tipo_projeto: string
@@ -122,6 +129,8 @@ export type Database = {
         Insert: {
           atualizado_em?: string
           classificacao_margem?: string | null
+          closing_strategy?: string | null
+          commercial_notes?: Json | null
           complexidade?: string | null
           criado_em?: string
           descricao_projeto: string
@@ -130,6 +139,7 @@ export type Database = {
           funcionalidades_desejadas?: string[] | null
           id?: string
           integracoes?: string[] | null
+          is_phased?: boolean | null
           link_referencia?: string | null
           nivel_urgencia?: string | null
           nome_cliente: string
@@ -140,8 +150,12 @@ export type Database = {
           orcamento_id?: string | null
           prazo_desejado?: string | null
           problema_cliente?: string | null
+          proposal_addons?: Json | null
+          proposal_tiers?: Json | null
+          proposal_validity?: string | null
           proposta_json?: Json | null
           proposta_texto?: string | null
+          recommended_tier?: string | null
           segmento?: string | null
           status?: string
           tipo_projeto?: string
@@ -152,6 +166,8 @@ export type Database = {
         Update: {
           atualizado_em?: string
           classificacao_margem?: string | null
+          closing_strategy?: string | null
+          commercial_notes?: Json | null
           complexidade?: string | null
           criado_em?: string
           descricao_projeto?: string
@@ -160,6 +176,7 @@ export type Database = {
           funcionalidades_desejadas?: string[] | null
           id?: string
           integracoes?: string[] | null
+          is_phased?: boolean | null
           link_referencia?: string | null
           nivel_urgencia?: string | null
           nome_cliente?: string
@@ -170,8 +187,12 @@ export type Database = {
           orcamento_id?: string | null
           prazo_desejado?: string | null
           problema_cliente?: string | null
+          proposal_addons?: Json | null
+          proposal_tiers?: Json | null
+          proposal_validity?: string | null
           proposta_json?: Json | null
           proposta_texto?: string | null
+          recommended_tier?: string | null
           segmento?: string | null
           status?: string
           tipo_projeto?: string
