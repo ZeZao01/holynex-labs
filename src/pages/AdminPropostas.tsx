@@ -86,7 +86,7 @@ export default function AdminPropostas() {
         tipo_projeto: p.tipo_projeto,
         nicho: p.segmento || "",
         descricao: p.descricao_projeto,
-        resumo_executivo: p.objetivo_cliente || "",
+        resumo_executivo: p.proposta_json?.resumo_executivo || "",
         valor_contrato: recTier?.price || p.valor_ideal || 0,
         faixa_contratada: recTier?.name || "",
         estrategia_comercial_origem: p.closing_strategy || "",
