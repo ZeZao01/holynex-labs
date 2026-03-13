@@ -6,6 +6,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import SectionCard from "@/components/admin/SectionCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import StatCard from "@/components/admin/StatCard";
+import StatsGrid from "@/components/admin/StatsGrid";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
