@@ -151,12 +151,13 @@ export default function AdminFinanceiro() {
       <PageHeader title="Financeiro Estratégico" description="Inteligência financeira, margens, rankings e oportunidades" breadcrumbs={[{ label: "Financeiro" }]} />
 
       {/* KPI Cards */}
-      <StatsGrid columns={5}>
+      <StatsGrid columns={6}>
         <StatCard title="Receita Total" value={fmt(stats.receitaTotal)} icon={<DollarSign className="h-5 w-5" />} />
         <StatCard title="Recorrência Mensal" value={fmt(stats.recorrencia)} icon={<Repeat className="h-5 w-5" />} />
         <StatCard title="Manutenção" value={fmt(stats.manutencao)} icon={<Zap className="h-5 w-5" />} />
         <StatCard title="Ticket Médio" value={fmt(stats.ticketMedio)} icon={<BarChart3 className="h-5 w-5" />} />
         <StatCard title="Margem Média" value={`${stats.margemMedia.toFixed(1)}%`} icon={<TrendingUp className="h-5 w-5" />} />
+        <StatCard title="Interações Portfólio" value={stats.portfolioInteracoes} icon={<Flame className="h-5 w-5" />} />
       </StatsGrid>
 
       {/* Risk Alerts */}
