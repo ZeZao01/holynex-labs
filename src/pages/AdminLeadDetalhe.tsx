@@ -106,7 +106,7 @@ export default function AdminLeadDetalhe() {
     <div className="space-y-6">
       <PageHeader
         title={lead.nome}
-        subtitle={`Lead #${lead.id.slice(0, 8)} • ${new Date(lead.criadoEm).toLocaleDateString("pt-BR")}`}
+        description={`Lead #${lead.id.slice(0, 8)} • ${new Date(lead.criadoEm).toLocaleDateString("pt-BR")}`}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate("/admin/orcamentos")} className="gap-1.5">
