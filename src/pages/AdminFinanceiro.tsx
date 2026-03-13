@@ -207,7 +207,7 @@ export default function AdminFinanceiro() {
                       <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
                       <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
                       <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--foreground))" }} />
-                      <Bar dataKey="ticket" fill="hsl(262,98%,71%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="ticket" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
