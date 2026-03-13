@@ -29,12 +29,15 @@ import { format } from "date-fns";
 export default function AdminAcessos() {
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [systems, setSystems] = useState<DeliveredSystem[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterEnv, setFilterEnv] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterSystem, setFilterSystem] = useState("all");
+  const [filterProject, setFilterProject] = useState("all");
+  const [filterNoVerification, setFilterNoVerification] = useState(false);
   const [groupBy, setGroupBy] = useState<"none" | "system">("none");
   const [showNew, setShowNew] = useState(false);
   const [editAccess, setEditAccess] = useState<ProjectAccess | null>(null);
