@@ -40,6 +40,7 @@ export default function AdminProjetoDetalhe() {
   const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
   const [events, setEvents] = useState<ProjectEvent[]>([]);
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Project>>({});
   const [saving, setSaving] = useState(false);
