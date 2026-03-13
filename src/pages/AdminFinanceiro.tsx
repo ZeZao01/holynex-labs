@@ -44,25 +44,30 @@ export default function AdminFinanceiro() {
   const [systems, setSystems] = useState<DeliveredSystem[]>([]);
   const [nicheData, setNicheData] = useState<NicheMetrics[]>([]);
   const [portfolioPerf, setPortfolioPerf] = useState<PortfolioPerformance[]>([]);
+  const [modelPerf, setModelPerf] = useState<ProjectModelPerformance[]>([]);
   const [search, setSearch] = useState("");
   const [filterNicho, setFilterNicho] = useState("all");
   const [filterFlag, setFilterFlag] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function load() {
     try {
-      const [m, s, n, p] = await Promise.all([
+      const [m, s, n, p, mp] = await Promise.all([
         getAllProfitabilityMetrics(),
         getDeliveredSystems(),
         getNicheMetrics(),
         getPortfolioPerformance(),
+        getProjectModelPerformance(),
       ]);
       setMetrics(m);
       setSystems(s);
       setNicheData(n);
       setPortfolioPerf(p);
+      setModelPerf(mp);
     } catch {
       toast({ title: "Erro ao carregar dados financeiros", variant: "destructive" });
     } finally {
