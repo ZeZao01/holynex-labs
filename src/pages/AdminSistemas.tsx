@@ -33,7 +33,9 @@ export default function AdminSistemas() {
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const loadCb = useCallback(() => { load(); }, []);
   useEffect(() => { load(); }, []);
+  useRealtimeSubscription("delivered_systems", loadCb);
 
   async function load() {
     setLoading(true);
