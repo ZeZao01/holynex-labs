@@ -874,10 +874,10 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
         const bw = 28;
         pdf.setFillColor(...C.magenta);
         pdf.roundedRect(tx + (tierW - bw) / 2, tierY - 4, bw, 8, 4, 4, "F");
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(5.5);
-        pdf.setTextColor(...C.white);
-        pdf.text("RECOMENDADO", tx + tierW / 2, tierY, { align: "center" });
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.white);
+      pdf.text("RECOMENDADO", tx + tierW / 2, tierY, { align: "center" });
       }
       let ty = tierY + 12;
       pdf.setFont("helvetica", "bold");
