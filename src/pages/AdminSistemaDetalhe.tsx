@@ -16,6 +16,7 @@ import { getModulesBySystem, ProjectModule, MODULE_STATUS, MODULE_CATEGORIES } f
 import {
   getAccessesBySystem, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
 } from "@/lib/project-accesses";
+import { listChanges, ProjectChange, getStatusMeta, getLabel, CHANGE_TYPES } from "@/lib/project-changes";
 import SystemForm from "@/components/admin/SystemForm";
 import {
   ArrowLeft, Edit, Copy, Recycle, Star, Archive, ExternalLink,
