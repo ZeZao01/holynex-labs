@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          criado_em: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          criado_em?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          criado_em?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       delivered_system_events: {
         Row: {
           criado_em: string | null
@@ -835,6 +871,69 @@ export type Database = {
           },
         ]
       }
+      project_modules: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          delivered_system_id: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          prioridade: string | null
+          progresso: number | null
+          project_id: string | null
+          responsavel: string | null
+          status: string
+          tipo: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          delivered_system_id?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          prioridade?: string | null
+          progresso?: number | null
+          project_id?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          delivered_system_id?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          prioridade?: string | null
+          progresso?: number | null
+          project_id?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_modules_delivered_system_id_fkey"
+            columns: ["delivered_system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_modules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_profitability_metrics: {
         Row: {
           atualizado_em: string | null
@@ -905,6 +1004,96 @@ export type Database = {
             columns: ["delivered_system_id"]
             isOneToOne: true
             referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          atualizado_em: string
+          cliente: string
+          criado_em: string
+          data_conclusao: string | null
+          data_inicio: string | null
+          data_previsao: string | null
+          delivered_system_id: string | null
+          descricao: string | null
+          empresa_cliente: string | null
+          id: string
+          nicho: string | null
+          nome: string
+          observacoes: string | null
+          prioridade: string
+          progresso: number | null
+          proposta_id: string | null
+          recorrencia_mensal: number | null
+          responsavel: string | null
+          stack: string[] | null
+          status: string
+          tipo_projeto: string | null
+          valor_contrato: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cliente?: string
+          criado_em?: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao?: string | null
+          delivered_system_id?: string | null
+          descricao?: string | null
+          empresa_cliente?: string | null
+          id?: string
+          nicho?: string | null
+          nome: string
+          observacoes?: string | null
+          prioridade?: string
+          progresso?: number | null
+          proposta_id?: string | null
+          recorrencia_mensal?: number | null
+          responsavel?: string | null
+          stack?: string[] | null
+          status?: string
+          tipo_projeto?: string | null
+          valor_contrato?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          cliente?: string
+          criado_em?: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao?: string | null
+          delivered_system_id?: string | null
+          descricao?: string | null
+          empresa_cliente?: string | null
+          id?: string
+          nicho?: string | null
+          nome?: string
+          observacoes?: string | null
+          prioridade?: string
+          progresso?: number | null
+          proposta_id?: string | null
+          recorrencia_mensal?: number | null
+          responsavel?: string | null
+          stack?: string[] | null
+          status?: string
+          tipo_projeto?: string | null
+          valor_contrato?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_delivered_system_id_fkey"
+            columns: ["delivered_system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
             referencedColumns: ["id"]
           },
         ]
