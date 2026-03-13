@@ -1171,7 +1171,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       // Text
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7.5);
+      pdf.setFontSize(8);
       pdf.setTextColor(...C.lightGray);
       const lines = pdf.splitTextToSize(b.text, bCardW - 12);
       let ly = by + 44;
