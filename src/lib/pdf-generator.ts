@@ -1052,7 +1052,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     const phase2Items = ["Desenvolvimento das funcionalidades", "Implementação da área administrativa", "Integrações e automações", "Testes (QA), ajustes e Go-live"];
     let p2y = s1y + 18;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7.5);
+    pdf.setFontSize(8);
     for (const item of phase2Items) {
       pdf.setFillColor(...C.cyan);
       pdf.circle(s2x + 7, p2y - 0.5, 0.6, "F");
