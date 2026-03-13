@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_executions: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          duration_ms: number | null
+          entity_id: string | null
+          entity_type: string
+          error_reason: string | null
+          fallback_triggered: boolean
+          human_approved: boolean | null
+          id: string
+          input_summary: string | null
+          model_used: string
+          notas: string | null
+          output_data: Json | null
+          output_text: string | null
+          output_valid: boolean
+          prompt_version: string
+          provider_used: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          use_case: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type?: string
+          error_reason?: string | null
+          fallback_triggered?: boolean
+          human_approved?: boolean | null
+          id?: string
+          input_summary?: string | null
+          model_used?: string
+          notas?: string | null
+          output_data?: Json | null
+          output_text?: string | null
+          output_valid?: boolean
+          prompt_version?: string
+          provider_used?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          use_case?: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type?: string
+          error_reason?: string | null
+          fallback_triggered?: boolean
+          human_approved?: boolean | null
+          id?: string
+          input_summary?: string | null
+          model_used?: string
+          notas?: string | null
+          output_data?: Json | null
+          output_text?: string | null
+          output_valid?: boolean
+          prompt_version?: string
+          provider_used?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          use_case?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
