@@ -35,6 +35,7 @@ import AdminModelos from "./pages/AdminModelos";
 import AdminFinanceiro from "./pages/AdminFinanceiro";
 import AdminSeguranca from "./pages/AdminSeguranca";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes";
+import AdminIA from "./pages/AdminIA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ function AppRoutes() {
           <Route path="/admin/portfolio-admin" element={<AdminPortfolioAdmin />} />
           <Route path="/admin/modelos" element={<AdminModelos />} />
           <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
+          <Route path="/admin/ia" element={<AdminIA />} />
           <Route path="/admin/seguranca" element={<AdminSeguranca />} />
           <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
           <Route path="*" element={<NotFound />} />

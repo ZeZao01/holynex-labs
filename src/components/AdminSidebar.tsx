@@ -16,6 +16,7 @@ import {
   Palette,
   FilePlus,
   ClipboardList,
+  Sparkles,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,6 +55,7 @@ const comercialItems = [
   { title: "Portfólio Público", url: "/admin/portfolio-admin", icon: Globe },
   { title: "Projetos Modelo", url: "/admin/modelos", icon: LayoutTemplate },
   { title: "Financeiro", url: "/admin/financeiro", icon: DollarSign },
+  { title: "IA Assistiva", url: "/admin/ia", icon: Sparkles },
 ];
 
 const sistemaItems = [
