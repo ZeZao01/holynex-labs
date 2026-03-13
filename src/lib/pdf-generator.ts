@@ -1429,7 +1429,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.text("holynexlabs.com.br", ctaX + ctaW / 2, contactY + 31, { align: "center" });
 
     // Confidential footer
-    pdf.setFontSize(6);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.darkGray);
     pdf.text("Este documento é confidencial e destinado exclusivamente ao destinatário.", mx + 5, H - 8);
   }
