@@ -17,7 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import {
   Loader2, Pencil, ExternalLink, Flag, Clock, DollarSign, Target, Plus, Trash2, CheckCircle2,
-  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck, KeyRound, Copy, Blocks
+  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck, KeyRound, Copy, Blocks, Wrench
 } from "lucide-react";
 import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
 import { getModulesByProject, ProjectModule, MODULE_STATUS, MODULE_CATEGORIES } from "@/lib/project-modules";
