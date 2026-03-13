@@ -51,12 +51,16 @@ export default function AdminAcessos() {
     load();
   }, []);
 
+  const loadCb = useCallback(() => load(), []);
+  useRealtimeSubscription("project_accesses", loadCb);
+
   async function load() {
     setLoading(true);
     try {
-      const [a, s] = await Promise.all([getProjectAccesses(), getDeliveredSystems()]);
+      const [a, s, p] = await Promise.all([getProjectAccesses(), getDeliveredSystems(), getProjects()]);
       setAccesses(a);
       setSystems(s);
+      setProjects(p);
     } catch {
       toast({ title: "Erro ao carregar acessos", variant: "destructive" });
     } finally {
