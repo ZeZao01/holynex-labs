@@ -310,6 +310,34 @@ export default function AdminProjetoDetalhe() {
         )}
       </SectionCard>
 
+      {/* Acessos vinculados */}
+      <SectionCard title={`Acessos & Credenciais (${accesses.length})`} action={<Button size="sm" variant="outline" onClick={() => navigate("/admin/acessos")}><KeyRound className="h-4 w-4 mr-1" /> Ver Todos</Button>}>
+        {accesses.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Nenhum acesso vinculado a este projeto</p>
+        ) : (
+          <div className="space-y-2">
+            {accesses.slice(0, 10).map(a => (
+              <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-medium">{a.friendly_name}</span>
+                  <span className="text-xs text-muted-foreground">{ACCESS_TYPES[a.access_type] || a.access_type}</span>
+                  <span className="text-xs text-muted-foreground">• {ENVIRONMENTS[a.environment] || a.environment}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {ACCESS_STATUS[a.status] && <StatusBadge status={ACCESS_STATUS[a.status].badge} label={ACCESS_STATUS[a.status].label} />}
+                  {a.access_url && (
+                    <a href={a.access_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                      <Button size="icon" variant="ghost" className="h-6 w-6"><ExternalLink className="h-3 w-3" /></Button>
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
       {/* Events */}
       <SectionCard title="Histórico">
         {events.length === 0 ? (
