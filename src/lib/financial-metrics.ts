@@ -156,3 +156,12 @@ export async function getPortfolioPerformance() {
   if (error) throw error;
   return (data || []) as PortfolioPerformance[];
 }
+
+export async function getProjectModelPerformance() {
+  const { data, error } = await supabase
+    .from("project_model_performance_metrics")
+    .select("*")
+    .order("opportunity_score", { ascending: false });
+  if (error) throw error;
+  return (data || []) as ProjectModelPerformance[];
+}
