@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Plus, Trash2, Eye, FileText, TrendingUp, DollarSign, BarChart3, Copy } from "lucide-react";
+import { Loader2, Plus, Trash2, Eye, FileText, TrendingUp, DollarSign, BarChart3, Copy, FolderKanban } from "lucide-react";
+import { saveProject, addProjectEvent } from "@/lib/projects";
 import { toast } from "@/components/ui/sonner";
 
 export default function AdminPropostas() {
@@ -71,6 +72,36 @@ export default function AdminPropostas() {
       }
     } catch (err: any) {
       toast.error(err.message || "Erro ao duplicar");
+    }
+  };
+
+  const handleConvertToProject = async (p: Proposta) => {
+    if (!confirm(`Converter proposta de "${p.nome_cliente}" em projeto?`)) return;
+    try {
+      const recTier = p.proposal_tiers.find(t => t.is_recommended);
+      const proj = await saveProject({
+        nome: `Projeto ${p.nome_cliente}`,
+        cliente: p.nome_cliente,
+        empresa_cliente: p.empresa_cliente || "",
+        tipo_projeto: p.tipo_projeto,
+        nicho: p.segmento || "",
+        descricao: p.descricao_projeto,
+        resumo_executivo: p.proposta_json?.resumo_executivo || "",
+        valor_contrato: recTier?.price || p.valor_ideal || 0,
+        faixa_contratada: recTier?.name || "",
+        estrategia_comercial_origem: p.closing_strategy || "",
+        proposta_id: p.id,
+        status: "aguardando_inicio",
+        prioridade: "media",
+      });
+      await addProjectEvent(proj.id, "projeto_criado", `Convertido da proposta de ${p.nome_cliente}`);
+      // Update proposta status to "aceita" if not already
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase.from("propostas").update({ status: "aceita" }).eq("id", p.id);
+      toast.success("Projeto criado com sucesso!");
+      navigate(`/admin/projetos/${proj.id}`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao converter em projeto");
     }
   };
 
@@ -197,6 +228,11 @@ export default function AdminPropostas() {
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(p)}>
                           <Copy className="h-3.5 w-3.5" />
                         </Button>
+                        {p.status !== "aceita" && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500" title="Converter em projeto" onClick={() => handleConvertToProject(p)}>
+                            <FolderKanban className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleRemove(p.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

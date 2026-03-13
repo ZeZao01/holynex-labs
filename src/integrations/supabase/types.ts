@@ -883,6 +883,85 @@ export type Database = {
           },
         ]
       }
+      project_events: {
+        Row: {
+          criado_em: string | null
+          descricao: string | null
+          evento: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_milestones: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          data_concluida: string | null
+          data_prevista: string | null
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          project_id: string
+          status: string
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          data_concluida?: string | null
+          data_prevista?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          project_id: string
+          status?: string
+          titulo: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          data_concluida?: string | null
+          data_prevista?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          project_id?: string
+          status?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_model_performance_metrics: {
         Row: {
           atualizado_em: string
@@ -1082,7 +1161,10 @@ export type Database = {
       }
       projects: {
         Row: {
+          admin_url: string | null
+          analytics_url: string | null
           atualizado_em: string
+          categoria: string | null
           cliente: string
           criado_em: string
           data_conclusao: string | null
@@ -1090,8 +1172,14 @@ export type Database = {
           data_previsao: string | null
           delivered_system_id: string | null
           descricao: string | null
+          descricao_interna: string | null
+          design_url: string | null
+          docs_url: string | null
           empresa_cliente: string | null
+          estrategia_comercial_origem: string | null
+          faixa_contratada: string | null
           id: string
+          live_url: string | null
           nicho: string | null
           nome: string
           observacoes: string | null
@@ -1099,14 +1187,23 @@ export type Database = {
           progresso: number | null
           proposta_id: string | null
           recorrencia_mensal: number | null
+          repo_url: string | null
           responsavel: string | null
+          responsavel_comercial: string | null
+          responsavel_produto: string | null
+          responsavel_tecnico: string | null
+          resumo_executivo: string | null
           stack: string[] | null
+          staging_url: string | null
           status: string
           tipo_projeto: string | null
           valor_contrato: number | null
         }
         Insert: {
+          admin_url?: string | null
+          analytics_url?: string | null
           atualizado_em?: string
+          categoria?: string | null
           cliente?: string
           criado_em?: string
           data_conclusao?: string | null
@@ -1114,8 +1211,14 @@ export type Database = {
           data_previsao?: string | null
           delivered_system_id?: string | null
           descricao?: string | null
+          descricao_interna?: string | null
+          design_url?: string | null
+          docs_url?: string | null
           empresa_cliente?: string | null
+          estrategia_comercial_origem?: string | null
+          faixa_contratada?: string | null
           id?: string
+          live_url?: string | null
           nicho?: string | null
           nome: string
           observacoes?: string | null
@@ -1123,14 +1226,23 @@ export type Database = {
           progresso?: number | null
           proposta_id?: string | null
           recorrencia_mensal?: number | null
+          repo_url?: string | null
           responsavel?: string | null
+          responsavel_comercial?: string | null
+          responsavel_produto?: string | null
+          responsavel_tecnico?: string | null
+          resumo_executivo?: string | null
           stack?: string[] | null
+          staging_url?: string | null
           status?: string
           tipo_projeto?: string | null
           valor_contrato?: number | null
         }
         Update: {
+          admin_url?: string | null
+          analytics_url?: string | null
           atualizado_em?: string
+          categoria?: string | null
           cliente?: string
           criado_em?: string
           data_conclusao?: string | null
@@ -1138,8 +1250,14 @@ export type Database = {
           data_previsao?: string | null
           delivered_system_id?: string | null
           descricao?: string | null
+          descricao_interna?: string | null
+          design_url?: string | null
+          docs_url?: string | null
           empresa_cliente?: string | null
+          estrategia_comercial_origem?: string | null
+          faixa_contratada?: string | null
           id?: string
+          live_url?: string | null
           nicho?: string | null
           nome?: string
           observacoes?: string | null
@@ -1147,8 +1265,14 @@ export type Database = {
           progresso?: number | null
           proposta_id?: string | null
           recorrencia_mensal?: number | null
+          repo_url?: string | null
           responsavel?: string | null
+          responsavel_comercial?: string | null
+          responsavel_produto?: string | null
+          responsavel_tecnico?: string | null
+          resumo_executivo?: string | null
           stack?: string[] | null
+          staging_url?: string | null
           status?: string
           tipo_projeto?: string | null
           valor_contrato?: number | null
