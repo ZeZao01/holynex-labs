@@ -290,6 +290,106 @@ export type Database = {
           },
         ]
       }
+      project_access_events: {
+        Row: {
+          access_id: string
+          criado_em: string | null
+          descricao: string | null
+          evento: string
+          id: string
+        }
+        Insert: {
+          access_id: string
+          criado_em?: string | null
+          descricao?: string | null
+          evento: string
+          id?: string
+        }
+        Update: {
+          access_id?: string
+          criado_em?: string | null
+          descricao?: string | null
+          evento?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_access_events_access_id_fkey"
+            columns: ["access_id"]
+            isOneToOne: false
+            referencedRelation: "project_accesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_accesses: {
+        Row: {
+          access_type: string
+          access_url: string | null
+          atualizado_em: string | null
+          criado_em: string | null
+          delivered_system_id: string | null
+          environment: string | null
+          friendly_name: string
+          id: string
+          last_verified_at: string | null
+          notes: string | null
+          owner_name: string | null
+          project_id: string | null
+          provider_name: string | null
+          secret_masked: string | null
+          secret_reference: string | null
+          status: string | null
+          username: string | null
+        }
+        Insert: {
+          access_type?: string
+          access_url?: string | null
+          atualizado_em?: string | null
+          criado_em?: string | null
+          delivered_system_id?: string | null
+          environment?: string | null
+          friendly_name?: string
+          id?: string
+          last_verified_at?: string | null
+          notes?: string | null
+          owner_name?: string | null
+          project_id?: string | null
+          provider_name?: string | null
+          secret_masked?: string | null
+          secret_reference?: string | null
+          status?: string | null
+          username?: string | null
+        }
+        Update: {
+          access_type?: string
+          access_url?: string | null
+          atualizado_em?: string | null
+          criado_em?: string | null
+          delivered_system_id?: string | null
+          environment?: string | null
+          friendly_name?: string
+          id?: string
+          last_verified_at?: string | null
+          notes?: string | null
+          owner_name?: string | null
+          project_id?: string | null
+          provider_name?: string | null
+          secret_masked?: string | null
+          secret_reference?: string | null
+          status?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_accesses_delivered_system_id_fkey"
+            columns: ["delivered_system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       propostas: {
         Row: {
           atualizado_em: string
