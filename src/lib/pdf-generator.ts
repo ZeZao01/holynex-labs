@@ -981,6 +981,189 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
 
   // ══════════════════════════════════════════════
+  // SLIDE 5D — SCOPE COMPARISON TABLE
+  // ══════════════════════════════════════════════
+  if (tiers.length > 1) {
+    newPage();
+    const mx = 20, my = 18;
+    drawSectionBadge("Análise Comparativa", mx, my);
+    drawTitle("Comparativo entre Faixas", mx, my + 16, 22);
+
+    const modules = SCOPE_MODULE_DEFAULTS;
+    const colW = Math.min((W - mx * 2 - 50) / tiers.length, 55);
+    const labelW = 50;
+    const tableX = mx;
+    let ty = my + 34;
+
+    // Header row
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.midGray);
+    pdf.text("MÓDULO", tableX, ty);
+    tiers.forEach((tier, i) => {
+      const tc: RGB = tier.is_recommended ? C.magenta : C.white;
+      pdf.setTextColor(...tc);
+      pdf.text(tier.name.toUpperCase().substring(0, 12), tableX + labelW + i * colW + colW / 2, ty, { align: "center" });
+    });
+    ty += 4;
+    pdf.setDrawColor(...C.cyan);
+    pdf.saveGraphicsState();
+    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
+    pdf.line(tableX, ty, tableX + labelW + tiers.length * colW, ty);
+    pdf.restoreGraphicsState();
+    ty += 5;
+
+    // Module rows
+    pdf.setFontSize(7);
+    for (const mod of modules) {
+      if (ty > H - 30) { newPage(); ty = 24; }
+      // Alternating row bg
+      pdf.setFillColor(255, 255, 255);
+      pdf.saveGraphicsState();
+      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.02 }));
+      pdf.rect(tableX, ty - 3, labelW + tiers.length * colW, 6, "F");
+      pdf.restoreGraphicsState();
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(...C.lightGray);
+      pdf.text(mod.label, tableX + 2, ty);
+
+      tiers.forEach((tier, i) => {
+        const sm = tier.scope_modules.find(m => m.id === mod.id);
+        const status = sm?.status || "not_included";
+        const cx = tableX + labelW + i * colW + colW / 2;
+        if (status === "included") {
+          pdf.setTextColor(...C.green);
+          pdf.setFont("helvetica", "bold");
+          pdf.text("+", cx, ty, { align: "center" });
+        } else if (status === "optional") {
+          pdf.setTextColor(...C.yellow);
+          pdf.setFont("helvetica", "bold");
+          pdf.text("~", cx, ty, { align: "center" });
+        } else {
+          pdf.setTextColor(...C.darkGray);
+          pdf.setFont("helvetica", "normal");
+          pdf.text("-", cx, ty, { align: "center" });
+        }
+      });
+      ty += 6;
+    }
+
+    // Price row
+    ty += 2;
+    pdf.setDrawColor(...C.cyan);
+    pdf.saveGraphicsState();
+    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
+    pdf.line(tableX, ty, tableX + labelW + tiers.length * colW, ty);
+    pdf.restoreGraphicsState();
+    ty += 5;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.white);
+    pdf.text("INVESTIMENTO", tableX + 2, ty);
+    tiers.forEach((tier, i) => {
+      const tc: RGB = tier.is_recommended ? C.magenta : C.cyan;
+      pdf.setTextColor(...tc);
+      pdf.text(tier.price > 0 ? `R$ ${tier.price.toLocaleString("pt-BR")}` : "—", tableX + labelW + i * colW + colW / 2, ty, { align: "center" });
+    });
+    ty += 6;
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(...C.midGray);
+    pdf.text("PRAZO", tableX + 2, ty);
+    tiers.forEach((tier, i) => {
+      pdf.setTextColor(...C.lightGray);
+      pdf.text(tier.estimated_days > 0 ? `${tier.estimated_days} dias` : "—", tableX + labelW + i * colW + colW / 2, ty, { align: "center" });
+    });
+
+    // Legend
+    const legY = H - 22;
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.green);
+    pdf.text("+ Incluído", mx, legY);
+    pdf.setTextColor(...C.yellow);
+    pdf.text("~ Opcional", mx + 30, legY);
+    pdf.setTextColor(...C.darkGray);
+    pdf.text("- Não incluído", mx + 60, legY);
+  }
+
+  // ══════════════════════════════════════════════
+  // SLIDE 6 — CONDIÇÕES COMERCIAIS
+  // ══════════════════════════════════════════════
+  {
+    const notes = proposta.commercial_notes;
+    const validity = proposta.proposal_validity || "30 dias";
+    const isPhased = proposta.is_phased;
+
+    newPage();
+    const mx = 20, my = 18;
+    drawSectionBadge("Termos e Condições", mx, my);
+    drawTitle("Condições Comerciais", mx, my + 16, 22);
+
+    let cy = my + 34;
+
+    // Validity and phased badges
+    const badgeItems = [
+      { label: "Validade", value: validity },
+      { label: "Modalidade", value: isPhased ? "Projeto faseado" : "Entrega única" },
+    ];
+    if (proposta.closing_strategy) {
+      badgeItems.push({ label: "Estratégia", value: proposta.closing_strategy.substring(0, 30) });
+    }
+
+    badgeItems.forEach((item, i) => {
+      const bx = mx + i * 85;
+      drawCard(bx, cy, 78, 22, i === 0 ? C.cyan : C.magenta);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.midGray);
+      pdf.text(item.label.toUpperCase(), bx + 5, cy + 8);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...C.white);
+      pdf.text(item.value.substring(0, 20), bx + 5, cy + 16);
+    });
+
+    cy += 32;
+
+    // Commercial notes sections
+    if (notes) {
+      const notesSections = [
+        { title: "Observação Geral", text: notes.general_note, color: C.cyan },
+        { title: "Justificativa da Recomendação", text: notes.recommendation_justification, color: C.magenta },
+        { title: "Estratégia de Fechamento", text: notes.closing_strategy, color: C.purple },
+        { title: "Próximos Passos", text: notes.next_steps, color: C.green },
+      ].filter(s => s.text);
+
+      for (const section of notesSections) {
+        if (cy > H - 30) { newPage(); cy = 24; }
+        drawSubtitle(section.title, mx, cy, section.color);
+        cy += 6;
+        cy = drawParagraph(section.text, mx, cy, W - mx * 2);
+        cy += 4;
+      }
+    }
+
+    // Disclaimer
+    if (cy > H - 25) { newPage(); cy = 24; }
+    pdf.setDrawColor(...C.midGray);
+    pdf.saveGraphicsState();
+    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.2 }));
+    pdf.line(mx, cy, W - mx, cy);
+    pdf.restoreGraphicsState();
+    cy += 6;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.darkGray);
+    const disclaimerLines = pdf.splitTextToSize(
+      "Os valores apresentados são válidos pelo período indicado. Alterações de escopo podem impactar prazos e investimentos. Esta proposta é confidencial e destinada exclusivamente ao destinatário.",
+      W - mx * 2
+    );
+    for (const l of disclaimerLines) { pdf.text(l, mx, cy); cy += 4; }
+  }
+
+  // ══════════════════════════════════════════════
+  // SLIDE 7 — CRONOGRAMA
+  // ══════════════════════════════════════════════
   if (pj?.cronograma || pj?.estimativa_esforco) {
     newPage();
     const mx = 20, my = 18;
