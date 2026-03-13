@@ -39,11 +39,30 @@ function buildColors(t: PdfTemplate) {
   };
 }
 
-export async function generatePropostaPdf(proposta: Proposta, templateId?: string): Promise<Blob> {
+export async function generatePropostaPdf(proposta: Proposta, templateId?: string, documentCode?: string): Promise<Blob> {
   const template = getTemplateById(templateId || "cyber-magenta");
   const C = buildColors(template);
-  const logoBase64 = await loadImageAsBase64(logoUrl);
+  let logoBase64: string;
+  try {
+    logoBase64 = await loadImageAsBase64(logoUrl);
+  } catch {
+    // Fallback: generate a simple placeholder if logo fails
+    const c = document.createElement("canvas");
+    c.width = 100; c.height = 100;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#a855f7";
+    ctx.fillRect(0, 0, 100, 100);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 40px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("HN", 50, 50);
+    logoBase64 = c.toDataURL("image/png");
+  }
   const pj = proposta.proposta_json as any;
+  const tiers = proposta.proposal_tiers || [];
+  const addons = (proposta.proposal_addons || []).filter(a => a.is_active && a.is_selected);
+  const docCode = documentCode || "";
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297, H = 210;
   let pageNum = 0;
