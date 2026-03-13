@@ -1324,7 +1324,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       // Description
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7.5);
+      pdf.setFontSize(8);
       pdf.setTextColor(...C.midGray);
       pdf.text(stepDescs[i] || "", mx + 33, ry + 10);
 
