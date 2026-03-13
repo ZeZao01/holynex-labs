@@ -122,8 +122,16 @@ export default function AdminAcessos() {
     if (filterEnv !== "all" && a.environment !== filterEnv) return false;
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (filterSystem !== "all" && a.delivered_system_id !== filterSystem) return false;
+    if (filterProject !== "all" && a.project_id !== filterProject) return false;
+    if (filterNoVerification) {
+      if (a.status !== "ativo") return false;
+      if (a.last_verified_at) {
+        const days = Math.floor((Date.now() - new Date(a.last_verified_at).getTime()) / 86400000);
+        if (days <= 30) return false;
+      }
+    }
     return true;
-  }), [accesses, search, filterType, filterEnv, filterStatus, filterSystem]);
+  }), [accesses, search, filterType, filterEnv, filterStatus, filterSystem, filterProject, filterNoVerification]);
 
   const alerts = useMemo(() => getAccessAlerts(accesses), [accesses]);
 
