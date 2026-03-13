@@ -1022,49 +1022,108 @@ export type Database = {
           },
         ]
       }
+      project_module_events: {
+        Row: {
+          criado_em: string | null
+          descricao: string | null
+          evento: string
+          id: string
+          module_id: string
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento: string
+          id?: string
+          module_id: string
+        }
+        Update: {
+          criado_em?: string | null
+          descricao?: string | null
+          evento?: string
+          id?: string
+          module_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_module_events_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "project_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_modules: {
         Row: {
           atualizado_em: string
+          category: string | null
+          complexity_level: string | null
           criado_em: string
           delivered_system_id: string | null
+          depends_on_module_id: string | null
           descricao: string | null
+          functional_priority: string | null
           id: string
+          internal_description: string | null
+          is_delivered: boolean | null
+          module_key: string | null
           nome: string
           observacoes: string | null
           prioridade: string | null
           progresso: number | null
           project_id: string | null
           responsavel: string | null
+          reusability_type: string | null
+          short_description: string | null
           status: string
           tipo: string | null
         }
         Insert: {
           atualizado_em?: string
+          category?: string | null
+          complexity_level?: string | null
           criado_em?: string
           delivered_system_id?: string | null
+          depends_on_module_id?: string | null
           descricao?: string | null
+          functional_priority?: string | null
           id?: string
+          internal_description?: string | null
+          is_delivered?: boolean | null
+          module_key?: string | null
           nome: string
           observacoes?: string | null
           prioridade?: string | null
           progresso?: number | null
           project_id?: string | null
           responsavel?: string | null
+          reusability_type?: string | null
+          short_description?: string | null
           status?: string
           tipo?: string | null
         }
         Update: {
           atualizado_em?: string
+          category?: string | null
+          complexity_level?: string | null
           criado_em?: string
           delivered_system_id?: string | null
+          depends_on_module_id?: string | null
           descricao?: string | null
+          functional_priority?: string | null
           id?: string
+          internal_description?: string | null
+          is_delivered?: boolean | null
+          module_key?: string | null
           nome?: string
           observacoes?: string | null
           prioridade?: string | null
           progresso?: number | null
           project_id?: string | null
           responsavel?: string | null
+          reusability_type?: string | null
+          short_description?: string | null
           status?: string
           tipo?: string | null
         }

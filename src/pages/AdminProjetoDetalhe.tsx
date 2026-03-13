@@ -17,9 +17,10 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import {
   Loader2, Pencil, ExternalLink, Flag, Clock, DollarSign, Target, Plus, Trash2, CheckCircle2,
-  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck, KeyRound, Copy
+  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck, KeyRound, Copy, Blocks
 } from "lucide-react";
 import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
+import { getModulesByProject, ProjectModule, MODULE_STATUS, MODULE_CATEGORIES } from "@/lib/project-modules";
 import {
   getAccessesByProject, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
 } from "@/lib/project-accesses";
@@ -40,6 +41,7 @@ export default function AdminProjetoDetalhe() {
   const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
   const [events, setEvents] = useState<ProjectEvent[]>([]);
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
+  const [projectModules, setProjectModules] = useState<ProjectModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Project>>({});
@@ -56,17 +58,19 @@ export default function AdminProjetoDetalhe() {
 
   async function load() {
     try {
-      const [p, m, e, ac] = await Promise.all([
+      const [p, m, e, ac, pm] = await Promise.all([
         getProject(id!),
         getMilestones(id!),
         getProjectEvents(id!),
         getAccessesByProject(id!),
+        getModulesByProject(id!),
       ]);
       setProject(p);
       setForm(p || {});
       setMilestones(m);
       setEvents(e);
       setAccesses(ac);
+      setProjectModules(pm);
     } catch { toast({ title: "Erro ao carregar projeto", variant: "destructive" }); }
     finally { setLoading(false); }
   }
@@ -307,6 +311,35 @@ export default function AdminProjetoDetalhe() {
               ))}
             </TableBody>
           </Table>
+        )}
+      </SectionCard>
+
+      {/* Módulos do projeto */}
+      <SectionCard title={`Módulos (${projectModules.length})`} action={<Button size="sm" variant="outline" onClick={() => navigate("/admin/modulos")}><Blocks className="h-4 w-4 mr-1" /> Gerenciar</Button>}>
+        {projectModules.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Nenhum módulo vinculado a este projeto</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectModules.length}</p><p className="text-xs text-muted-foreground">Total</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectModules.filter(m => m.status === "entregue" || m.status === "concluido").length}</p><p className="text-xs text-muted-foreground">Entregues</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectModules.filter(m => m.reusability_type === "sim").length}</p><p className="text-xs text-muted-foreground">Reutilizáveis</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{new Set(projectModules.map(m => m.category)).size}</p><p className="text-xs text-muted-foreground">Categorias</p></div>
+            </div>
+            <div className="space-y-2">
+              {projectModules.slice(0, 8).map(m => (
+                <div key={m.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Blocks className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium">{m.nome}</span>
+                    <span className="text-xs text-muted-foreground">{MODULE_CATEGORIES[m.category] || m.category}</span>
+                  </div>
+                  <StatusBadge status={MODULE_STATUS[m.status]?.color || "pending"} label={MODULE_STATUS[m.status]?.label || m.status} />
+                </div>
+              ))}
+              {projectModules.length > 8 && <p className="text-xs text-muted-foreground text-center">+ {projectModules.length - 8} módulos</p>}
+            </div>
+          </>
         )}
       </SectionCard>
 
