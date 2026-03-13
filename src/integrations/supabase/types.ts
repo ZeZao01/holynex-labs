@@ -1797,6 +1797,199 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          action: string
+          allowed: boolean
+          atualizado_em: string
+          criado_em: string
+          id: string
+          module: string
+          role_name: string
+        }
+        Insert: {
+          action?: string
+          allowed?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          module?: string
+          role_name?: string
+        }
+        Update: {
+          action?: string
+          allowed?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          module?: string
+          role_name?: string
+        }
+        Relationships: []
+      }
+      security_alerts: {
+        Row: {
+          assigned_to: string | null
+          atualizado_em: string
+          criado_em: string
+          description: string
+          event_id: string | null
+          id: string
+          notas: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          description?: string
+          event_id?: string | null
+          id?: string
+          notas?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source?: string | null
+          status?: string
+          title?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          atualizado_em?: string
+          criado_em?: string
+          description?: string
+          event_id?: string | null
+          id?: string
+          notas?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_alerts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "security_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_events: {
+        Row: {
+          criado_em: string
+          description: string
+          entity_id: string | null
+          entity_type: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          severity: string
+          source: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          criado_em?: string
+          description?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          severity?: string
+          source?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          criado_em?: string
+          description?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          severity?: string
+          source?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_incidents: {
+        Row: {
+          alert_id: string | null
+          atualizado_em: string
+          containment_action: string | null
+          corrective_action: string | null
+          criado_em: string
+          description: string
+          id: string
+          incident_type: string
+          notas: string | null
+          resolved_at: string | null
+          responsible: string | null
+          severity: string
+          source: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          alert_id?: string | null
+          atualizado_em?: string
+          containment_action?: string | null
+          corrective_action?: string | null
+          criado_em?: string
+          description?: string
+          id?: string
+          incident_type?: string
+          notas?: string | null
+          resolved_at?: string | null
+          responsible?: string | null
+          severity?: string
+          source?: string | null
+          status?: string
+          title?: string
+        }
+        Update: {
+          alert_id?: string | null
+          atualizado_em?: string
+          containment_action?: string | null
+          corrective_action?: string | null
+          criado_em?: string
+          description?: string
+          id?: string
+          incident_type?: string
+          notas?: string | null
+          resolved_at?: string | null
+          responsible?: string | null
+          severity?: string
+          source?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_incidents_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "security_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
