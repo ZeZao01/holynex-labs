@@ -36,7 +36,9 @@ export default function AdminProjetos() {
   const [saving, setSaving] = useState(false);
   const [propostas, setPropostas] = useState<{ id: string; nome_cliente: string }[]>([]);
 
+  const loadCb = useCallback(() => { load(); }, []);
   useEffect(() => { load(); }, []);
+  useRealtimeSubscription("projects", loadCb);
 
   async function load() {
     try {

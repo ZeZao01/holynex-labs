@@ -25,14 +25,16 @@ export default function AdminPropostas() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [tipoFilter, setTipoFilter] = useState("all");
 
+  const refresh = useCallback(async () => {
+    try { setPropostas(await getPropostas()); } catch {} finally { setLoadingData(false); }
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
     if (user) refresh();
   }, [user, authLoading]);
 
-  const refresh = async () => {
-    try { setPropostas(await getPropostas()); } catch {} finally { setLoadingData(false); }
-  };
+  useRealtimeSubscription("propostas", refresh, !!user);
 
   const handleRemove = async (id: string) => { await removerProposta(id); refresh(); };
 
