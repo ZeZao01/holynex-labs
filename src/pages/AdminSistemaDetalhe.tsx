@@ -12,6 +12,7 @@ import {
   DeliveredSystem, SystemTag, SystemEvent,
   SUPPORT_STATUS_MAP, OPERATIONAL_STATUS_MAP, REUSE_MAP,
 } from "@/lib/delivered-systems";
+import { getModulesBySystem, ProjectModule, MODULE_STATUS, MODULE_CATEGORIES } from "@/lib/project-modules";
 import {
   getAccessesBySystem, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
 } from "@/lib/project-accesses";
