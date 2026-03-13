@@ -75,6 +75,42 @@ export default function AdminPropostas() {
     }
   };
 
+  const handleConvertToProject = async (p: Proposta) => {
+    if (!confirm(`Converter proposta de "${p.nome_cliente}" em projeto?`)) return;
+    try {
+      const recTier = p.proposal_tiers.find(t => t.is_recommended);
+      const proj = await saveProject({
+        nome: `Projeto ${p.nome_cliente}`,
+        cliente: p.nome_cliente,
+        empresa_cliente: p.empresa_cliente || "",
+        tipo_projeto: p.tipo_projeto,
+        nicho: p.segmento || "",
+        descricao: p.descricao_projeto,
+        resumo_executivo: p.objetivo_cliente || "",
+        valor_contrato: recTier?.price || p.valor_ideal || 0,
+        faixa_contratada: recTier?.name || "",
+        estrategia_comercial_origem: p.closing_strategy || "",
+        proposta_id: p.id,
+        status: "aguardando_inicio",
+        prioridade: "media",
+      });
+      await addProjectEvent(proj.id, "projeto_criado", `Convertido da proposta de ${p.nome_cliente}`);
+      await salvarProposta(
+        { nome_cliente: p.nome_cliente, empresa_cliente: p.empresa_cliente, segmento: p.segmento, email_cliente: p.email_cliente, tipo_projeto: p.tipo_projeto, descricao_projeto: p.descricao_projeto, problema_cliente: "", objetivo_cliente: "", funcionalidades_desejadas: [], integracoes: [], numero_usuarios: "", prazo_desejado: "", orcamento_cliente: "", nivel_urgencia: "medio", link_referencia: "", observacoes: "" },
+        p.proposta_json, p.proposal_tiers, p.proposal_addons,
+        p.recommended_tier || "", p.commercial_notes || undefined, p.proposal_validity,
+        p.is_phased, p.closing_strategy, p.id
+      );
+      // Update proposta status to "aceita" if not already
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase.from("propostas").update({ status: "aceita" }).eq("id", p.id);
+      toast.success("Projeto criado com sucesso!");
+      navigate(`/admin/projetos/${proj.id}`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao converter em projeto");
+    }
+  };
+
   const filtered = useMemo(() => {
     return propostas.filter(p => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
