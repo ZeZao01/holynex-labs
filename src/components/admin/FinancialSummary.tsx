@@ -119,7 +119,7 @@ export default function FinancialSummary({ systemId }: Props) {
         <Stat label="Setup" value={fmt(metrics!.receita_setup)} />
         <Stat label="Recorrência" value={`${fmt(metrics!.receita_recorrente)}/mês`} />
         <Stat label="Manutenção" value={fmt(metrics!.receita_manutencao)} />
-        <Stat label="Margem" value={`${metrics!.margem_estimada.toFixed(1)}%`} color={metrics!.margem_estimada < 20 ? "text-red-400" : metrics!.margem_estimada > 50 ? "text-emerald-400" : undefined} />
+        <Stat label="Margem" value={`${metrics!.margem_estimada.toFixed(1)}%`} color={metrics!.margem_estimada < 20 ? "text-destructive" : metrics!.margem_estimada > 50 ? "text-primary" : undefined} />
       </div>
       <div className="grid grid-cols-5 gap-2">
         <ScoreBlock label="Profit." value={metrics!.profitability_score} />
