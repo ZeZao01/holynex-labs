@@ -45,13 +45,15 @@ export default function AdminSistemaDetalhe() {
         navigate("/admin/sistemas");
         return;
       }
-      const [t, e] = await Promise.all([
+      const [t, e, ac] = await Promise.all([
         getSystemTags(id!),
         getSystemEvents(id!),
+        getAccessesBySystem(id!),
       ]);
       setSystem(s);
       setTags(t);
       setEvents(e);
+      setAccesses(ac);
     } catch {
       toast({ title: "Erro ao carregar sistema", variant: "destructive" });
     }
