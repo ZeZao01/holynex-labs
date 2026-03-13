@@ -69,7 +69,7 @@ export default function AdminOrcamentos() {
     <div className="space-y-6">
       <PageHeader
         title="Leads & Orçamentos"
-        subtitle="Pipeline comercial qualificado"
+        description="Pipeline comercial qualificado"
         actions={
           <Button onClick={() => navigate("/contato")} size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" /> Novo Lead
