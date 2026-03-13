@@ -106,14 +106,14 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   const addPageNumber = () => {
     pageNum++;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.darkGray);
     pdf.text(`${pageNum}`, W / 2, H - 6, { align: "center" });
   };
 
   const addFooterLogo = () => {
     pdf.addImage(logoBase64, "PNG", W - 22, H - 14, 8, 8);
-    pdf.setFontSize(6);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.darkGray);
     pdf.text("HolyNex Labs", W - 24, H - 8, { align: "right" });
   };
@@ -140,7 +140,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setLineWidth(0.3);
     pdf.roundedRect(x, y, pdf.getTextWidth(text) + 12, 7, 3, 3, "S");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.magenta);
     pdf.text(text.toUpperCase(), x + 6, y + 5);
   };
@@ -181,12 +181,13 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   const drawParagraph = (text: string, x: number, y: number, maxW: number): number => {
     if (!text) return y;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
+    pdf.setFontSize(9.5);
     pdf.setTextColor(...C.lightGray);
     const lines = pdf.splitTextToSize(text, maxW);
     for (const line of lines) {
+      if (y > H - 18) { newPage(); y = 24; }
       pdf.text(line, x, y);
-      y += 4.5;
+      y += 5;
     }
     return y;
   };
@@ -194,17 +195,18 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   const drawBulletList = (items: string[], x: number, y: number, maxW: number, dotColor: RGB = C.cyan): number => {
     if (!items?.length) return y;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
+    pdf.setFontSize(9.5);
     pdf.setTextColor(...C.lightGray);
     for (const item of items) {
       const lines = pdf.splitTextToSize(item, maxW - 6);
+      if (y + lines.length * 5 > H - 18) { newPage(); y = 24; }
       pdf.setFillColor(...dotColor);
-      pdf.circle(x + 1.5, y - 1.2, 0.8, "F");
+      pdf.circle(x + 1.5, y - 1.2, 1, "F");
       for (let i = 0; i < lines.length; i++) {
         pdf.text(lines[i], x + 5, y);
-        y += 4.5;
+        y += 5;
       }
-      y += 1;
+      y += 1.5;
     }
     return y;
   };
@@ -305,12 +307,12 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   pdf.restoreGraphicsState();
 
   // Confidential + Document code
-  pdf.setFontSize(6);
-  pdf.setTextColor(...C.darkGray);
-  pdf.text("Documento confidencial — destinado exclusivamente ao destinatário", W / 2, H - 14, { align: "center" });
-  if (docCode) {
-    pdf.text(`Código: ${docCode}`, W / 2, H - 8, { align: "center" });
-  }
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.darkGray);
+    pdf.text("Documento confidencial — destinado exclusivamente ao destinatário", W / 2, H - 14, { align: "center" });
+    if (docCode) {
+      pdf.text(`Código: ${docCode}`, W / 2, H - 8, { align: "center" });
+    }
 
   pageNum = 0;
 
@@ -501,18 +503,18 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       // Text
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7.5);
+      pdf.setFontSize(8);
       pdf.setTextColor(...C.lightGray);
       const lines = pdf.splitTextToSize(card.text, cardW - 10);
       for (const l of lines.slice(0, 8)) {
         pdf.text(l, cx + 5, ty);
-        ty += 3.8;
+        ty += 4;
       }
 
       // Tags
       let tagX = cx + 5;
       const tagY = cardY + cardH - 10;
-      pdf.setFontSize(6);
+      pdf.setFontSize(7);
       for (const tag of card.tags) {
         pdf.setFillColor(...card.color);
         pdf.saveGraphicsState();
@@ -694,7 +696,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setFillColor(...C.cyan);
     pdf.circle(W - mx - 41, my + 4, 1, "F");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(6.5);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.white);
     pdf.text("PAGAMENTO ÚNICO", W - mx - 37, my + 5.5);
 
@@ -728,7 +730,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       // Label
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(6.5);
+      pdf.setFontSize(7);
       pdf.setTextColor(...C.lightGray);
       pdf.text(barLabels[i], bx + 7, chartY + 72, { align: "center" });
     });
@@ -779,10 +781,10 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
         const badgeW = 30;
         pdf.setFillColor(...C.magenta);
         pdf.roundedRect(px + (pricingW - badgeW) / 2, py - 4, badgeW, 8, 4, 4, "F");
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(6);
-        pdf.setTextColor(...C.white);
-        pdf.text("RECOMENDADO", px + pricingW / 2, py, { align: "center" });
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.white);
+      pdf.text("RECOMENDADO", px + pricingW / 2, py, { align: "center" });
       }
 
       // Plan name
@@ -835,7 +837,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.roundedRect(px + 5, btnY, pricingW - 10, 8, 3, 3, "S");
       pdf.restoreGraphicsState();
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(6.5);
+      pdf.setFontSize(7);
       { const tc = plan.featured ? C.white : C.lightGray; pdf.setTextColor(...tc); }
       pdf.text(plan.btn.toUpperCase(), px + pricingW / 2, btnY + 5.5, { align: "center" });
     });
@@ -872,10 +874,10 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
         const bw = 28;
         pdf.setFillColor(...C.magenta);
         pdf.roundedRect(tx + (tierW - bw) / 2, tierY - 4, bw, 8, 4, 4, "F");
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(5.5);
-        pdf.setTextColor(...C.white);
-        pdf.text("RECOMENDADO", tx + tierW / 2, tierY, { align: "center" });
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.white);
+      pdf.text("RECOMENDADO", tx + tierW / 2, tierY, { align: "center" });
       }
       let ty = tierY + 12;
       pdf.setFont("helvetica", "bold");
@@ -904,8 +906,8 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.line(tx + 5, ty, tx + tierW - 5, ty);
       pdf.restoreGraphicsState();
       ty += 5;
-      pdf.setFontSize(6.5);
-      for (const mod of tier.scope_modules.slice(0, 12)) {
+    pdf.setFontSize(7);
+    for (const mod of tier.scope_modules.slice(0, 12)) {
         if (ty > tierY + tierH - 8) break;
         const statusSymbol = mod.status === "included" ? "+" : mod.status === "optional" ? "~" : "-";
         const statusColor: RGB = mod.status === "included" ? C.green : mod.status === "optional" ? C.yellow : C.darkGray;
@@ -949,7 +951,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.setFontSize(9);
       pdf.setTextColor(...C.cyan);
       pdf.text("R$ " + addon.price.toLocaleString("pt-BR"), ax + addonW - 5, aRowY + 8, { align: "right" });
-      pdf.setFontSize(5.5);
+      pdf.setFontSize(7);
       pdf.setTextColor(...C.midGray);
       pdf.text(addon.category, ax + addonW - 5, aRowY + 14, { align: "right" });
     });
@@ -994,7 +996,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     drawCard(mx, tlY, W - mx * 2, 70, C.cyan);
 
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.cyan);
     pdf.text("LINHA DO TEMPO DE EXECUÇÃO", mx + 8, tlY + 8);
 
@@ -1011,7 +1013,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setFillColor(...C.magenta);
     pdf.roundedRect(s1x + 5, s1y - 4, 25, 7, 3, 3, "F");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(6);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.white);
     pdf.text("FASE 01", s1x + 17.5, s1y, { align: "center" });
     pdf.setFont("helvetica", "bold");
@@ -1022,7 +1024,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     const phase1Items = ["Kickoff e alinhamento de escopo", "Configuração de ambiente", "Design da interface (UI/UX)", "Estruturação do banco de dados"];
     let p1y = s1y + 18;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7.5);
+    pdf.setFontSize(8);
     for (const item of phase1Items) {
       pdf.setFillColor(...C.magenta);
       pdf.circle(s1x + 7, p1y - 0.5, 0.6, "F");
@@ -1040,7 +1042,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setFillColor(...C.cyan);
     pdf.roundedRect(s2x + 5, s1y - 4, 25, 7, 3, 3, "F");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(6);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.bg);
     pdf.text("FASE 02", s2x + 17.5, s1y, { align: "center" });
     pdf.setFont("helvetica", "bold");
@@ -1050,7 +1052,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     const phase2Items = ["Desenvolvimento das funcionalidades", "Implementação da área administrativa", "Integrações e automações", "Testes (QA), ajustes e Go-live"];
     let p2y = s1y + 18;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7.5);
+    pdf.setFontSize(8);
     for (const item of phase2Items) {
       pdf.setFillColor(...C.cyan);
       pdf.circle(s2x + 7, p2y - 0.5, 0.6, "F");
@@ -1169,7 +1171,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       // Text
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7.5);
+      pdf.setFontSize(8);
       pdf.setTextColor(...C.lightGray);
       const lines = pdf.splitTextToSize(b.text, bCardW - 12);
       let ly = by + 44;
@@ -1185,7 +1187,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.roundedRect(bx + 5, by + bCardH - 12, bCardW - 10, 7, 2, 2, "F");
       pdf.restoreGraphicsState();
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(6.5);
+      pdf.setFontSize(7);
       pdf.setTextColor(...b.color);
       pdf.text(b.badge.toUpperCase(), bx + bCardW / 2, by + bCardH - 7, { align: "center" });
     });
@@ -1322,7 +1324,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       // Description
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7.5);
+      pdf.setFontSize(8);
       pdf.setTextColor(...C.midGray);
       pdf.text(stepDescs[i] || "", mx + 33, ry + 10);
 
@@ -1422,12 +1424,12 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.roundedRect(ctaX + (ctaW - webW) / 2, contactY + 26, webW, 7, 3, 3, "S");
     pdf.restoreGraphicsState();
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.magenta);
     pdf.text("holynexlabs.com.br", ctaX + ctaW / 2, contactY + 31, { align: "center" });
 
     // Confidential footer
-    pdf.setFontSize(6);
+    pdf.setFontSize(7);
     pdf.setTextColor(...C.darkGray);
     pdf.text("Este documento é confidencial e destinado exclusivamente ao destinatário.", mx + 5, H - 8);
   }
