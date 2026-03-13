@@ -15,14 +15,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { FolderKanban, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { FolderKanban, Plus, Pencil, Trash2, Loader2, Eye } from "lucide-react";
 import { getProjects, saveProject, deleteProject, Project, PROJECT_STATUS, PROJECT_PRIORITY } from "@/lib/projects";
 import { supabase } from "@/integrations/supabase/client";
 
 const emptyProject: Partial<Project> = {
   nome: "", cliente: "", empresa_cliente: "", descricao: "", tipo_projeto: "Sistema interno",
-  nicho: "", status: "planejamento", prioridade: "media", responsavel: "", valor_contrato: 0,
-  recorrencia_mensal: 0, progresso: 0, observacoes: "", stack: [],
+  categoria: "", nicho: "", status: "aguardando_inicio", prioridade: "media", faixa_contratada: "",
+  responsavel: "", responsavel_comercial: "", responsavel_produto: "", responsavel_tecnico: "",
+  resumo_executivo: "", descricao_interna: "", estrategia_comercial_origem: "",
+  valor_contrato: 0, recorrencia_mensal: 0, progresso: 0, observacoes: "", stack: [],
+  live_url: "", admin_url: "", staging_url: "", repo_url: "", docs_url: "", design_url: "", analytics_url: "",
 };
 
 export default function AdminProjetos() {
@@ -31,6 +34,8 @@ export default function AdminProjetos() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterNicho, setFilterNicho] = useState("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Project>>(emptyProject);
   const [saving, setSaving] = useState(false);
@@ -71,9 +76,13 @@ export default function AdminProjetos() {
     catch { toast({ title: "Erro ao excluir", variant: "destructive" }); }
   }
 
+  const nichos = [...new Set(projects.map(p => p.nicho).filter(Boolean))];
+
   const filtered = projects.filter(p => {
     if (search && !p.nome.toLowerCase().includes(search.toLowerCase()) && !p.cliente.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterStatus !== "all" && p.status !== filterStatus) return false;
+    if (filterPriority !== "all" && p.prioridade !== filterPriority) return false;
+    if (filterNicho !== "all" && p.nicho !== filterNicho) return false;
     return true;
   });
 
@@ -91,12 +100,28 @@ export default function AdminProjetos() {
       <div className="flex flex-wrap items-center gap-3">
         <FilterToolbar searchPlaceholder="Buscar projeto..." searchValue={search} onSearchChange={setSearch} />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[170px] h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos status</SelectItem>
             {Object.entries(PROJECT_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={filterPriority} onValueChange={setFilterPriority}>
+          <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Prioridade</SelectItem>
+            {Object.entries(PROJECT_PRIORITY).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {nichos.length > 0 && (
+          <Select value={filterNicho} onValueChange={setFilterNicho}>
+            <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Nicho</SelectItem>
+              {nichos.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -108,24 +133,31 @@ export default function AdminProjetos() {
               <TableRow>
                 <TableHead>Projeto</TableHead>
                 <TableHead>Cliente</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead>Progresso</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="w-[80px]" />
+                <TableHead className="text-right">Recorrência</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead className="w-[100px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map(p => (
-                <TableRow key={p.id}>
+                <TableRow key={p.id} className="cursor-pointer" onClick={() => navigate(`/admin/projetos/${p.id}`)}>
                   <TableCell className="font-medium">{p.nome}</TableCell>
                   <TableCell className="text-muted-foreground">{p.cliente || p.empresa_cliente || "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{p.tipo_projeto || "—"}</TableCell>
                   <TableCell><StatusBadge status={PROJECT_STATUS[p.status]?.color || "pending"} label={PROJECT_STATUS[p.status]?.label || p.status} /></TableCell>
                   <TableCell className="text-sm">{PROJECT_PRIORITY[p.prioridade] || p.prioridade}</TableCell>
                   <TableCell><div className="flex items-center gap-2 w-24"><Progress value={p.progresso} className="h-2" /><span className="text-xs text-muted-foreground">{p.progresso}%</span></div></TableCell>
                   <TableCell className="text-right font-medium">R$ {(p.valor_contrato || 0).toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{p.recorrencia_mensal ? `R$ ${p.recorrencia_mensal.toLocaleString("pt-BR")}/mês` : "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{p.responsavel || p.responsavel_tecnico || "—"}</TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/projetos/${p.id}`)}><Eye className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setForm(p); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
@@ -145,10 +177,12 @@ export default function AdminProjetos() {
             <div><Label>Cliente</Label><Input value={form.cliente || ""} onChange={e => setForm({ ...form, cliente: e.target.value })} /></div>
             <div><Label>Empresa</Label><Input value={form.empresa_cliente || ""} onChange={e => setForm({ ...form, empresa_cliente: e.target.value })} /></div>
             <div><Label>Tipo</Label><Input value={form.tipo_projeto || ""} onChange={e => setForm({ ...form, tipo_projeto: e.target.value })} /></div>
+            <div><Label>Categoria</Label><Input value={form.categoria || ""} onChange={e => setForm({ ...form, categoria: e.target.value })} /></div>
             <div><Label>Nicho</Label><Input value={form.nicho || ""} onChange={e => setForm({ ...form, nicho: e.target.value })} /></div>
+            <div><Label>Faixa Contratada</Label><Input value={form.faixa_contratada || ""} onChange={e => setForm({ ...form, faixa_contratada: e.target.value })} /></div>
             <div>
               <Label>Status</Label>
-              <Select value={form.status || "planejamento"} onValueChange={v => setForm({ ...form, status: v })}>
+              <Select value={form.status || "aguardando_inicio"} onValueChange={v => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(PROJECT_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
               </Select>
@@ -160,7 +194,9 @@ export default function AdminProjetos() {
                 <SelectContent>{Object.entries(PROJECT_PRIORITY).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Responsável</Label><Input value={form.responsavel || ""} onChange={e => setForm({ ...form, responsavel: e.target.value })} /></div>
+            <div><Label>Responsável Comercial</Label><Input value={form.responsavel_comercial || ""} onChange={e => setForm({ ...form, responsavel_comercial: e.target.value })} /></div>
+            <div><Label>Responsável Produto</Label><Input value={form.responsavel_produto || ""} onChange={e => setForm({ ...form, responsavel_produto: e.target.value })} /></div>
+            <div><Label>Responsável Técnico</Label><Input value={form.responsavel_tecnico || ""} onChange={e => setForm({ ...form, responsavel_tecnico: e.target.value })} /></div>
             <div><Label>Progresso (%)</Label><Input type="number" min={0} max={100} value={form.progresso || 0} onChange={e => setForm({ ...form, progresso: Number(e.target.value) })} /></div>
             <div><Label>Valor Contrato (R$)</Label><Input type="number" value={form.valor_contrato || 0} onChange={e => setForm({ ...form, valor_contrato: Number(e.target.value) })} /></div>
             <div><Label>Recorrência Mensal (R$)</Label><Input type="number" value={form.recorrencia_mensal || 0} onChange={e => setForm({ ...form, recorrencia_mensal: Number(e.target.value) })} /></div>
@@ -176,6 +212,7 @@ export default function AdminProjetos() {
                 </Select>
               </div>
             )}
+            <div className="md:col-span-2"><Label>Resumo Executivo</Label><Textarea value={form.resumo_executivo || ""} onChange={e => setForm({ ...form, resumo_executivo: e.target.value })} rows={2} /></div>
             <div className="md:col-span-2"><Label>Descrição</Label><Textarea value={form.descricao || ""} onChange={e => setForm({ ...form, descricao: e.target.value })} rows={3} /></div>
             <div className="md:col-span-2"><Label>Observações</Label><Textarea value={form.observacoes || ""} onChange={e => setForm({ ...form, observacoes: e.target.value })} rows={2} /></div>
           </div>
