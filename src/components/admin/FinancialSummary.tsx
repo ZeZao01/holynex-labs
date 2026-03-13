@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { DollarSign, TrendingUp, Repeat, Zap, Target } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
