@@ -207,8 +207,23 @@ export default function AdminFinanceiro() {
             <RankingCard title="♻️ Maior Potencial de Reuso" items={topReuso} scoreKey="reuse_score" />
             <RankingCard title="🚀 Maior Oportunidade" items={topOportunidade} scoreKey="opportunity_score" />
           </div>
-          {enrichedMetrics.length === 0 && (
-            <EmptyState icon={<Award className="h-10 w-10 text-muted-foreground" />} title="Sem dados de ranking" description="Adicione métricas financeiras nos sistemas entregues para ver os rankings." />
+
+          {topModelos.length > 0 && (
+            <SectionCard title="📈 Modelos com melhor potencial comercial">
+              <div className="space-y-2">
+                {topModelos.map((m, i) => (
+                  <div key={m.id} className="flex items-center gap-3 text-sm">
+                    <span className="text-xs font-bold text-muted-foreground w-5 text-right">{i + 1}.</span>
+                    <span className="flex-1 font-medium truncate">{m.model_name || `Modelo ${i + 1}`}</span>
+                    <ScoreBar value={Number(m.opportunity_score) || 0} />
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {enrichedMetrics.length === 0 && topModelos.length === 0 && (
+            <EmptyState icon={<Award className="h-10 w-10 text-muted-foreground" />} title="Sem dados de ranking" description="Adicione métricas financeiras nos sistemas entregues e modelos para ver os rankings." />
           )}
         </TabsContent>
 
