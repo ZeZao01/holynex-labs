@@ -19,7 +19,7 @@ import {
 import SystemForm from "@/components/admin/SystemForm";
 import {
   ArrowLeft, Edit, Copy, Recycle, Star, Archive, ExternalLink,
-  Globe, Server, Github, FileText, Palette, BarChart3, Clock, KeyRound,
+  Globe, Server, Github, FileText, Palette, BarChart3, Clock, KeyRound, Blocks,
 } from "lucide-react";
 import FinancialSummary from "@/components/admin/FinancialSummary";
 import { format } from "date-fns";
