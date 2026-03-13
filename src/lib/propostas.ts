@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ProposalTier, ProposalAddon, CommercialNotes } from "@/lib/proposal-tiers";
+import { normalizePropostaJSON } from "@/lib/proposal-normalizer";
+import { logProposalEvent } from "@/lib/proposal-events";
 
 export interface PropostaInput {
   nome_cliente: string;
