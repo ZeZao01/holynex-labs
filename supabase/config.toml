@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.preencher-formulario]
 verify_jwt = false
+
+[functions.classificar-lead]
+verify_jwt = false
+
+[functions.gerar-tiers]
+verify_jwt = false
+
+[functions.copiloto-ia]
+verify_jwt = false
