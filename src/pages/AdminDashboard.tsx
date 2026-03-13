@@ -241,7 +241,7 @@ export default function AdminDashboard() {
   const alerts: AlertItem[] = [
     ...(stats.pendentes > 0 ? [{ type: "warning" as const, text: `${stats.pendentes} lead(s) pendente(s) aguardando análise`, action: "Ver leads" }] : []),
     ...(stats.propostasSemEnvio > 0 ? [{ type: "warning" as const, text: `${stats.propostasSemEnvio} proposta(s) em rascunho sem envio`, action: "Ver propostas" }] : []),
-    ...(stats.projetosPausados > 0 ? [{ type: "error" as const, text: `${stats.projetosPausados} projeto(s) pausado(s)`, action: "Ver projetos" }] : []),
+    ...(stats.projetosPausados > 0 ? [{ type: "danger" as const, text: `${stats.projetosPausados} projeto(s) pausado(s)`, action: "Ver projetos" }] : []),
     ...(stats.solicitacoesPendentes > 0 ? [{ type: "warning" as const, text: `${stats.solicitacoesPendentes} solicitação(ões) pendente(s)`, action: "Ver solicitações" }] : []),
     ...(stats.sistemasSemLink > 0 ? [{ type: "info" as const, text: `${stats.sistemasSemLink} sistema(s) sem link de produção configurado`, action: "Ver sistemas" }] : []),
     ...(stats.acessos === 0 ? [{ type: "info" as const, text: "Nenhum acesso/credencial cadastrado ainda", action: "Cadastrar" }] : []),
