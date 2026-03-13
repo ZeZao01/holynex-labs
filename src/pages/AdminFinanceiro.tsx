@@ -129,6 +129,10 @@ export default function AdminFinanceiro() {
   const topRecorrencia = useMemo(() => [...enrichedMetrics].sort((a, b) => b.recurrence_score - a.recurrence_score).slice(0, 10), [enrichedMetrics]);
   const topReuso = useMemo(() => [...enrichedMetrics].sort((a, b) => b.reuse_score - a.reuse_score).slice(0, 10), [enrichedMetrics]);
   const topOportunidade = useMemo(() => [...enrichedMetrics].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 10), [enrichedMetrics]);
+  const topModelos = useMemo(
+    () => [...modelPerf].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 10),
+    [modelPerf],
+  );
 
   const nichos = useMemo(() => [...new Set(systems.map(s => s.nicho).filter(Boolean))], [systems]);
 
