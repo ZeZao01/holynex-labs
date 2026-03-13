@@ -13,3 +13,6 @@ Design system: dark cyberpunk theme, HSL colors, Space Grotesk + Inter fonts.
 - Types/constants in src/lib/ (projects.ts, project-modules.ts, audit-logs.ts, etc.)
 - Sidebar groups: Comercial, Operacional, Estratégico, Sistema
 - Phase 15 (QA) refinements: responsive StatCards, skeleton loading, breadcrumb in topbar, real counts in dashboard
+- PWA enabled: vite-plugin-pwa, manifest, service worker auto-update, installable from browser
+- Realtime enabled: all main tables via supabase_realtime publication, useRealtimeSubscription hook
+- Button effect: single-direction neon shimmer with pulsing glow (not splitting)

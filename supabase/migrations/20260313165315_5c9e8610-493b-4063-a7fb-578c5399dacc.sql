@@ -1,0 +1,10 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.orcamentos;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.propostas;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.delivered_systems;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.project_modules;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.project_changes;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.project_accesses;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.pdf_versoes;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.portfolio_items;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;

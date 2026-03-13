@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/admin/PageHeader";
 import FilterToolbar from "@/components/admin/FilterToolbar";
@@ -35,7 +36,9 @@ export default function AdminProjetos() {
   const [saving, setSaving] = useState(false);
   const [propostas, setPropostas] = useState<{ id: string; nome_cliente: string }[]>([]);
 
+  const loadCb = useCallback(() => { load(); }, []);
   useEffect(() => { load(); }, []);
+  useRealtimeSubscription("projects", loadCb);
 
   async function load() {
     try {

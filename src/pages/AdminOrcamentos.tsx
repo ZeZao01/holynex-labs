@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getOrcamentos, atualizarStatus, removerOrcamento, type Orcamento, type OrcamentoStatus } from "@/lib/orcamentos";
@@ -45,10 +46,10 @@ export default function AdminOrcamentos() {
     }
     if (user) {
       refresh();
-      const interval = setInterval(refresh, 5000);
-      return () => clearInterval(interval);
     }
   }, [user, authLoading, navigate, refresh]);
+
+  useRealtimeSubscription("orcamentos", refresh, !!user);
 
   const filtered = useMemo(() => {
     if (tab === "todos") return orcamentos;

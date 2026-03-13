@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,11 +33,18 @@ export default function AdminDashboard() {
   const [recentPropostas, setRecentPropostas] = useState<MiniModuleItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadDataCb = useCallback(() => { loadData(); }, []);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/admin/login"); return; }
     loadData();
   }, [user, authLoading]);
+
+  useRealtimeSubscription("orcamentos", loadDataCb, !!user);
+  useRealtimeSubscription("propostas", loadDataCb, !!user);
+  useRealtimeSubscription("projects", loadDataCb, !!user);
+  useRealtimeSubscription("delivered_systems", loadDataCb, !!user);
 
   const loadData = async () => {
     setLoading(true);
