@@ -61,7 +61,20 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     ctx.fillText("HN", 50, 50);
     logoBase64 = c.toDataURL("image/png");
   }
-  const pj = proposta.proposta_json as any;
+  // ── Normalize AI output before rendering ──
+  const renderStart = Date.now();
+  const normResult = normalizePropostaJSON(proposta.proposta_json);
+  const pjPublic = extractDocumentoPublico(normResult.data);
+  const pj = pjPublic as any;
+
+  // Log render start
+  logProposalEvent("proposal_pdf_render_started", proposta.id, {
+    schema_valid: normResult.schema_valid,
+    output_size: normResult.output_size,
+    warnings: normResult.warnings,
+    template_id: templateId || "cyber-magenta",
+  });
+
   const tiers = proposta.proposal_tiers || [];
   const addons = (proposta.proposal_addons || []).filter(a => a.is_active && a.is_selected);
   const docCode = documentCode || "";
