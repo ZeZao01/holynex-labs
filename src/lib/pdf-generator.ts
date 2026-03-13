@@ -106,7 +106,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   const addPageNumber = () => {
     pageNum++;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.darkGray);
     pdf.text(`${pageNum}`, W / 2, H - 6, { align: "center" });
   };
