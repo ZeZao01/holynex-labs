@@ -186,10 +186,10 @@ export default function AdminFinanceiro() {
         {/* Rankings Tab */}
         <TabsContent value="rankings" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RankingCard title="🏆 Maior Retorno" icon={<Award className="h-4 w-4" />} items={topRetorno} scoreKey="profitability_score" />
-            <RankingCard title="🔄 Maior Recorrência" icon={<Repeat className="h-4 w-4" />} items={topRecorrencia} scoreKey="recurrence_score" />
-            <RankingCard title="♻️ Maior Potencial de Reuso" icon={<Target className="h-4 w-4" />} items={topReuso} scoreKey="reuse_score" />
-            <RankingCard title="🚀 Maior Oportunidade" icon={<Flame className="h-4 w-4" />} items={topOportunidade} scoreKey="opportunity_score" />
+            <RankingCard title="🏆 Maior Retorno" items={topRetorno} scoreKey="profitability_score" />
+            <RankingCard title="🔄 Maior Recorrência" items={topRecorrencia} scoreKey="recurrence_score" />
+            <RankingCard title="♻️ Maior Potencial de Reuso" items={topReuso} scoreKey="reuse_score" />
+            <RankingCard title="🚀 Maior Oportunidade" items={topOportunidade} scoreKey="opportunity_score" />
           </div>
           {enrichedMetrics.length === 0 && (
             <EmptyState icon={<Award className="h-10 w-10 text-muted-foreground" />} title="Sem dados de ranking" description="Adicione métricas financeiras nos sistemas entregues para ver os rankings." />
