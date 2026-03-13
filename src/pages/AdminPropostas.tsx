@@ -95,12 +95,6 @@ export default function AdminPropostas() {
         prioridade: "media",
       });
       await addProjectEvent(proj.id, "projeto_criado", `Convertido da proposta de ${p.nome_cliente}`);
-      await salvarProposta(
-        { nome_cliente: p.nome_cliente, empresa_cliente: p.empresa_cliente, segmento: p.segmento, email_cliente: p.email_cliente, tipo_projeto: p.tipo_projeto, descricao_projeto: p.descricao_projeto, problema_cliente: "", objetivo_cliente: "", funcionalidades_desejadas: [], integracoes: [], numero_usuarios: "", prazo_desejado: "", orcamento_cliente: "", nivel_urgencia: "medio", link_referencia: "", observacoes: "" },
-        p.proposta_json, p.proposal_tiers, p.proposal_addons,
-        p.recommended_tier || "", p.commercial_notes || undefined, p.proposal_validity,
-        p.is_phased, p.closing_strategy, p.id
-      );
       // Update proposta status to "aceita" if not already
       const { supabase } = await import("@/integrations/supabase/client");
       await supabase.from("propostas").update({ status: "aceita" }).eq("id", p.id);
