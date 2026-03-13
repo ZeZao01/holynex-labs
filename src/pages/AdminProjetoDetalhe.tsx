@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
 import {
+  getAccessesByProject, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
+} from "@/lib/project-accesses";
+import {
   getProject, saveProject, Project, PROJECT_STATUS, PROJECT_PRIORITY,
   getMilestones, saveMilestone, deleteMilestone, ProjectMilestone, MILESTONE_STATUS,
   getProjectEvents, addProjectEvent, ProjectEvent,
