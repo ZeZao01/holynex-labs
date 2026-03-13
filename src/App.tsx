@@ -89,6 +89,8 @@ function AppRoutes() {
         <Route path="/solucoes" element={<Solucoes />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/portfolio/:id" element={<PortfolioDetalhe />} />
+        <Route path="/modelos" element={<Modelos />} />
+        <Route path="/modelos/:slug" element={<ModeloDetalhe />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/contato" element={<Contato />} />
         <Route path="/admin/login" element={<AdminLogin />} />
