@@ -20,6 +20,7 @@ import Contato from "./pages/Contato";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminOrcamentos from "./pages/AdminOrcamentos";
+import AdminLeadDetalhe from "./pages/AdminLeadDetalhe";
 import AdminPropostas from "./pages/AdminPropostas";
 import AdminNovaProposta from "./pages/AdminNovaProposta";
 import AdminPropostaDetalhe from "./pages/AdminPropostaDetalhe";
