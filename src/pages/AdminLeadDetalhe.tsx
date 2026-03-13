@@ -162,7 +162,7 @@ export default function AdminLeadDetalhe() {
           </SectionCard>
 
           {/* AI Analysis */}
-          <SectionCard title="IA Assistiva" actions={
+          <SectionCard title="IA Assistiva" action={
             <Button variant="outline" size="sm" onClick={handleAiClassify} disabled={aiLoading} className="gap-1.5">
               {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
               {aiLoading ? "Analisando..." : "Classificar com IA"}

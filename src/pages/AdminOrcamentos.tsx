@@ -129,7 +129,7 @@ export default function AdminOrcamentos() {
       {loadingData ? (
         <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}</div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={Users} title="Nenhum lead encontrado" description="Ajuste os filtros ou aguarde novos orçamentos." />
+        <EmptyState icon={<Users className="h-10 w-10 text-muted-foreground" />} title="Nenhum lead encontrado" description="Ajuste os filtros ou aguarde novos orçamentos." />
       ) : (
         <div className="border border-border/40 rounded-xl overflow-hidden">
           <Table>
