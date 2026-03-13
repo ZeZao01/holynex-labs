@@ -5,10 +5,10 @@ Design system: dark cyberpunk theme, HSL colors, Space Grotesk + Inter fonts.
 - WhatsApp number: already configured in WhatsAppFloat component
 - Admin routes are hidden (not in navbar): /admin/login, /admin/dashboard, etc.
 - Edge function `gerar-proposta` uses multi-provider AI (Groq > OpenRouter > Lovable AI) for structured JSON proposals
-- Database tables: `orcamentos`, `propostas`, `pdf_versoes`, `delivered_systems`, `projects`, `project_modules`, `project_accesses`, `project_changes`, `portfolio_items`, `audit_logs`
+- Database tables: `orcamentos`, `propostas`, `pdf_versoes`, `delivered_systems`, `projects`, `project_modules`, `project_accesses`, `project_changes`, `portfolio_items`, `audit_logs`, `project_milestones`, `project_events`
 - Language: Portuguese (BR) with i18n support
 - User prefers: IA calculates all financial values, full proposal + PDF + dashboard
-- All 15 phases complete: Structure, Dashboard, Leads, Proposals, PDFs, Projects, Systems, Accesses, Modules, Maintenance, Portfolio, Models, Financial, Security, QA
+- All 15 phases complete + Phase 6 (Projects): Structure, Dashboard, Leads, Proposals, PDFs, Projects, Systems, Accesses, Modules, Maintenance, Portfolio, Models, Financial, Security, QA
 - Reusable admin components: PageHeader, StatCard, StatsGrid, EmptyState, FilterToolbar, StatusBadge, SectionCard
 - Types/constants in src/lib/ (projects.ts, project-modules.ts, audit-logs.ts, etc.)
 - Sidebar groups: Comercial, Operacional, Estrategico, Sistema
@@ -20,3 +20,7 @@ Design system: dark cyberpunk theme, HSL colors, Space Grotesk + Inter fonts.
 - PDF: "Proposta Comercial Completa" section excluded from public PDF, kept for internal history
 - PDF events: proposal_ai_requested/completed/failed, proposal_pdf_render_started/failed/generated logged to audit_logs
 - Prompt version tracking: v3.0-structured with observability metadata (_meta in edge function response)
+- Project statuses: aguardando_inicio, discovery, planejamento, em_design, em_desenvolvimento, em_validacao, aguardando_cliente, entregue, em_manutencao, pausado, cancelado
+- Project detail page: /admin/projetos/:id with milestones, events, links, quick actions
+- Convert proposal to project: action in AdminPropostas table
+- SectionCard uses `action` prop (not `actions`)
