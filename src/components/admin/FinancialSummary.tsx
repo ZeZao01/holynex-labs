@@ -14,7 +14,6 @@ import {
 
 interface Props {
   systemId: string;
-  compact?: boolean;
 }
 
 export default function FinancialSummary({ systemId }: Props) {
