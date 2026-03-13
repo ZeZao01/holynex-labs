@@ -175,7 +175,11 @@ export default function AdminModelos() {
         actions={<Button onClick={() => { setEditing(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Modelo</Button>}
       />
 
-      <StatsGrid stats={stats} />
+      <StatsGrid columns={4}>
+        {stats.map(s => (
+          <StatCard key={s.label} title={s.label} value={s.value} />
+        ))}
+      </StatsGrid>
 
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[200px]">
