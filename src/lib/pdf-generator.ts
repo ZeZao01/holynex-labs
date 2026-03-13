@@ -140,7 +140,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setLineWidth(0.3);
     pdf.roundedRect(x, y, pdf.getTextWidth(text) + 12, 7, 3, 3, "S");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.magenta);
     pdf.text(text.toUpperCase(), x + 6, y + 5);
   };
