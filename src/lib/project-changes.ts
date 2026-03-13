@@ -125,11 +125,14 @@ export function getPriorityMeta(value: string) {
 }
 
 // ── CRUD ──
-export async function listChanges() {
-  const { data, error } = await supabase
+export async function listChanges(filters?: { project_id?: string; delivered_system_id?: string }) {
+  let q = supabase
     .from("project_changes")
     .select("*")
     .order("criado_em", { ascending: false });
+  if (filters?.project_id) q = q.eq("project_id", filters.project_id);
+  if (filters?.delivered_system_id) q = q.eq("delivered_system_id", filters.delivered_system_id);
+  const { data, error } = await q;
   if (error) throw error;
   return (data || []) as ProjectChange[];
 }

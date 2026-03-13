@@ -17,10 +17,11 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import {
   Loader2, Pencil, ExternalLink, Flag, Clock, DollarSign, Target, Plus, Trash2, CheckCircle2,
-  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck, KeyRound, Copy, Blocks
+  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck, KeyRound, Copy, Blocks, Wrench
 } from "lucide-react";
 import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
 import { getModulesByProject, ProjectModule, MODULE_STATUS, MODULE_CATEGORIES } from "@/lib/project-modules";
+import { listChanges, ProjectChange, getStatusMeta, getPriorityMeta, getLabel, CHANGE_TYPES } from "@/lib/project-changes";
 import {
   getAccessesByProject, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
 } from "@/lib/project-accesses";
@@ -42,6 +43,7 @@ export default function AdminProjetoDetalhe() {
   const [events, setEvents] = useState<ProjectEvent[]>([]);
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [projectModules, setProjectModules] = useState<ProjectModule[]>([]);
+  const [projectChanges, setProjectChanges] = useState<ProjectChange[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Project>>({});
@@ -58,12 +60,13 @@ export default function AdminProjetoDetalhe() {
 
   async function load() {
     try {
-      const [p, m, e, ac, pm] = await Promise.all([
+      const [p, m, e, ac, pm, pc] = await Promise.all([
         getProject(id!),
         getMilestones(id!),
         getProjectEvents(id!),
         getAccessesByProject(id!),
         getModulesByProject(id!),
+        listChanges({ project_id: id! }),
       ]);
       setProject(p);
       setForm(p || {});
@@ -71,6 +74,7 @@ export default function AdminProjetoDetalhe() {
       setEvents(e);
       setAccesses(ac);
       setProjectModules(pm);
+      setProjectChanges(pc);
     } catch { toast({ title: "Erro ao carregar projeto", variant: "destructive" }); }
     finally { setLoading(false); }
   }
@@ -338,6 +342,34 @@ export default function AdminProjetoDetalhe() {
                 </div>
               ))}
               {projectModules.length > 8 && <p className="text-xs text-muted-foreground text-center">+ {projectModules.length - 8} módulos</p>}
+            </div>
+          </>
+        )}
+      </SectionCard>
+
+      {/* Alterações & Manutenção */}
+      <SectionCard title={`Alterações & Manutenção (${projectChanges.length})`} action={<Button size="sm" variant="outline" onClick={() => navigate("/admin/manutencao")}><Wrench className="h-4 w-4 mr-1" /> Ver Todas</Button>}>
+        {projectChanges.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma solicitação vinculada a este projeto</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectChanges.filter(c => c.status === "aberta" || c.status === "em_analise").length}</p><p className="text-xs text-muted-foreground">Abertas</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectChanges.filter(c => c.status === "em_execucao").length}</p><p className="text-xs text-muted-foreground">Em Execução</p></div>
+              <div className="rounded-lg bg-muted/30 p-3 text-center"><p className="text-lg font-bold">{projectChanges.filter(c => c.status === "concluida").length}</p><p className="text-xs text-muted-foreground">Concluídas</p></div>
+            </div>
+            <div className="space-y-2">
+              {projectChanges.slice(0, 6).map(c => (
+                <div key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium truncate max-w-[180px]">{c.title}</span>
+                    <span className="text-xs text-muted-foreground">{getLabel(CHANGE_TYPES, c.change_type)}</span>
+                  </div>
+                  <StatusBadge status={getStatusMeta(c.status).color} label={getStatusMeta(c.status).label} />
+                </div>
+              ))}
+              {projectChanges.length > 6 && <p className="text-xs text-muted-foreground text-center">+ {projectChanges.length - 6} solicitações</p>}
             </div>
           </>
         )}

@@ -16,10 +16,11 @@ import { getModulesBySystem, ProjectModule, MODULE_STATUS, MODULE_CATEGORIES } f
 import {
   getAccessesBySystem, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
 } from "@/lib/project-accesses";
+import { listChanges, ProjectChange, getStatusMeta, getLabel, CHANGE_TYPES } from "@/lib/project-changes";
 import SystemForm from "@/components/admin/SystemForm";
 import {
   ArrowLeft, Edit, Copy, Recycle, Star, Archive, ExternalLink,
-  Globe, Server, Github, FileText, Palette, BarChart3, Clock, KeyRound, Blocks,
+  Globe, Server, Github, FileText, Palette, BarChart3, Clock, KeyRound, Blocks, Wrench,
 } from "lucide-react";
 import FinancialSummary from "@/components/admin/FinancialSummary";
 import { format } from "date-fns";
@@ -32,6 +33,7 @@ export default function AdminSistemaDetalhe() {
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [sysModules, setSysModules] = useState<ProjectModule[]>([]);
+  const [sysChanges, setSysChanges] = useState<ProjectChange[]>([]);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -47,17 +49,19 @@ export default function AdminSistemaDetalhe() {
         navigate("/admin/sistemas");
         return;
       }
-      const [t, e, ac, sm] = await Promise.all([
+      const [t, e, ac, sm, sc] = await Promise.all([
         getSystemTags(id!),
         getSystemEvents(id!),
         getAccessesBySystem(id!),
         getModulesBySystem(id!),
+        listChanges({ delivered_system_id: id! }),
       ]);
       setSystem(s);
       setTags(t);
       setEvents(e);
       setAccesses(ac);
       setSysModules(sm);
+      setSysChanges(sc);
     } catch {
       toast({ title: "Erro ao carregar sistema", variant: "destructive" });
     }
@@ -262,6 +266,26 @@ export default function AdminSistemaDetalhe() {
                   {sysModules.length > 6 && <p className="text-[10px] text-muted-foreground text-center">+ {sysModules.length - 6} módulos</p>}
                 </div>
               </>
+            )}
+          </div>
+          {/* Alterações & Manutenção */}
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold flex items-center gap-2"><Wrench className="h-4 w-4" /> Alterações ({sysChanges.length})</h3>
+              <Button size="sm" variant="ghost" onClick={() => navigate("/admin/manutencao")} className="text-xs">Ver todas</Button>
+            </div>
+            {sysChanges.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma solicitação vinculada.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {sysChanges.slice(0, 5).map(c => (
+                  <div key={c.id} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/30">
+                    <span className="font-medium truncate max-w-[140px]">{c.title}</span>
+                    <StatusBadge status={getStatusMeta(c.status).color} label={getStatusMeta(c.status).label} />
+                  </div>
+                ))}
+                {sysChanges.length > 5 && <p className="text-[10px] text-muted-foreground text-center">+ {sysChanges.length - 5} solicitações</p>}
+              </div>
             )}
           </div>
           {/* Acessos vinculados */}
