@@ -775,6 +775,66 @@ export type Database = {
           },
         ]
       }
+      project_model_performance_metrics: {
+        Row: {
+          atualizado_em: string
+          cliques: number
+          criado_em: string
+          delivered_system_id: string | null
+          demand_score: number
+          id: string
+          leads_gerados: number
+          model_name: string
+          opportunity_score: number
+          portfolio_item_id: string | null
+          versao_mais_procurada: string | null
+          visualizacoes: number
+        }
+        Insert: {
+          atualizado_em?: string
+          cliques?: number
+          criado_em?: string
+          delivered_system_id?: string | null
+          demand_score?: number
+          id?: string
+          leads_gerados?: number
+          model_name?: string
+          opportunity_score?: number
+          portfolio_item_id?: string | null
+          versao_mais_procurada?: string | null
+          visualizacoes?: number
+        }
+        Update: {
+          atualizado_em?: string
+          cliques?: number
+          criado_em?: string
+          delivered_system_id?: string | null
+          demand_score?: number
+          id?: string
+          leads_gerados?: number
+          model_name?: string
+          opportunity_score?: number
+          portfolio_item_id?: string | null
+          versao_mais_procurada?: string | null
+          visualizacoes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_model_performance_metrics_delivered_system_id_fkey"
+            columns: ["delivered_system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_model_performance_metrics_portfolio_item_id_fkey"
+            columns: ["portfolio_item_id"]
+            isOneToOne: true
+            referencedRelation: "portfolio_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_profitability_metrics: {
         Row: {
           atualizado_em: string | null
