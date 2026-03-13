@@ -395,7 +395,7 @@ function ScorePill({ label, value }: { label: string; value: number }) {
   );
 }
 
-function RankingCard({ title, icon, items, scoreKey }: { title: string; icon: React.ReactNode; items: (ProfitabilityMetrics & { system: DeliveredSystem | null })[]; scoreKey: keyof ProfitabilityMetrics }) {
+function RankingCard({ title, items, scoreKey }: { title: string; items: (ProfitabilityMetrics & { system: DeliveredSystem | null })[]; scoreKey: keyof ProfitabilityMetrics }) {
   if (items.length === 0) return null;
   return (
     <SectionCard title={title}>
