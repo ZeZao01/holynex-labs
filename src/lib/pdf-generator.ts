@@ -781,10 +781,10 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
         const badgeW = 30;
         pdf.setFillColor(...C.magenta);
         pdf.roundedRect(px + (pricingW - badgeW) / 2, py - 4, badgeW, 8, 4, 4, "F");
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(6);
-        pdf.setTextColor(...C.white);
-        pdf.text("RECOMENDADO", px + pricingW / 2, py, { align: "center" });
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.white);
+      pdf.text("RECOMENDADO", px + pricingW / 2, py, { align: "center" });
       }
 
       // Plan name
