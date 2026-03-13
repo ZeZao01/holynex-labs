@@ -74,18 +74,19 @@ export default function AdminFinanceiro() {
     const receitaTotal = metrics.reduce((a, m) => a + (m.receita_total || 0), 0);
     const recorrencia = metrics.reduce((a, m) => a + (m.receita_recorrente || 0), 0);
     const manutencao = metrics.reduce((a, m) => a + (m.receita_manutencao || 0), 0);
-    const margens = metrics.filter(m => m.receita_total > 0).map(m => m.margem_estimada);
+    const margens = metrics.filter((m) => m.receita_total > 0).map((m) => m.margem_estimada);
     const margemMedia = margens.length > 0 ? margens.reduce((a, b) => a + b, 0) / margens.length : 0;
 
-    // Also compute from systems that don't have metrics yet
     const systemReceitaTotal = systems.reduce((a, s) => a + (s.valor_fechado || 0), 0);
     const systemRecorrencia = systems.reduce((a, s) => a + (s.recorrencia_mensal || 0), 0);
     const totalReceita = Math.max(receitaTotal, systemReceitaTotal);
     const totalRecorrencia = Math.max(recorrencia, systemRecorrencia);
     const ticketMedio = systems.length > 0 ? systemReceitaTotal / systems.length : 0;
 
-    return { receitaTotal: totalReceita, recorrencia: totalRecorrencia, manutencao, margemMedia, ticketMedio };
-  }, [metrics, systems]);
+    const portfolioInteracoes = portfolioPerf.reduce((a, p) => a + (p.cliques || 0) + (p.ctas_acionados || 0), 0);
+
+    return { receitaTotal: totalReceita, recorrencia: totalRecorrencia, manutencao, margemMedia, ticketMedio, portfolioInteracoes };
+  }, [metrics, systems, portfolioPerf]);
 
   // Enriched metrics with system info
   const enrichedMetrics = useMemo(() => {
