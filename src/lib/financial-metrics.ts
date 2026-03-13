@@ -46,6 +46,19 @@ export interface PortfolioPerformance {
   opportunity_score: number;
 }
 
+export interface ProjectModelPerformance {
+  id: string;
+  portfolio_item_id: string | null;
+  delivered_system_id: string | null;
+  model_name: string;
+  visualizacoes: number;
+  cliques: number;
+  leads_gerados: number;
+  versao_mais_procurada: string;
+  demand_score: number;
+  opportunity_score: number;
+}
+
 export const STRATEGIC_FLAGS = [
   "estrategico", "vender_mais", "destacar_site", "alta_margem",
   "muito_procurado", "gera_recorrencia", "evitar_escalar",
