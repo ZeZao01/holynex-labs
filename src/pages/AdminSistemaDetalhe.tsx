@@ -29,7 +29,7 @@ export default function AdminSistemaDetalhe() {
   const [system, setSystem] = useState<DeliveredSystem | null>(null);
   const [tags, setTags] = useState<SystemTag[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
-  const [editing, setEditing] = useState(false);
+  const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
