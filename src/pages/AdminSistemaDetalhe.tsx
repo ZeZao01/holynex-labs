@@ -31,6 +31,7 @@ export default function AdminSistemaDetalhe() {
   const [tags, setTags] = useState<SystemTag[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
+  const [sysModules, setSysModules] = useState<ProjectModule[]>([]);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
