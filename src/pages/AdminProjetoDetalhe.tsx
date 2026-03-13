@@ -20,6 +20,7 @@ import {
   FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck, KeyRound, Copy
 } from "lucide-react";
 import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
+import { getModulesByProject, ProjectModule, MODULE_STATUS, MODULE_CATEGORIES } from "@/lib/project-modules";
 import {
   getAccessesByProject, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
 } from "@/lib/project-accesses";
