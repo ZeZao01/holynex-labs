@@ -2,19 +2,19 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getPropostas, removerProposta, type Proposta } from "@/lib/propostas";
+import { getPropostas, removerProposta, salvarProposta, type Proposta, type PropostaInput } from "@/lib/propostas";
 import { PROPOSAL_STATUS_MAP } from "@/lib/proposal-tiers";
 import PageHeader from "@/components/admin/PageHeader";
 import FilterToolbar from "@/components/admin/FilterToolbar";
 import StatCard from "@/components/admin/StatCard";
 import StatsGrid from "@/components/admin/StatsGrid";
-import StatusBadge from "@/components/admin/StatusBadge";
 import EmptyState from "@/components/admin/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, Eye, FileText, TrendingUp, DollarSign, BarChart3 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Loader2, Plus, Trash2, Eye, FileText, TrendingUp, DollarSign, BarChart3, Copy } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 
 export default function AdminPropostas() {
   const { user, loading: authLoading } = useAuth();
@@ -37,6 +37,42 @@ export default function AdminPropostas() {
   useRealtimeSubscription("propostas", refresh, !!user);
 
   const handleRemove = async (id: string) => { await removerProposta(id); refresh(); };
+
+  const handleDuplicate = async (p: Proposta) => {
+    try {
+      const input: PropostaInput = {
+        nome_cliente: p.nome_cliente + " (cópia)",
+        empresa_cliente: p.empresa_cliente,
+        segmento: p.segmento,
+        email_cliente: p.email_cliente,
+        tipo_projeto: p.tipo_projeto,
+        descricao_projeto: p.descricao_projeto,
+        problema_cliente: "",
+        objetivo_cliente: "",
+        funcionalidades_desejadas: [],
+        integracoes: [],
+        numero_usuarios: "",
+        prazo_desejado: "",
+        orcamento_cliente: "",
+        nivel_urgencia: "medio",
+        link_referencia: "",
+        observacoes: "",
+        orcamento_id: p.orcamento_id || undefined,
+      };
+      if (p.proposta_json) {
+        const recTier = p.proposal_tiers.find(t => t.is_recommended)?.type || "";
+        const id = await salvarProposta(
+          input, p.proposta_json, p.proposal_tiers, p.proposal_addons,
+          recTier, p.commercial_notes || undefined, p.proposal_validity,
+          p.is_phased, p.closing_strategy
+        );
+        toast.success("Proposta duplicada!");
+        navigate(`/admin/propostas/${id}`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao duplicar");
+    }
+  };
 
   const filtered = useMemo(() => {
     return propostas.filter(p => {
@@ -109,64 +145,69 @@ export default function AdminPropostas() {
         <EmptyState
           icon={<FileText className="h-10 w-10 text-muted-foreground" />}
           title={propostas.length === 0 ? "Nenhuma proposta criada" : "Nenhum resultado"}
-          description={propostas.length === 0 ? "Crie sua primeira proposta comercial com IA." : "Ajuste os filtros para encontrar propostas."}
+          description={propostas.length === 0 ? "Crie sua primeira proposta comercial com IA." : "Ajuste os filtros."}
           action={propostas.length === 0 ? { label: "Nova Proposta", onClick: () => navigate("/admin/propostas/nova") } : undefined}
         />
       ) : (
-        <AnimatePresence mode="popLayout">
-          <div className="space-y-3">
-            {filtered.map(p => {
-              const st = PROPOSAL_STATUS_MAP[p.status] || PROPOSAL_STATUS_MAP.rascunho;
-              const recTier = p.proposal_tiers.find(t => t.is_recommended);
-              return (
-                <motion.div
-                  key={p.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="rounded-xl border border-border/40 bg-card p-5 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="font-display font-semibold text-base truncate">{p.nome_cliente}</h3>
-                        <Badge variant="outline" className={`${st.bgClass} ${st.color} text-xs`}>{st.label}</Badge>
-                        {recTier && <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">Rec: {recTier.name}</Badge>}
-                        {p.proposal_tiers.length > 0 && <Badge variant="outline" className="text-[10px]">{p.proposal_tiers.length} faixas</Badge>}
+        <div className="border border-border/40 rounded-xl overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30">
+                <TableHead className="text-xs">Cliente</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Tipo</TableHead>
+                <TableHead className="text-xs hidden lg:table-cell">Faixa Rec.</TableHead>
+                <TableHead className="text-xs hidden lg:table-cell">Valor Rec.</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Faixas</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Data</TableHead>
+                <TableHead className="text-xs text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map(p => {
+                const st = PROPOSAL_STATUS_MAP[p.status] || PROPOSAL_STATUS_MAP.rascunho;
+                const recTier = p.proposal_tiers.find(t => t.is_recommended);
+                return (
+                  <TableRow key={p.id} className="cursor-pointer hover:bg-muted/20" onClick={() => navigate(`/admin/propostas/${p.id}`)}>
+                    <TableCell>
+                      <div className="font-medium text-sm">{p.nome_cliente}</div>
+                      {p.empresa_cliente && <div className="text-xs text-muted-foreground">{p.empresa_cliente}</div>}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{p.tipo_projeto}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      {recTier ? <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">{recTier.name}</Badge> : <span className="text-xs text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm font-medium text-primary">
+                      {recTier ? `R$ ${recTier.price.toLocaleString("pt-BR")}` : `R$ ${p.valor_ideal.toLocaleString("pt-BR")}`}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={`text-[10px] ${st.bgClass} ${st.color}`}>{st.label}</Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                      {p.proposal_tiers.length > 0 ? `${p.proposal_tiers.length} faixas` : "—"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                      {new Date(p.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/propostas/${p.id}`)}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(p)}>
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleRemove(p.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
-                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-1.5">
-                        {p.empresa_cliente && <span>{p.empresa_cliente}</span>}
-                        <span>{p.tipo_projeto}</span>
-                        {p.segmento && <span>• {p.segmento}</span>}
-                        <span>{new Date(p.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</span>
-                      </div>
-                      <div className="flex gap-3 text-xs">
-                        {recTier ? (
-                          <span className="text-primary font-medium">R$ {recTier.price.toLocaleString("pt-BR")}</span>
-                        ) : (
-                          <>
-                            <span className="text-amber-400">Min: R$ {p.valor_minimo.toLocaleString("pt-BR")}</span>
-                            <span className="text-primary font-medium">Ideal: R$ {p.valor_ideal.toLocaleString("pt-BR")}</span>
-                            <span className="text-emerald-400">Premium: R$ {p.valor_premium.toLocaleString("pt-BR")}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button variant="default" size="sm" onClick={() => navigate(`/admin/propostas/${p.id}`)} className="gap-1">
-                        <Eye className="h-3.5 w-3.5" /> Ver
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleRemove(p.id)} className="text-muted-foreground hover:text-destructive gap-1">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </AnimatePresence>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   );
