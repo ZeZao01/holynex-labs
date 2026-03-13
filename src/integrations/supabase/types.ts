@@ -281,37 +281,109 @@ export type Database = {
       }
       orcamentos: {
         Row: {
+          aceita_mvp: boolean | null
+          complexidade_estimada: string | null
           criado_em: string
           descricao: string
+          dor_principal: string | null
           email: string
           empresa: string | null
+          estagio_operacao: string | null
+          estrategia_comercial: string | null
+          faixa_investimento: string | null
+          faixa_ticket: string | null
           id: string
+          nicho: string | null
           nome: string
+          numero_usuarios: string | null
+          objetivo: string | null
+          observacoes_internas: string | null
+          origem_lead: string | null
+          prazo_desejado: string | null
+          precisa_admin: boolean | null
+          precisa_app_mobile: boolean | null
+          precisa_area_cliente: boolean | null
+          precisa_integracoes: boolean | null
+          precisa_login: boolean | null
           prioridade: string | null
           resumo_ia: string | null
+          score_qualificacao: number | null
           status: string
+          status_comercial: string | null
+          tags_automaticas: string[] | null
+          temperatura_lead: string | null
+          tipo_projeto: string | null
+          urgencia: string | null
         }
         Insert: {
+          aceita_mvp?: boolean | null
+          complexidade_estimada?: string | null
           criado_em?: string
           descricao: string
+          dor_principal?: string | null
           email: string
           empresa?: string | null
+          estagio_operacao?: string | null
+          estrategia_comercial?: string | null
+          faixa_investimento?: string | null
+          faixa_ticket?: string | null
           id?: string
+          nicho?: string | null
           nome: string
+          numero_usuarios?: string | null
+          objetivo?: string | null
+          observacoes_internas?: string | null
+          origem_lead?: string | null
+          prazo_desejado?: string | null
+          precisa_admin?: boolean | null
+          precisa_app_mobile?: boolean | null
+          precisa_area_cliente?: boolean | null
+          precisa_integracoes?: boolean | null
+          precisa_login?: boolean | null
           prioridade?: string | null
           resumo_ia?: string | null
+          score_qualificacao?: number | null
           status?: string
+          status_comercial?: string | null
+          tags_automaticas?: string[] | null
+          temperatura_lead?: string | null
+          tipo_projeto?: string | null
+          urgencia?: string | null
         }
         Update: {
+          aceita_mvp?: boolean | null
+          complexidade_estimada?: string | null
           criado_em?: string
           descricao?: string
+          dor_principal?: string | null
           email?: string
           empresa?: string | null
+          estagio_operacao?: string | null
+          estrategia_comercial?: string | null
+          faixa_investimento?: string | null
+          faixa_ticket?: string | null
           id?: string
+          nicho?: string | null
           nome?: string
+          numero_usuarios?: string | null
+          objetivo?: string | null
+          observacoes_internas?: string | null
+          origem_lead?: string | null
+          prazo_desejado?: string | null
+          precisa_admin?: boolean | null
+          precisa_app_mobile?: boolean | null
+          precisa_area_cliente?: boolean | null
+          precisa_integracoes?: boolean | null
+          precisa_login?: boolean | null
           prioridade?: string | null
           resumo_ia?: string | null
+          score_qualificacao?: number | null
           status?: string
+          status_comercial?: string | null
+          tags_automaticas?: string[] | null
+          temperatura_lead?: string | null
+          tipo_projeto?: string | null
+          urgencia?: string | null
         }
         Relationships: []
       }
