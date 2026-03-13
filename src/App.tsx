@@ -25,6 +25,7 @@ import AdminPropostaDetalhe from "./pages/AdminPropostaDetalhe";
 import AdminTemplates from "./pages/AdminTemplates";
 import AdminProjetos from "./pages/AdminProjetos";
 import AdminSistemas from "./pages/AdminSistemas";
+import AdminSistemaDetalhe from "./pages/AdminSistemaDetalhe";
 import AdminAcessos from "./pages/AdminAcessos";
 import AdminModulos from "./pages/AdminModulos";
 import AdminManutencao from "./pages/AdminManutencao";

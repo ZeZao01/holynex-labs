@@ -120,7 +120,7 @@ export async function saveDeliveredSystem(system: Partial<DeliveredSystem>) {
   } else {
     const { data, error } = await supabase
       .from("delivered_systems")
-      .insert(system)
+      .insert([system as any])
       .select()
       .single();
     if (error) throw error;
