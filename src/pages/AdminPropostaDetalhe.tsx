@@ -95,7 +95,7 @@ export default function AdminPropostaDetalhe() {
     setExportingPdf(true);
     try {
       const pdfBlob = await generatePropostaPdf(proposta, template?.id);
-      await uploadPdf(id, proposta.nome_cliente, pdfBlob);
+      const result = await uploadPdf(id, proposta.nome_cliente, pdfBlob, proposta, template?.id);
       setPdfRefreshKey(k => k + 1);
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
@@ -103,8 +103,11 @@ export default function AdminPropostaDetalhe() {
       a.download = `Proposta_HolyNex_${proposta.nome_cliente.replace(/\s+/g, "_")}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("PDF gerado!");
-    } catch { toast.error("Erro ao exportar PDF"); } finally { setExportingPdf(false); }
+      toast.success(`PDF v${result.versao} gerado! Código: ${result.document_code}`);
+    } catch (err: any) {
+      console.error("PDF export error:", err);
+      toast.error(err?.message || "Erro ao exportar PDF. Tente novamente.");
+    } finally { setExportingPdf(false); }
   };
 
   const startEditTiers = () => {
