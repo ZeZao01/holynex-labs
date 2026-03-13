@@ -268,8 +268,9 @@ export async function setPermission(roleName: string, module: string, action: st
     .from("role_permissions" as any).select("id")
     .eq("role_name", roleName).eq("module", module).eq("action", action).maybeSingle();
 
-  if (existing) {
-    await supabase.from("role_permissions" as any).update({ allowed, atualizado_em: new Date().toISOString() }).eq("id", existing.id);
+  const existingRow = existing as any;
+  if (existingRow?.id) {
+    await supabase.from("role_permissions" as any).update({ allowed, atualizado_em: new Date().toISOString() }).eq("id", existingRow.id);
   } else {
     await supabase.from("role_permissions" as any).insert({ role_name: roleName, module, action, allowed });
   }
