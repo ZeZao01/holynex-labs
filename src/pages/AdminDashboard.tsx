@@ -248,13 +248,13 @@ export default function AdminDashboard() {
   ];
 
   const operationalStatus: OperationalItem[] = [
-    { label: "Comercial", status: stats.leads > 0 ? "ok" : "pending", detail: `${stats.leads} leads · ${stats.propostas} propostas` },
-    { label: "Execução", status: stats.projetosAtivos > 0 ? "ok" : "pending", detail: `${stats.projetosAtivos} ativos · ${stats.projetosPausados} pausados` },
-    { label: "Entregas", status: stats.sistemas > 0 ? "ok" : "pending", detail: `${stats.sistemas} sistemas entregues` },
-    { label: "Manutenção", status: stats.solicitacoesPendentes > 0 ? "warning" : "ok", detail: `${stats.solicitacoes} solicitações abertas` },
-    { label: "Documentos", status: stats.pdfsGerados > 0 ? "ok" : "pending", detail: `${stats.pdfsGerados} PDFs gerados` },
-    { label: "Credenciais", status: stats.acessos > 0 ? "ok" : "pending", detail: `${stats.acessos} acessos cadastrados` },
-    { label: "Módulos", status: stats.modulos > 0 ? "ok" : "pending", detail: `${stats.modulos} módulos ativos` },
+    { label: "Comercial", status: stats.leads > 0 ? "ok" : "pending" },
+    { label: "Execução", status: stats.projetosAtivos > 0 ? "ok" : "pending" },
+    { label: "Entregas", status: stats.sistemas > 0 ? "ok" : "pending" },
+    { label: "Manutenção", status: stats.solicitacoesPendentes > 0 ? "attention" : "ok" },
+    { label: "Documentos", status: stats.pdfsGerados > 0 ? "ok" : "pending" },
+    { label: "Credenciais", status: stats.acessos > 0 ? "ok" : "pending" },
+    { label: "Módulos", status: stats.modulos > 0 ? "ok" : "pending" },
   ];
 
   const quickActions = [
