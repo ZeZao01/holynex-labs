@@ -4,9 +4,7 @@ import SectionCard from "@/components/admin/SectionCard";
 import StatCard from "@/components/admin/StatCard";
 import StatsGrid from "@/components/admin/StatsGrid";
 import FilterToolbar from "@/components/admin/FilterToolbar";
-import StatusBadge from "@/components/admin/StatusBadge";
 import EmptyState from "@/components/admin/EmptyState";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,42 +13,61 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import {
   DollarSign, TrendingUp, Repeat, BarChart3, AlertTriangle, Award,
-  Target, Zap, ArrowUpRight, Star, Shield, Flame,
+  Target, Zap, Flame,
 } from "lucide-react";
 import {
-  getAllProfitabilityMetrics, getNicheMetrics, getPortfolioPerformance,
-  ProfitabilityMetrics, NicheMetrics, PortfolioPerformance,
-  FLAG_LABELS, RISK_ALERTS,
+  getAllProfitabilityMetrics,
+  getNicheMetrics,
+  getPortfolioPerformance,
+  getProjectModelPerformance,
+  ProfitabilityMetrics,
+  NicheMetrics,
+  PortfolioPerformance,
+  ProjectModelPerformance,
+  FLAG_LABELS,
+  RISK_ALERTS,
 } from "@/lib/financial-metrics";
 import { getDeliveredSystems, DeliveredSystem } from "@/lib/delivered-systems";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-const CHART_COLORS = ["hsl(262,98%,71%)", "hsl(180,70%,50%)", "hsl(40,95%,60%)", "hsl(340,80%,60%)", "hsl(120,60%,50%)", "hsl(200,80%,60%)"];
+const CHART_COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--accent))",
+  "hsl(var(--secondary))",
+  "hsl(var(--muted-foreground))",
+  "hsl(var(--foreground))",
+  "hsl(var(--border))",
+];
 
 export default function AdminFinanceiro() {
   const [metrics, setMetrics] = useState<ProfitabilityMetrics[]>([]);
   const [systems, setSystems] = useState<DeliveredSystem[]>([]);
   const [nicheData, setNicheData] = useState<NicheMetrics[]>([]);
   const [portfolioPerf, setPortfolioPerf] = useState<PortfolioPerformance[]>([]);
+  const [modelPerf, setModelPerf] = useState<ProjectModelPerformance[]>([]);
   const [search, setSearch] = useState("");
   const [filterNicho, setFilterNicho] = useState("all");
   const [filterFlag, setFilterFlag] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function load() {
     try {
-      const [m, s, n, p] = await Promise.all([
+      const [m, s, n, p, mp] = await Promise.all([
         getAllProfitabilityMetrics(),
         getDeliveredSystems(),
         getNicheMetrics(),
         getPortfolioPerformance(),
+        getProjectModelPerformance(),
       ]);
       setMetrics(m);
       setSystems(s);
       setNicheData(n);
       setPortfolioPerf(p);
+      setModelPerf(mp);
     } catch {
       toast({ title: "Erro ao carregar dados financeiros", variant: "destructive" });
     } finally {
@@ -69,18 +86,19 @@ export default function AdminFinanceiro() {
     const receitaTotal = metrics.reduce((a, m) => a + (m.receita_total || 0), 0);
     const recorrencia = metrics.reduce((a, m) => a + (m.receita_recorrente || 0), 0);
     const manutencao = metrics.reduce((a, m) => a + (m.receita_manutencao || 0), 0);
-    const margens = metrics.filter(m => m.receita_total > 0).map(m => m.margem_estimada);
+    const margens = metrics.filter((m) => m.receita_total > 0).map((m) => m.margem_estimada);
     const margemMedia = margens.length > 0 ? margens.reduce((a, b) => a + b, 0) / margens.length : 0;
 
-    // Also compute from systems that don't have metrics yet
     const systemReceitaTotal = systems.reduce((a, s) => a + (s.valor_fechado || 0), 0);
     const systemRecorrencia = systems.reduce((a, s) => a + (s.recorrencia_mensal || 0), 0);
     const totalReceita = Math.max(receitaTotal, systemReceitaTotal);
     const totalRecorrencia = Math.max(recorrencia, systemRecorrencia);
     const ticketMedio = systems.length > 0 ? systemReceitaTotal / systems.length : 0;
 
-    return { receitaTotal: totalReceita, recorrencia: totalRecorrencia, manutencao, margemMedia, ticketMedio };
-  }, [metrics, systems]);
+    const portfolioInteracoes = portfolioPerf.reduce((a, p) => a + (p.cliques || 0) + (p.ctas_acionados || 0), 0);
+
+    return { receitaTotal: totalReceita, recorrencia: totalRecorrencia, manutencao, margemMedia, ticketMedio, portfolioInteracoes };
+  }, [metrics, systems, portfolioPerf]);
 
   // Enriched metrics with system info
   const enrichedMetrics = useMemo(() => {
@@ -111,6 +129,10 @@ export default function AdminFinanceiro() {
   const topRecorrencia = useMemo(() => [...enrichedMetrics].sort((a, b) => b.recurrence_score - a.recurrence_score).slice(0, 10), [enrichedMetrics]);
   const topReuso = useMemo(() => [...enrichedMetrics].sort((a, b) => b.reuse_score - a.reuse_score).slice(0, 10), [enrichedMetrics]);
   const topOportunidade = useMemo(() => [...enrichedMetrics].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 10), [enrichedMetrics]);
+  const topModelos = useMemo(
+    () => [...modelPerf].sort((a, b) => b.opportunity_score - a.opportunity_score).slice(0, 10),
+    [modelPerf],
+  );
 
   const nichos = useMemo(() => [...new Set(systems.map(s => s.nicho).filter(Boolean))], [systems]);
 
@@ -145,23 +167,24 @@ export default function AdminFinanceiro() {
       <PageHeader title="Financeiro Estratégico" description="Inteligência financeira, margens, rankings e oportunidades" breadcrumbs={[{ label: "Financeiro" }]} />
 
       {/* KPI Cards */}
-      <StatsGrid columns={5}>
+      <StatsGrid columns={6}>
         <StatCard title="Receita Total" value={fmt(stats.receitaTotal)} icon={<DollarSign className="h-5 w-5" />} />
         <StatCard title="Recorrência Mensal" value={fmt(stats.recorrencia)} icon={<Repeat className="h-5 w-5" />} />
         <StatCard title="Manutenção" value={fmt(stats.manutencao)} icon={<Zap className="h-5 w-5" />} />
         <StatCard title="Ticket Médio" value={fmt(stats.ticketMedio)} icon={<BarChart3 className="h-5 w-5" />} />
         <StatCard title="Margem Média" value={`${stats.margemMedia.toFixed(1)}%`} icon={<TrendingUp className="h-5 w-5" />} />
+        <StatCard title="Interações Portfólio" value={stats.portfolioInteracoes} icon={<Flame className="h-5 w-5" />} />
       </StatsGrid>
 
       {/* Risk Alerts */}
       {risks.length > 0 && (
-        <SectionCard title="⚠️ Alertas de Risco" className="border-amber-500/30">
+        <SectionCard title="⚠️ Alertas de Risco" className="border-destructive/30">
           <div className="space-y-2">
             {risks.slice(0, 5).map((r, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-amber-500/5">
-                <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+              <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-destructive/10">
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                 <span className="font-medium">{r.system?.nome || "Sistema"}</span>
-                <Badge variant="outline" className="text-amber-400 border-amber-400/30">{r.label}</Badge>
+                <Badge variant="outline" className="text-destructive border-destructive/30">{r.label}</Badge>
               </div>
             ))}
           </div>
@@ -179,13 +202,28 @@ export default function AdminFinanceiro() {
         {/* Rankings Tab */}
         <TabsContent value="rankings" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RankingCard title="🏆 Maior Retorno" icon={<Award className="h-4 w-4" />} items={topRetorno} scoreKey="profitability_score" />
-            <RankingCard title="🔄 Maior Recorrência" icon={<Repeat className="h-4 w-4" />} items={topRecorrencia} scoreKey="recurrence_score" />
-            <RankingCard title="♻️ Maior Potencial de Reuso" icon={<Target className="h-4 w-4" />} items={topReuso} scoreKey="reuse_score" />
-            <RankingCard title="🚀 Maior Oportunidade" icon={<Flame className="h-4 w-4" />} items={topOportunidade} scoreKey="opportunity_score" />
+            <RankingCard title="🏆 Maior Retorno" items={topRetorno} scoreKey="profitability_score" />
+            <RankingCard title="🔄 Maior Recorrência" items={topRecorrencia} scoreKey="recurrence_score" />
+            <RankingCard title="♻️ Maior Potencial de Reuso" items={topReuso} scoreKey="reuse_score" />
+            <RankingCard title="🚀 Maior Oportunidade" items={topOportunidade} scoreKey="opportunity_score" />
           </div>
-          {enrichedMetrics.length === 0 && (
-            <EmptyState icon={<Award className="h-10 w-10 text-muted-foreground" />} title="Sem dados de ranking" description="Adicione métricas financeiras nos sistemas entregues para ver os rankings." />
+
+          {topModelos.length > 0 && (
+            <SectionCard title="📈 Modelos com melhor potencial comercial">
+              <div className="space-y-2">
+                {topModelos.map((m, i) => (
+                  <div key={m.id} className="flex items-center gap-3 text-sm">
+                    <span className="text-xs font-bold text-muted-foreground w-5 text-right">{i + 1}.</span>
+                    <span className="flex-1 font-medium truncate">{m.model_name || `Modelo ${i + 1}`}</span>
+                    <ScoreBar value={Number(m.opportunity_score) || 0} />
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {enrichedMetrics.length === 0 && topModelos.length === 0 && (
+            <EmptyState icon={<Award className="h-10 w-10 text-muted-foreground" />} title="Sem dados de ranking" description="Adicione métricas financeiras nos sistemas entregues e modelos para ver os rankings." />
           )}
         </TabsContent>
 
@@ -200,7 +238,7 @@ export default function AdminFinanceiro() {
                       <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
                       <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
                       <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--foreground))" }} />
-                      <Bar dataKey="ticket" fill="hsl(262,98%,71%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="ticket" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -328,7 +366,7 @@ export default function AdminFinanceiro() {
                       <TableCell className="text-right font-medium">{fmt(m.receita_total)}</TableCell>
                       <TableCell className="text-right">{fmt(m.receita_recorrente)}/mês</TableCell>
                       <TableCell className="text-right">
-                        <span className={m.margem_estimada < 20 ? "text-red-400" : m.margem_estimada > 50 ? "text-emerald-400" : "text-foreground"}>
+                        <span className={m.margem_estimada < 20 ? "text-destructive" : m.margem_estimada > 50 ? "text-primary" : "text-foreground"}>
                           {m.margem_estimada.toFixed(1)}%
                         </span>
                       </TableCell>
@@ -379,7 +417,7 @@ function ScoreBar({ value }: { value: number }) {
 }
 
 function ScorePill({ label, value }: { label: string; value: number }) {
-  const color = value >= 70 ? "text-emerald-400" : value >= 40 ? "text-amber-400" : "text-red-400";
+  const color = value >= 70 ? "text-primary" : value >= 40 ? "text-foreground" : "text-destructive";
   return (
     <div className="flex flex-col items-center">
       <span className={`text-[10px] font-bold ${color}`}>{value}</span>
@@ -388,7 +426,7 @@ function ScorePill({ label, value }: { label: string; value: number }) {
   );
 }
 
-function RankingCard({ title, icon, items, scoreKey }: { title: string; icon: React.ReactNode; items: (ProfitabilityMetrics & { system: DeliveredSystem | null })[]; scoreKey: keyof ProfitabilityMetrics }) {
+function RankingCard({ title, items, scoreKey }: { title: string; items: (ProfitabilityMetrics & { system: DeliveredSystem | null })[]; scoreKey: keyof ProfitabilityMetrics }) {
   if (items.length === 0) return null;
   return (
     <SectionCard title={title}>

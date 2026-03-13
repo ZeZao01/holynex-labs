@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { DollarSign, TrendingUp, Repeat, Zap, Target } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,9 @@ import {
 
 interface Props {
   systemId: string;
-  compact?: boolean;
 }
 
-export default function FinancialSummary({ systemId, compact }: Props) {
+export default function FinancialSummary({ systemId }: Props) {
   const [metrics, setMetrics] = useState<ProfitabilityMetrics | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<ProfitabilityMetrics>>({});
@@ -120,7 +119,7 @@ export default function FinancialSummary({ systemId, compact }: Props) {
         <Stat label="Setup" value={fmt(metrics!.receita_setup)} />
         <Stat label="Recorrência" value={`${fmt(metrics!.receita_recorrente)}/mês`} />
         <Stat label="Manutenção" value={fmt(metrics!.receita_manutencao)} />
-        <Stat label="Margem" value={`${metrics!.margem_estimada.toFixed(1)}%`} color={metrics!.margem_estimada < 20 ? "text-red-400" : metrics!.margem_estimada > 50 ? "text-emerald-400" : undefined} />
+        <Stat label="Margem" value={`${metrics!.margem_estimada.toFixed(1)}%`} color={metrics!.margem_estimada < 20 ? "text-destructive" : metrics!.margem_estimada > 50 ? "text-primary" : undefined} />
       </div>
       <div className="grid grid-cols-5 gap-2">
         <ScoreBlock label="Profit." value={metrics!.profitability_score} />
@@ -140,7 +139,7 @@ export default function FinancialSummary({ systemId, compact }: Props) {
       {risks.length > 0 && (
         <div className="space-y-1">
           {risks.map(r => (
-            <div key={r.key} className="text-xs text-amber-400 flex items-center gap-1">⚠️ {r.label}</div>
+            <div key={r.key} className="text-xs text-destructive flex items-center gap-1">⚠️ {r.label}</div>
           ))}
         </div>
       )}
@@ -158,7 +157,7 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 }
 
 function ScoreBlock({ label, value }: { label: string; value: number }) {
-  const color = value >= 70 ? "text-emerald-400" : value >= 40 ? "text-amber-400" : "text-red-400";
+  const color = value >= 70 ? "text-primary" : value >= 40 ? "text-foreground" : "text-destructive";
   return (
     <div className="text-center">
       <Progress value={value} className="h-1.5 mb-1" />
