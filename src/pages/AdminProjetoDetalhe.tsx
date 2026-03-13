@@ -70,6 +70,7 @@ export default function AdminProjetoDetalhe() {
       setMilestones(m);
       setEvents(e);
       setAccesses(ac);
+      setProjectModules(pm);
     } catch { toast({ title: "Erro ao carregar projeto", variant: "destructive" }); }
     finally { setLoading(false); }
   }
