@@ -390,6 +390,148 @@ export type Database = {
           },
         ]
       }
+      project_change_events: {
+        Row: {
+          change_id: string
+          criado_em: string | null
+          descricao: string | null
+          evento: string
+          id: string
+        }
+        Insert: {
+          change_id: string
+          criado_em?: string | null
+          descricao?: string | null
+          evento: string
+          id?: string
+        }
+        Update: {
+          change_id?: string
+          criado_em?: string | null
+          descricao?: string | null
+          evento?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_change_events_change_id_fkey"
+            columns: ["change_id"]
+            isOneToOne: false
+            referencedRelation: "project_changes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_changes: {
+        Row: {
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          assigned_to_name: string | null
+          atualizado_em: string | null
+          billing_mode: string | null
+          change_type: string
+          commercial_notes: string | null
+          completed_at: string | null
+          criado_em: string | null
+          delivered_system_id: string | null
+          desired_deadline: string | null
+          detailed_description: string | null
+          estimated_cost: number | null
+          estimated_hours: number | null
+          id: string
+          internal_notes: string | null
+          is_included_in_contract: boolean | null
+          needs_approval: boolean | null
+          opportunity_tag: string | null
+          planned_date: string | null
+          priority: string
+          project_id: string | null
+          project_module_id: string | null
+          request_origin: string | null
+          requested_at: string | null
+          requested_by_name: string | null
+          short_description: string | null
+          status: string
+          title: string
+          urgency: string
+        }
+        Insert: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assigned_to_name?: string | null
+          atualizado_em?: string | null
+          billing_mode?: string | null
+          change_type?: string
+          commercial_notes?: string | null
+          completed_at?: string | null
+          criado_em?: string | null
+          delivered_system_id?: string | null
+          desired_deadline?: string | null
+          detailed_description?: string | null
+          estimated_cost?: number | null
+          estimated_hours?: number | null
+          id?: string
+          internal_notes?: string | null
+          is_included_in_contract?: boolean | null
+          needs_approval?: boolean | null
+          opportunity_tag?: string | null
+          planned_date?: string | null
+          priority?: string
+          project_id?: string | null
+          project_module_id?: string | null
+          request_origin?: string | null
+          requested_at?: string | null
+          requested_by_name?: string | null
+          short_description?: string | null
+          status?: string
+          title: string
+          urgency?: string
+        }
+        Update: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assigned_to_name?: string | null
+          atualizado_em?: string | null
+          billing_mode?: string | null
+          change_type?: string
+          commercial_notes?: string | null
+          completed_at?: string | null
+          criado_em?: string | null
+          delivered_system_id?: string | null
+          desired_deadline?: string | null
+          detailed_description?: string | null
+          estimated_cost?: number | null
+          estimated_hours?: number | null
+          id?: string
+          internal_notes?: string | null
+          is_included_in_contract?: boolean | null
+          needs_approval?: boolean | null
+          opportunity_tag?: string | null
+          planned_date?: string | null
+          priority?: string
+          project_id?: string | null
+          project_module_id?: string | null
+          request_origin?: string | null
+          requested_at?: string | null
+          requested_by_name?: string | null
+          short_description?: string | null
+          status?: string
+          title?: string
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_changes_delivered_system_id_fkey"
+            columns: ["delivered_system_id"]
+            isOneToOne: false
+            referencedRelation: "delivered_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       propostas: {
         Row: {
           atualizado_em: string
