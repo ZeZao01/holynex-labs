@@ -162,13 +162,13 @@ export default function AdminFinanceiro() {
 
       {/* Risk Alerts */}
       {risks.length > 0 && (
-        <SectionCard title="⚠️ Alertas de Risco" className="border-amber-500/30">
+        <SectionCard title="⚠️ Alertas de Risco" className="border-destructive/30">
           <div className="space-y-2">
             {risks.slice(0, 5).map((r, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-amber-500/5">
-                <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+              <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-destructive/10">
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                 <span className="font-medium">{r.system?.nome || "Sistema"}</span>
-                <Badge variant="outline" className="text-amber-400 border-amber-400/30">{r.label}</Badge>
+                <Badge variant="outline" className="text-destructive border-destructive/30">{r.label}</Badge>
               </div>
             ))}
           </div>
