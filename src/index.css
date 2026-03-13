@@ -92,60 +92,82 @@
 /* ===== Animated Glow Button ===== */
 .btn-glow {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   z-index: 1;
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .btn-glow::before {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: -3px;
   z-index: -2;
   background: linear-gradient(
     90deg,
     hsl(262, 98%, 71%),
     hsl(220, 90%, 70%),
     hsl(280, 80%, 60%),
+    hsl(262, 98%, 71%),
+    hsl(220, 90%, 70%),
     hsl(262, 98%, 71%)
   );
   background-size: 300% 100%;
   border-radius: inherit;
   animation: glow-slide 3s linear infinite;
+  filter: blur(0px);
+  transition: filter 0.4s, inset 0.4s;
 }
 .btn-glow::after {
   content: '';
   position: absolute;
-  inset: 2px;
+  inset: 3px;
   z-index: -1;
   background: hsl(240, 20%, 2%);
   border-radius: inherit;
   transition: background 0.3s;
 }
+.btn-glow:hover::before {
+  inset: -4px;
+  filter: blur(6px);
+}
 .btn-glow:hover::after {
   background: hsl(250, 30%, 8%);
 }
 .btn-glow:hover {
-  box-shadow: 0 0 30px hsl(262, 98%, 71%, 0.4), 0 0 60px hsl(262, 98%, 71%, 0.15);
+  box-shadow:
+    0 0 20px hsl(262, 98%, 71%, 0.5),
+    0 0 40px hsl(262, 98%, 71%, 0.25),
+    0 0 80px hsl(262, 98%, 71%, 0.1);
   transform: translateY(-2px);
+}
+/* Neon pulse on the border */
+.btn-glow {
+  animation: neon-pulse-shadow 3s ease-in-out infinite;
 }
 
 /* Filled glow variant */
 .btn-glow-filled {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   z-index: 1;
   background: linear-gradient(
     90deg,
     hsl(262, 98%, 71%) 0%,
     hsl(220, 90%, 70%) 50%,
+    hsl(280, 80%, 60%) 75%,
     hsl(262, 98%, 71%) 100%
   );
-  background-size: 200% 100%;
-  animation: glow-slide-filled 3s ease infinite;
+  background-size: 300% 100%;
+  animation: glow-slide-filled 3s linear infinite;
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow:
+    0 0 12px hsl(262, 98%, 71%, 0.35),
+    0 0 30px hsl(262, 98%, 71%, 0.15);
 }
 .btn-glow-filled:hover {
-  box-shadow: 0 0 30px hsl(262, 98%, 71%, 0.5), 0 0 60px hsl(262, 98%, 71%, 0.2);
+  box-shadow:
+    0 0 20px hsl(262, 98%, 71%, 0.6),
+    0 0 50px hsl(262, 98%, 71%, 0.3),
+    0 0 80px hsl(262, 98%, 71%, 0.1);
   transform: translateY(-2px);
 }
 
