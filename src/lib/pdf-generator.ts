@@ -2,6 +2,8 @@ import { jsPDF } from "jspdf";
 import type { Proposta } from "@/lib/propostas";
 import { type PdfTemplate, type RGB, getTemplateById } from "@/lib/pdf-templates";
 import { TIER_DEFAULTS, SCOPE_MODULE_DEFAULTS, type ProposalTier, type ScopeStatus } from "@/lib/proposal-tiers";
+import { normalizePropostaJSON, extractDocumentoPublico } from "@/lib/proposal-normalizer";
+import { logProposalEvent } from "@/lib/proposal-events";
 import logoUrl from "@/assets/logo.png";
 
 // ── Image loader ──
