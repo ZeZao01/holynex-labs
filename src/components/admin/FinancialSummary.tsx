@@ -157,7 +157,7 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 }
 
 function ScoreBlock({ label, value }: { label: string; value: number }) {
-  const color = value >= 70 ? "text-emerald-400" : value >= 40 ? "text-amber-400" : "text-red-400";
+  const color = value >= 70 ? "text-primary" : value >= 40 ? "text-foreground" : "text-destructive";
   return (
     <div className="text-center">
       <Progress value={value} className="h-1.5 mb-1" />
