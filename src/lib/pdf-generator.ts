@@ -1408,7 +1408,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
     pdf.setTextColor(...C.cyan);
-    pdf.text("APROVAR PROJETO ✓", ctaX + ctaW / 2, btnY + 7, { align: "center" });
+    pdf.text("APROVAR PROJETO", ctaX + ctaW / 2, btnY + 7, { align: "center" });
 
     // Contact info
     const contactY = btnY + 25;
