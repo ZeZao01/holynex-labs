@@ -16,6 +16,7 @@ import {
   Palette,
   FilePlus,
   ClipboardList,
+  Sparkles,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
