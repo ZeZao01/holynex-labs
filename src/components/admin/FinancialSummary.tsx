@@ -17,7 +17,7 @@ interface Props {
   compact?: boolean;
 }
 
-export default function FinancialSummary({ systemId, compact }: Props) {
+export default function FinancialSummary({ systemId }: Props) {
   const [metrics, setMetrics] = useState<ProfitabilityMetrics | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<ProfitabilityMetrics>>({});
