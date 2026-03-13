@@ -1452,38 +1452,30 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   // ══════════════════════════════════════════════
   // EXTRA PAGES — Full text sections that didn't fit
   // ══════════════════════════════════════════════
-  const extraSections: Array<{ title: string; type: "text" | "list"; data: any }> = [];
-
-  if (pj?.riscos?.length) extraSections.push({ title: "Riscos e Premissas", type: "list", data: pj.riscos });
-  if (pj?.proposta_comercial) extraSections.push({ title: "Proposta Comercial Completa", type: "text", data: pj.proposta_comercial });
-
-  for (const section of extraSections) {
+  // Only include Riscos — "Proposta Comercial Completa" is excluded from public PDF
+  if (pj?.riscos?.length) {
     newPage();
     const mx = 20;
     let y = 22;
 
     drawSectionBadge("Detalhamento", mx, y);
     y += 12;
-    drawTitle(section.title, mx, y, 20);
+    drawTitle("Riscos e Premissas", mx, y, 20);
     y += 10;
 
-    if (section.type === "text") {
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
-      pdf.setTextColor(...C.lightGray);
-      const lines = pdf.splitTextToSize(section.data, W - mx * 2);
-      for (const line of lines) {
-        if (y > H - 20) {
-          newPage();
-          y = 22;
-        }
-        pdf.text(line, mx, y);
-        y += 4.5;
-      }
-    } else {
-      y = drawBulletList(section.data, mx, y, W - mx * 2, C.cyan);
-    }
+    y = drawBulletList(pj.riscos, mx, y, W - mx * 2, C.cyan);
   }
+
+  // Log successful render
+  const renderDuration = Date.now() - renderStart;
+  logProposalEvent("proposal_pdf_generated", proposta.id, {
+    render_status: "success",
+    duration_ms: renderDuration,
+    schema_valid: normResult.schema_valid,
+    output_size: normResult.output_size,
+    template_id: templateId || "cyber-magenta",
+    pdf_version: pdf.getNumberOfPages(),
+  });
 
   return pdf.output("blob");
 }
