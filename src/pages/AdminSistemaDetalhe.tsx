@@ -34,8 +34,13 @@ export default function AdminSistemaDetalhe() {
 
   async function load() {
     try {
-      const [s, t, e] = await Promise.all([
-        getDeliveredSystem(id!),
+      const s = await getDeliveredSystem(id!);
+      if (!s) {
+        toast({ title: "Sistema não encontrado", variant: "destructive" });
+        navigate("/admin/sistemas");
+        return;
+      }
+      const [t, e] = await Promise.all([
         getSystemTags(id!),
         getSystemEvents(id!),
       ]);
