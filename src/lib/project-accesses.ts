@@ -74,6 +74,26 @@ export async function getProjectAccesses() {
   return data as ProjectAccess[];
 }
 
+export async function getAccessesByProject(projectId: string) {
+  const { data, error } = await supabase
+    .from("project_accesses")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("criado_em", { ascending: false });
+  if (error) throw error;
+  return data as ProjectAccess[];
+}
+
+export async function getAccessesBySystem(systemId: string) {
+  const { data, error } = await supabase
+    .from("project_accesses")
+    .select("*")
+    .eq("delivered_system_id", systemId)
+    .order("criado_em", { ascending: false });
+  if (error) throw error;
+  return data as ProjectAccess[];
+}
+
 export async function getProjectAccess(id: string) {
   const { data, error } = await supabase
     .from("project_accesses")

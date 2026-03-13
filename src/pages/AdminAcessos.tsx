@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/admin/PageHeader";
 import FilterToolbar from "@/components/admin/FilterToolbar";
@@ -18,6 +18,8 @@ import {
   maskSecret, getAccessAlerts,
 } from "@/lib/project-accesses";
 import { getDeliveredSystems, DeliveredSystem } from "@/lib/delivered-systems";
+import { getProjects, Project } from "@/lib/projects";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import {
   KeyRound, Plus, Copy, ExternalLink, Eye, EyeOff, CheckCircle2, Edit, Trash2,
   AlertTriangle, Clock, Shield,
@@ -27,12 +29,15 @@ import { format } from "date-fns";
 export default function AdminAcessos() {
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [systems, setSystems] = useState<DeliveredSystem[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterEnv, setFilterEnv] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterSystem, setFilterSystem] = useState("all");
+  const [filterProject, setFilterProject] = useState("all");
+  const [filterNoVerification, setFilterNoVerification] = useState(false);
   const [groupBy, setGroupBy] = useState<"none" | "system">("none");
   const [showNew, setShowNew] = useState(false);
   const [editAccess, setEditAccess] = useState<ProjectAccess | null>(null);
@@ -46,12 +51,16 @@ export default function AdminAcessos() {
     load();
   }, []);
 
+  const loadCb = useCallback(() => load(), []);
+  useRealtimeSubscription("project_accesses", loadCb);
+
   async function load() {
     setLoading(true);
     try {
-      const [a, s] = await Promise.all([getProjectAccesses(), getDeliveredSystems()]);
+      const [a, s, p] = await Promise.all([getProjectAccesses(), getDeliveredSystems(), getProjects()]);
       setAccesses(a);
       setSystems(s);
+      setProjects(p);
     } catch {
       toast({ title: "Erro ao carregar acessos", variant: "destructive" });
     } finally {
@@ -113,8 +122,16 @@ export default function AdminAcessos() {
     if (filterEnv !== "all" && a.environment !== filterEnv) return false;
     if (filterStatus !== "all" && a.status !== filterStatus) return false;
     if (filterSystem !== "all" && a.delivered_system_id !== filterSystem) return false;
+    if (filterProject !== "all" && a.project_id !== filterProject) return false;
+    if (filterNoVerification) {
+      if (a.status !== "ativo") return false;
+      if (a.last_verified_at) {
+        const days = Math.floor((Date.now() - new Date(a.last_verified_at).getTime()) / 86400000);
+        if (days <= 30) return false;
+      }
+    }
     return true;
-  }), [accesses, search, filterType, filterEnv, filterStatus, filterSystem]);
+  }), [accesses, search, filterType, filterEnv, filterStatus, filterSystem, filterProject, filterNoVerification]);
 
   const alerts = useMemo(() => getAccessAlerts(accesses), [accesses]);
 
@@ -209,6 +226,13 @@ export default function AdminAcessos() {
               {Object.entries(ACCESS_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={filterProject} onValueChange={setFilterProject}>
+            <SelectTrigger className="w-40 h-9"><SelectValue placeholder="Projeto" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Projetos</SelectItem>
+              {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>
             <SelectTrigger className="w-36 h-9"><SelectValue placeholder="Agrupar" /></SelectTrigger>
             <SelectContent>
@@ -216,6 +240,9 @@ export default function AdminAcessos() {
               <SelectItem value="system">Por Sistema</SelectItem>
             </SelectContent>
           </Select>
+          <Button size="sm" variant={filterNoVerification ? "default" : "outline"} className="h-9" onClick={() => setFilterNoVerification(!filterNoVerification)}>
+            <AlertTriangle className="h-3 w-3 mr-1" /> Sem verificação
+          </Button>
         </FilterToolbar>
         <Button size="sm" onClick={() => setShowNew(true)}><Plus className="h-4 w-4 mr-1" /> Novo Acesso</Button>
       </div>

@@ -17,9 +17,12 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import {
   Loader2, Pencil, ExternalLink, Flag, Clock, DollarSign, Target, Plus, Trash2, CheckCircle2,
-  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck
+  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck, KeyRound, Copy
 } from "lucide-react";
 import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
+import {
+  getAccessesByProject, ProjectAccess, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
+} from "@/lib/project-accesses";
 import {
   getProject, saveProject, Project, PROJECT_STATUS, PROJECT_PRIORITY,
   getMilestones, saveMilestone, deleteMilestone, ProjectMilestone, MILESTONE_STATUS,
@@ -36,6 +39,7 @@ export default function AdminProjetoDetalhe() {
   const [project, setProject] = useState<Project | null>(null);
   const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
   const [events, setEvents] = useState<ProjectEvent[]>([]);
+  const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Project>>({});
@@ -52,15 +56,17 @@ export default function AdminProjetoDetalhe() {
 
   async function load() {
     try {
-      const [p, m, e] = await Promise.all([
+      const [p, m, e, ac] = await Promise.all([
         getProject(id!),
         getMilestones(id!),
         getProjectEvents(id!),
+        getAccessesByProject(id!),
       ]);
       setProject(p);
       setForm(p || {});
       setMilestones(m);
       setEvents(e);
+      setAccesses(ac);
     } catch { toast({ title: "Erro ao carregar projeto", variant: "destructive" }); }
     finally { setLoading(false); }
   }
@@ -301,6 +307,34 @@ export default function AdminProjetoDetalhe() {
               ))}
             </TableBody>
           </Table>
+        )}
+      </SectionCard>
+
+      {/* Acessos vinculados */}
+      <SectionCard title={`Acessos & Credenciais (${accesses.length})`} action={<Button size="sm" variant="outline" onClick={() => navigate("/admin/acessos")}><KeyRound className="h-4 w-4 mr-1" /> Ver Todos</Button>}>
+        {accesses.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Nenhum acesso vinculado a este projeto</p>
+        ) : (
+          <div className="space-y-2">
+            {accesses.slice(0, 10).map(a => (
+              <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-medium">{a.friendly_name}</span>
+                  <span className="text-xs text-muted-foreground">{ACCESS_TYPES[a.access_type] || a.access_type}</span>
+                  <span className="text-xs text-muted-foreground">• {ENVIRONMENTS[a.environment] || a.environment}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {ACCESS_STATUS[a.status] && <StatusBadge status={ACCESS_STATUS[a.status].badge} label={ACCESS_STATUS[a.status].label} />}
+                  {a.access_url && (
+                    <a href={a.access_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                      <Button size="icon" variant="ghost" className="h-6 w-6"><ExternalLink className="h-3 w-3" /></Button>
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </SectionCard>
 
