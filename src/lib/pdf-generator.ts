@@ -730,7 +730,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       // Label
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(6.5);
+      pdf.setFontSize(7);
       pdf.setTextColor(...C.lightGray);
       pdf.text(barLabels[i], bx + 7, chartY + 72, { align: "center" });
     });
