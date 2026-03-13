@@ -335,7 +335,7 @@ export default function AdminFinanceiro() {
                       <TableCell className="text-right font-medium">{fmt(m.receita_total)}</TableCell>
                       <TableCell className="text-right">{fmt(m.receita_recorrente)}/mês</TableCell>
                       <TableCell className="text-right">
-                        <span className={m.margem_estimada < 20 ? "text-red-400" : m.margem_estimada > 50 ? "text-emerald-400" : "text-foreground"}>
+                        <span className={m.margem_estimada < 20 ? "text-destructive" : m.margem_estimada > 50 ? "text-primary" : "text-foreground"}>
                           {m.margem_estimada.toFixed(1)}%
                         </span>
                       </TableCell>
