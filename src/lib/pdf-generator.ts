@@ -514,7 +514,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       // Tags
       let tagX = cx + 5;
       const tagY = cardY + cardH - 10;
-      pdf.setFontSize(6);
+      pdf.setFontSize(7);
       for (const tag of card.tags) {
         pdf.setFillColor(...card.color);
         pdf.saveGraphicsState();
