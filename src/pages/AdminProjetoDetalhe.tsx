@@ -17,8 +17,9 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import {
   Loader2, Pencil, ExternalLink, Flag, Clock, DollarSign, Target, Plus, Trash2, CheckCircle2,
-  FolderKanban, CalendarDays, Globe, Link2, FileText
+  FolderKanban, CalendarDays, Globe, Link2, FileText, PackageCheck
 } from "lucide-react";
+import { saveDeliveredSystem, addSystemEvent } from "@/lib/delivered-systems";
 import {
   getProject, saveProject, Project, PROJECT_STATUS, PROJECT_PRIORITY,
   getMilestones, saveMilestone, deleteMilestone, ProjectMilestone, MILESTONE_STATUS,
@@ -117,6 +118,44 @@ export default function AdminProjetoDetalhe() {
     } catch { toast({ title: "Erro", variant: "destructive" }); }
   }
 
+  async function handleConvertToSystem() {
+    if (!project || !confirm("Converter projeto em sistema entregue?")) return;
+    try {
+      const sys = await saveDeliveredSystem({
+        nome: project.nome,
+        cliente: project.cliente,
+        empresa_cliente: project.empresa_cliente,
+        nicho: project.nicho,
+        tipo_projeto: project.tipo_projeto,
+        categoria: project.categoria,
+        resumo_curto: project.resumo_executivo || "",
+        descricao_interna: project.descricao_interna || project.descricao || "",
+        valor_fechado: project.valor_contrato || 0,
+        recorrencia_mensal: project.recorrencia_mensal || 0,
+        faixa_contratada: project.faixa_contratada || "",
+        live_url: project.live_url || "",
+        admin_url: project.admin_url || "",
+        staging_url: project.staging_url || "",
+        repo_url: project.repo_url || "",
+        docs_url: project.docs_url || "",
+        design_url: project.design_url || "",
+        analytics_url: project.analytics_url || "",
+        data_entrega: project.data_conclusao || new Date().toISOString(),
+        projeto_origem_id: project.id,
+        observacoes_tecnicas: project.observacoes || "",
+        status_suporte: "sem_suporte",
+        status_operacional: "em_uso",
+        potencial_reuso: "medio",
+        ativo: true,
+      });
+      await addSystemEvent(sys.id, "convertido_de_projeto", `Convertido do projeto: ${project.nome}`);
+      await saveProject({ id: id!, delivered_system_id: sys.id });
+      await addProjectEvent(id!, "convertido_em_sistema", `Sistema entregue criado: ${sys.id}`);
+      toast({ title: "Sistema entregue criado!" });
+      navigate(`/admin/sistemas/${sys.id}`);
+    } catch { toast({ title: "Erro ao converter", variant: "destructive" }); }
+  }
+
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   if (!project) return <div className="text-center py-12 text-muted-foreground">Projeto não encontrado</div>;
 
@@ -142,6 +181,8 @@ export default function AdminProjetoDetalhe() {
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => { setForm(project); setEditing(true); }}><Pencil className="h-4 w-4 mr-1" /> Editar</Button>
             {project.status !== "entregue" && <Button size="sm" onClick={handleMarkDelivered}><CheckCircle2 className="h-4 w-4 mr-1" /> Marcar Entregue</Button>}
+            {project.status === "entregue" && !project.delivered_system_id && <Button size="sm" onClick={handleConvertToSystem}><PackageCheck className="h-4 w-4 mr-1" /> Converter em Sistema</Button>}
+            {project.delivered_system_id && <Button variant="outline" size="sm" onClick={() => navigate(`/admin/sistemas/${project.delivered_system_id}`)}><PackageCheck className="h-4 w-4 mr-1" /> Ver Sistema</Button>}
             {project.proposta_id && <Button variant="outline" size="sm" onClick={() => navigate(`/admin/propostas/${project.proposta_id}`)}><FileText className="h-4 w-4 mr-1" /> Ver Proposta</Button>}
           </div>
         }
