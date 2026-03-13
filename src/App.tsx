@@ -12,6 +12,7 @@ import AdminLayout from "@/components/AdminLayout";
 
 import Index from "./pages/Index";
 import Servicos from "./pages/Servicos";
+import PortfolioDetalhe from "./pages/PortfolioDetalhe";
 import Solucoes from "./pages/Solucoes";
 import Portfolio from "./pages/Portfolio";
 import Sobre from "./pages/Sobre";
@@ -79,6 +80,7 @@ function AppRoutes() {
         <Route path="/servicos" element={<Servicos />} />
         <Route path="/solucoes" element={<Solucoes />} />
         <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="/portfolio/:id" element={<PortfolioDetalhe />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/contato" element={<Contato />} />
         <Route path="/admin/login" element={<AdminLogin />} />
