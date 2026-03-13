@@ -52,6 +52,7 @@ function AppRoutes() {
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
+          <Route path="/admin/orcamentos/:id" element={<AdminLeadDetalhe />} />
           <Route path="/admin/propostas" element={<AdminPropostas />} />
           <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
           <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
