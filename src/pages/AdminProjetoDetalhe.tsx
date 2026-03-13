@@ -56,15 +56,17 @@ export default function AdminProjetoDetalhe() {
 
   async function load() {
     try {
-      const [p, m, e] = await Promise.all([
+      const [p, m, e, ac] = await Promise.all([
         getProject(id!),
         getMilestones(id!),
         getProjectEvents(id!),
+        getAccessesByProject(id!),
       ]);
       setProject(p);
       setForm(p || {});
       setMilestones(m);
       setEvents(e);
+      setAccesses(ac);
     } catch { toast({ title: "Erro ao carregar projeto", variant: "destructive" }); }
     finally { setLoading(false); }
   }
