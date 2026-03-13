@@ -49,11 +49,12 @@ export default function AdminSistemaDetalhe() {
         navigate("/admin/sistemas");
         return;
       }
-      const [t, e, ac, sm] = await Promise.all([
+      const [t, e, ac, sm, sc] = await Promise.all([
         getSystemTags(id!),
         getSystemEvents(id!),
         getAccessesBySystem(id!),
         getModulesBySystem(id!),
+        listChanges({ delivered_system_id: id! }),
       ]);
       setSystem(s);
       setTags(t);
