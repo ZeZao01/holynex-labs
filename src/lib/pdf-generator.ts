@@ -674,7 +674,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
         // Text
         pdf.setFont("helvetica", isRec ? "bold" : "normal");
         pdf.setFontSize(8);
-        pdf.setTextColor(isRec ? C.white : C.lightGray);
+        { const tc: RGB = isRec ? C.white : C.lightGray; pdf.setTextColor(...tc); }
         pdf.text(feat.substring(0, 30), px + 14, fy);
         fy += 6;
       }
