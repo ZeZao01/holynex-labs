@@ -75,6 +75,9 @@ export interface Proposta {
   proposal_validity: string;
   is_phased: boolean;
   closing_strategy: string;
+  // DocumentSpec fields (Genspark pipeline)
+  document_spec: any | null;
+  pricing_sheet: any | null;
 }
 
 export async function gerarPropostaIA(input: PropostaInput): Promise<PropostaJSON> {
