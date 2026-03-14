@@ -641,7 +641,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       let fy = py + 16;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(10);
-      pdf.setTextColor(isRec ? C.white : C.midGray);
+      { const tc: RGB = isRec ? C.white : C.midGray; pdf.setTextColor(...tc); }
       pdf.text(plan.name, px + tierW / 2, fy, { align: "center" });
       fy += 10;
 
