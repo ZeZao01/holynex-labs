@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
-import { Rocket, Mail, Monitor, Cpu, BarChart3, Zap, CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
+import { Rocket, Mail, Monitor, Cpu, BarChart3, Zap, CheckCircle2, ArrowRight, Sparkles, Shield, Clock, CreditCard, LayoutDashboard, ChevronDown, Quote, Star } from "lucide-react";
+import { useState } from "react";
 import logo from "@/assets/logo.png";
 import Typewriter from "@/components/Typewriter";
 import RevealBox from "@/components/RevealBox";
@@ -14,6 +15,58 @@ const fadeUp: Variants = {
     transition: { delay: i * 0.1, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
   }),
 };
+
+/* ── Marquee for client logos ── */
+function ClientMarquee() {
+  const clients = [
+    "TechCorp", "MedSolutions", "FinanceHub", "EduPlus",
+    "RetailMax", "LogiTrack", "BuildPro", "CloudNex",
+    "DataFlow", "SmartOps", "GreenEnergy", "HealthNet",
+  ];
+
+  return (
+    <div className="relative overflow-hidden py-4">
+      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background to-transparent z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background to-transparent z-10" />
+      <div className="flex animate-marquee gap-12 items-center">
+        {[...clients, ...clients].map((name, i) => (
+          <div
+            key={`${name}-${i}`}
+            className="flex-shrink-0 glass rounded-xl px-8 py-4 flex items-center justify-center min-w-[160px] hover:border-primary/30 transition-all duration-300"
+          >
+            <span className="font-display font-semibold text-sm text-muted-foreground whitespace-nowrap">{name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── FAQ Accordion Item ── */
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="glass rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-5 sm:p-6 text-left group"
+      >
+        <span className="font-display font-semibold text-sm sm:text-base pr-4">{question}</span>
+        <ChevronDown
+          className={`h-5 w-5 text-primary flex-shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <motion.div
+        initial={false}
+        animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="overflow-hidden"
+      >
+        <p className="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-muted-foreground leading-relaxed">{answer}</p>
+      </motion.div>
+    </div>
+  );
+}
 
 export default function Index() {
   const { t } = useLanguage();
@@ -43,10 +96,46 @@ export default function Index() {
   ];
 
   const stats = [
-    { value: "50+", label: t("stats.projects") },
-    { value: "98%", label: t("stats.satisfaction") },
-    { value: "3x", label: t("stats.faster") },
-    { value: "24/7", label: t("stats.support") },
+    { value: "50+", label: t("stats.projects"), desc: t("stats.projects.desc") },
+    { value: "98%", label: t("stats.satisfaction"), desc: t("stats.satisfaction.desc") },
+    { value: "3x", label: t("stats.faster"), desc: t("stats.faster.desc") },
+    { value: "24/7", label: t("stats.support"), desc: t("stats.support.desc") },
+  ];
+
+  const testimonials = [
+    {
+      quote: "A HolyNex Labs criou toda a nossa plataforma digital do zero. A qualidade e o cumprimento dos prazos foram impressionantes.",
+      name: "Carlos Mendes",
+      role: "CEO",
+      company: "TechCorp Solutions",
+    },
+    {
+      quote: "O atendimento é excepcional. Nos ajudaram a digitalizar toda a jornada do cliente com agilidade e profissionalismo.",
+      name: "Ana Oliveira",
+      role: "Diretora de Operações",
+      company: "MedSolutions",
+    },
+    {
+      quote: "O sistema que a HolyNex criou transformou nossos processos. Economizamos horas de trabalho manual toda semana.",
+      name: "Roberto Silva",
+      role: "Diretor Geral",
+      company: "FinanceHub",
+    },
+  ];
+
+  const faqs = [
+    { q: t("faq.q1"), a: t("faq.a1") },
+    { q: t("faq.q2"), a: t("faq.a2") },
+    { q: t("faq.q3"), a: t("faq.a3") },
+    { q: t("faq.q4"), a: t("faq.a4") },
+    { q: t("faq.q5"), a: t("faq.a5") },
+  ];
+
+  const gatewayCards = [
+    { icon: Shield, title: t("section.gateway.protection"), desc: t("section.gateway.protection.desc") },
+    { icon: Clock, title: t("section.gateway.instant"), desc: t("section.gateway.instant.desc") },
+    { icon: LayoutDashboard, title: t("section.gateway.organized"), desc: t("section.gateway.organized.desc") },
+    { icon: CreditCard, title: t("section.gateway.methods"), desc: t("section.gateway.methods.desc") },
   ];
 
   return (
@@ -109,21 +198,35 @@ export default function Index() {
             </motion.div>
           </motion.div>
 
+          {/* Stats — enhanced with descriptions */}
           <motion.div
-            className="max-w-3xl mx-auto mt-12 sm:mt-20"
+            className="max-w-4xl mx-auto mt-12 sm:mt-20"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.7 }}
           >
-            <div className="glass rounded-2xl p-4 sm:p-6 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {stats.map((s) => (
-                <div key={s.label} className="text-center">
-                  <div className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-gradient-animated">{s.value}</div>
-                  <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">{s.label}</div>
+                <div key={s.label} className="glass rounded-2xl p-4 sm:p-6 text-center group hover:border-primary/30 transition-all duration-300">
+                  <div className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-gradient-animated">{s.value}</div>
+                  <div className="text-xs sm:text-sm font-semibold mt-2">{s.label}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight">{s.desc}</div>
                 </div>
               ))}
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Client logos marquee — Social Proof */}
+      <section className="py-12 sm:py-16 relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <RevealBox className="text-center mb-8">
+            <h2 className="font-display text-lg sm:text-xl md:text-2xl font-bold text-muted-foreground">
+              {t("section.clients")}
+            </h2>
+          </RevealBox>
+          <ClientMarquee />
         </div>
       </section>
 
@@ -173,6 +276,41 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Gateway / Payment Methods — Bento Grid */}
+      <section className="py-16 sm:py-28 relative">
+        <div className="container mx-auto px-4">
+          <RevealBox className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+            <span className="text-primary text-sm font-medium uppercase tracking-widest">{t("section.gateway")}</span>
+            <h2 className="font-display text-2xl sm:text-3xl md:text-5xl font-bold mt-4 mb-4">{t("section.gateway.title")}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">{t("section.gateway.desc")}</p>
+          </RevealBox>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {gatewayCards.map((card, i) => (
+              <RevealBox key={card.title} delay={i * 0.1} className="card-animated glass rounded-2xl p-5 sm:p-7 group cursor-default">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
+                  <card.icon className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold mb-2 text-sm sm:text-base">{card.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
+              </RevealBox>
+            ))}
+          </div>
+          {/* Payment method icons */}
+          <RevealBox className="mt-8 sm:mt-12">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+              {["Pix", "Visa", "Mastercard", "Amex", "Elo", "Boleto"].map((method) => (
+                <div
+                  key={method}
+                  className="glass rounded-xl px-5 py-3 flex items-center justify-center hover:border-primary/30 transition-all duration-300"
+                >
+                  <span className="font-display text-xs sm:text-sm font-semibold text-muted-foreground">{method}</span>
+                </div>
+              ))}
+            </div>
+          </RevealBox>
+        </div>
+      </section>
+
       {/* Diferenciais */}
       <section className="py-16 sm:py-28">
         <div className="container mx-auto px-4">
@@ -190,6 +328,37 @@ export default function Index() {
                   <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                   <span className="text-xs sm:text-sm font-medium">{d}</span>
                 </motion.div>
+              </RevealBox>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 sm:py-28 relative overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <RevealBox className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+            <span className="text-primary text-sm font-medium uppercase tracking-widest">{t("section.testimonials")}</span>
+            <h2 className="font-display text-2xl sm:text-3xl md:text-5xl font-bold mt-4 mb-4">{t("section.testimonials.title")}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">{t("section.testimonials.desc")}</p>
+          </RevealBox>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {testimonials.map((t, i) => (
+              <RevealBox key={t.name} delay={i * 0.15} className="card-animated glass rounded-2xl p-6 sm:p-8 group cursor-default flex flex-col">
+                <Quote className="h-8 w-8 text-primary/30 mb-4 flex-shrink-0" />
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="h-4 w-4 text-primary fill-primary" />
+                  ))}
+                </div>
+                <p className="text-sm sm:text-base text-foreground/90 leading-relaxed mb-6 flex-1 italic">
+                  "{t.quote}"
+                </p>
+                <div className="border-t border-border/50 pt-4">
+                  <div className="font-display font-semibold text-sm">{t.name}</div>
+                  <div className="text-xs text-muted-foreground">{t.role}</div>
+                  <div className="text-xs text-primary font-medium mt-1">{t.company}</div>
+                </div>
               </RevealBox>
             ))}
           </div>
@@ -219,6 +388,24 @@ export default function Index() {
                   </div>
                   <div className="hidden md:block h-[1px] flex-1 bg-border/30 group-hover:bg-primary/20 transition-colors" />
                 </div>
+              </RevealBox>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-16 sm:py-28 relative">
+        <div className="container mx-auto px-4">
+          <RevealBox className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+            <span className="text-primary text-sm font-medium uppercase tracking-widest">{t("section.faq")}</span>
+            <h2 className="font-display text-2xl sm:text-3xl md:text-5xl font-bold mt-4 mb-4">{t("section.faq.title")}</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">{t("section.faq.desc")}</p>
+          </RevealBox>
+          <div className="max-w-3xl mx-auto space-y-3">
+            {faqs.map((faq, i) => (
+              <RevealBox key={i} delay={i * 0.08}>
+                <FaqItem question={faq.q} answer={faq.a} />
               </RevealBox>
             ))}
           </div>

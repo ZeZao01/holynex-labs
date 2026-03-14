@@ -23,9 +23,13 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // Stats
     "stats.projects": "Projetos entregues",
+    "stats.projects.desc": "Plataformas, apps e sistemas funcionando no dia a dia",
     "stats.satisfaction": "Satisfação",
+    "stats.satisfaction.desc": "Dos clientes recomendam nossos serviços",
     "stats.faster": "Mais rápido",
+    "stats.faster.desc": "Que métodos tradicionais de desenvolvimento",
     "stats.support": "Suporte",
+    "stats.support.desc": "Seus sistemas funcionando 24 horas por dia",
 
     // Sections
     "section.whatWeDo": "O que fazemos",
@@ -44,6 +48,43 @@ export const translations: Record<Lang, Record<string, string>> = {
     "section.cta.desc": "Transformamos sua ideia em uma plataforma digital escalável.",
     "section.cta.btn": "Iniciar projeto",
     "section.learnMore": "Saiba mais",
+
+    // Social Proof
+    "section.clients": "Empresas que Confiam no Nosso Trabalho",
+    "section.clients.desc": "Projetos digitais criados para empresas de verdade",
+
+    // Testimonials
+    "section.testimonials": "O que Nossos Clientes Dizem",
+    "section.testimonials.title": "Histórias de quem confia na gente",
+    "section.testimonials.desc": "Veja o que empresas reais falam sobre trabalhar com a HolyNex Labs",
+
+    // Payment / Gateway
+    "section.gateway": "Integrações de Pagamento",
+    "section.gateway.title": "Especialistas em Gateways de Pagamento",
+    "section.gateway.desc": "Desenvolvemos integrações de pagamento sob medida — do checkout à reconciliação. Pix, crédito, débito, boleto e mais.",
+    "section.gateway.protection": "Proteção Total",
+    "section.gateway.protection.desc": "Cada transação é protegida com a mesma tecnologia usada pelos maiores bancos do país.",
+    "section.gateway.instant": "Pagamento Instantâneo",
+    "section.gateway.instant.desc": "Seus clientes finalizam a compra em segundos — sem travamentos ou telas de erro.",
+    "section.gateway.organized": "Tudo Organizado",
+    "section.gateway.organized.desc": "Veja quanto entrou, quanto falta receber e o extrato completo em um único painel.",
+    "section.gateway.methods": "Todas as Formas de Pagamento",
+    "section.gateway.methods.desc": "Pix, crédito, débito, boleto — seu cliente escolhe como quer pagar.",
+
+    // FAQ
+    "section.faq": "Perguntas Frequentes",
+    "section.faq.title": "Tire suas dúvidas antes de começar",
+    "section.faq.desc": "As respostas para as perguntas mais comuns dos nossos clientes.",
+    "faq.q1": "Quanto tempo leva para ficar pronto?",
+    "faq.a1": "Depende da complexidade do projeto. Projetos simples podem ficar prontos em 2-4 semanas. Sistemas mais complexos podem levar de 2 a 4 meses. Cada caso é analisado individualmente.",
+    "faq.q2": "Vocês dão suporte depois que o projeto fica pronto?",
+    "faq.a2": "Sim! Oferecemos planos de manutenção e suporte contínuo. Depois da entrega, continuamos ao seu lado para ajustes, melhorias e atualizações.",
+    "faq.q3": "Como eu acompanho o andamento do meu projeto?",
+    "faq.a3": "Você recebe atualizações semanais com demonstrações do progresso. Além disso, temos canais de comunicação diretos para tirar dúvidas a qualquer momento.",
+    "faq.q4": "Preciso entender de tecnologia?",
+    "faq.a4": "Não! Cuidamos de toda a parte técnica. Você só precisa nos contar o que precisa e nós transformamos em realidade.",
+    "faq.q5": "Posso pedir mudanças durante o desenvolvimento?",
+    "faq.a5": "Sim, ajustes são bem-vindos durante o processo. Trabalhamos de forma ágil para incorporar seu feedback rapidamente.",
 
     // Services cards
     "service.saas": "Desenvolvimento de SaaS",
@@ -194,9 +235,13 @@ export const translations: Record<Lang, Record<string, string>> = {
     "hero.cta2": "Talk to an Expert",
 
     "stats.projects": "Projects delivered",
+    "stats.projects.desc": "Platforms, apps and systems running daily",
     "stats.satisfaction": "Satisfaction",
+    "stats.satisfaction.desc": "Of clients recommend our services",
     "stats.faster": "Faster",
+    "stats.faster.desc": "Than traditional development methods",
     "stats.support": "Support",
+    "stats.support.desc": "Your systems running 24 hours a day",
 
     "section.whatWeDo": "What we do",
     "section.whatWeDo.title": "We build technology that solves",
@@ -214,6 +259,39 @@ export const translations: Record<Lang, Record<string, string>> = {
     "section.cta.desc": "We turn your idea into a scalable digital platform.",
     "section.cta.btn": "Start project",
     "section.learnMore": "Learn more",
+
+    "section.clients": "Companies That Trust Our Work",
+    "section.clients.desc": "Digital projects created for real businesses",
+
+    "section.testimonials": "What Our Clients Say",
+    "section.testimonials.title": "Stories from those who trust us",
+    "section.testimonials.desc": "See what real companies say about working with HolyNex Labs",
+
+    "section.gateway": "Payment Integrations",
+    "section.gateway.title": "Payment Gateway Specialists",
+    "section.gateway.desc": "We build custom payment integrations — from checkout to reconciliation. Pix, credit, debit, boleto and more.",
+    "section.gateway.protection": "Total Protection",
+    "section.gateway.protection.desc": "Every transaction is protected with the same technology used by the largest banks.",
+    "section.gateway.instant": "Instant Payment",
+    "section.gateway.instant.desc": "Your customers complete purchases in seconds — no freezes or error screens.",
+    "section.gateway.organized": "All Organized",
+    "section.gateway.organized.desc": "See revenue, receivables and full statements in a single dashboard.",
+    "section.gateway.methods": "All Payment Methods",
+    "section.gateway.methods.desc": "Pix, credit, debit, boleto — your customer chooses how to pay.",
+
+    "section.faq": "FAQ",
+    "section.faq.title": "Clear your doubts before starting",
+    "section.faq.desc": "Answers to the most common questions from our clients.",
+    "faq.q1": "How long does it take to be ready?",
+    "faq.a1": "It depends on the project complexity. Simple projects can be ready in 2-4 weeks. More complex systems may take 2 to 4 months. Each case is analyzed individually.",
+    "faq.q2": "Do you provide support after the project is done?",
+    "faq.a2": "Yes! We offer maintenance and continuous support plans. After delivery, we stay by your side for adjustments, improvements and updates.",
+    "faq.q3": "How do I track the progress of my project?",
+    "faq.a3": "You receive weekly updates with progress demos. We also have direct communication channels for questions at any time.",
+    "faq.q4": "Do I need to understand technology?",
+    "faq.a4": "No! We handle all the technical work. You just need to tell us what you need and we make it happen.",
+    "faq.q5": "Can I request changes during development?",
+    "faq.a5": "Yes, adjustments are welcome during the process. We work in an agile way to incorporate your feedback quickly.",
 
     "service.saas": "SaaS Development",
     "service.saas.desc": "Scalable platforms for startups and enterprises",
@@ -353,9 +431,13 @@ export const translations: Record<Lang, Record<string, string>> = {
     "hero.cta2": "Hablar con un Especialista",
 
     "stats.projects": "Proyectos entregados",
+    "stats.projects.desc": "Plataformas, apps y sistemas funcionando a diario",
     "stats.satisfaction": "Satisfacción",
+    "stats.satisfaction.desc": "De los clientes recomiendan nuestros servicios",
     "stats.faster": "Más rápido",
+    "stats.faster.desc": "Que métodos tradicionales de desarrollo",
     "stats.support": "Soporte",
+    "stats.support.desc": "Tus sistemas funcionando 24 horas al día",
 
     "section.whatWeDo": "Qué hacemos",
     "section.whatWeDo.title": "Creamos tecnología que resuelve",
@@ -373,6 +455,39 @@ export const translations: Record<Lang, Record<string, string>> = {
     "section.cta.desc": "Transformamos tu idea en una plataforma digital escalable.",
     "section.cta.btn": "Iniciar proyecto",
     "section.learnMore": "Saber más",
+
+    "section.clients": "Empresas que Confían en Nuestro Trabajo",
+    "section.clients.desc": "Proyectos digitales creados para empresas reales",
+
+    "section.testimonials": "Lo que Dicen Nuestros Clientes",
+    "section.testimonials.title": "Historias de quienes confían en nosotros",
+    "section.testimonials.desc": "Mira lo que empresas reales dicen sobre trabajar con HolyNex Labs",
+
+    "section.gateway": "Integraciones de Pago",
+    "section.gateway.title": "Especialistas en Pasarelas de Pago",
+    "section.gateway.desc": "Desarrollamos integraciones de pago a medida — del checkout a la reconciliación. Pix, crédito, débito, boleto y más.",
+    "section.gateway.protection": "Protección Total",
+    "section.gateway.protection.desc": "Cada transacción está protegida con la misma tecnología usada por los mayores bancos.",
+    "section.gateway.instant": "Pago Instantáneo",
+    "section.gateway.instant.desc": "Tus clientes completan la compra en segundos — sin bloqueos ni pantallas de error.",
+    "section.gateway.organized": "Todo Organizado",
+    "section.gateway.organized.desc": "Ve ingresos, cuentas por cobrar y extractos en un solo panel.",
+    "section.gateway.methods": "Todos los Métodos de Pago",
+    "section.gateway.methods.desc": "Pix, crédito, débito, boleto — tu cliente elige cómo pagar.",
+
+    "section.faq": "Preguntas Frecuentes",
+    "section.faq.title": "Aclara tus dudas antes de empezar",
+    "section.faq.desc": "Las respuestas a las preguntas más comunes de nuestros clientes.",
+    "faq.q1": "¿Cuánto tiempo tarda en estar listo?",
+    "faq.a1": "Depende de la complejidad del proyecto. Proyectos simples pueden estar listos en 2-4 semanas. Sistemas más complejos pueden tardar de 2 a 4 meses.",
+    "faq.q2": "¿Dan soporte después de que el proyecto está listo?",
+    "faq.a2": "¡Sí! Ofrecemos planes de mantenimiento y soporte continuo. Después de la entrega, seguimos a tu lado para ajustes y mejoras.",
+    "faq.q3": "¿Cómo acompaño el progreso de mi proyecto?",
+    "faq.a3": "Recibes actualizaciones semanales con demostraciones del progreso y canales de comunicación directos.",
+    "faq.q4": "¿Necesito entender de tecnología?",
+    "faq.a4": "¡No! Nos encargamos de toda la parte técnica. Solo necesitas decirnos qué necesitas.",
+    "faq.q5": "¿Puedo pedir cambios durante el desarrollo?",
+    "faq.a5": "Sí, los ajustes son bienvenidos. Trabajamos de forma ágil para incorporar tu feedback rápidamente.",
 
     "service.saas": "Desarrollo de SaaS",
     "service.saas.desc": "Plataformas escalables para startups y empresas",
