@@ -6,8 +6,9 @@ Design system: dark cyberpunk theme, HSL colors, Space Grotesk + Inter fonts.
 - Admin routes are hidden (not in navbar): /admin/login, /admin/dashboard, etc.
 - Edge function `gerar-proposta` uses multi-provider AI (Groq > OpenRouter > Lovable AI) for structured JSON proposals
 - Prompt v4.0-niche-adaptive: AI generates `niche_intelligence` object with KPIs, risk_matrix, strategic_benefits, timeline_phases, scope_labels, investment_justification, expert_reference — all specific to detected niche
-- pdf-niche-intelligence.ts extracts AI-generated niche data from proposta_json first, falls back to minimal defaults only when absent
-- No hardcoded niche profiles — all content is AI-generated and original
+- pdf-niche-intelligence.ts is a PURE EXTRACTION layer — NO fallback profiles, NO hardcoded content. Returns empty arrays when AI data is absent.
+- pdf-generator.ts uses ONLY AI-generated content. No pre-defined templates, no hardcoded diagnostic/benefit/metric strings.
+- User preference: ALL content must be 100% AI-generated and original. No pre-built niche profiles allowed.
 - Database tables: `orcamentos`, `propostas`, `pdf_versoes`, `delivered_systems`, `projects`, `project_modules`, `project_accesses`, `project_changes`, `portfolio_items`, `audit_logs`, `project_milestones`, `project_events`
 - Language: Portuguese (BR) with i18n support
 - User prefers: IA calculates all financial values, full proposal + PDF + dashboard
