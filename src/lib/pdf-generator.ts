@@ -43,7 +43,12 @@ function buildColors(t: PdfTemplate) {
 export async function generatePropostaPdf(proposta: Proposta, templateId?: string, documentCode?: string): Promise<Blob> {
   const template = getTemplateById(templateId || "cyber-magenta");
   const C = buildColors(template);
-  const niche = getNicheProfile(proposta);
+  const niche = getNicheProfile({
+    segmento: proposta.segmento,
+    tipo_projeto: proposta.tipo_projeto,
+    descricao_projeto: proposta.descricao_projeto,
+    proposta_json: proposta.proposta_json,
+  });
   let logoBase64: string;
   try {
     logoBase64 = await loadImageAsBase64(logoUrl);
