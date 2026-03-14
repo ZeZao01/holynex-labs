@@ -1297,6 +1297,225 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     }
   }
 
+  // ══════════════════════════════════════════════
+  // SLIDE 10 — DETALHAMENTO DE PREÇOS (from PricingSheet)
+  // ══════════════════════════════════════════════
+  {
+    const lineItems = pricingSheet?.line_items || [];
+    const pricingTotals = pricingSheet?.totals;
+    const pricingSection = docSpec?.sections?.find((s: any) => s.type === "pricing");
+
+    if (lineItems.length > 0 || pricingSection?.tables?.length > 0) {
+      newPage();
+      drawSectionHeader("Detalhamento", "Tabela de Investimento", 16);
+
+      let ty = 40;
+      const tableX = MX;
+      const tableW = W - MX * 2;
+
+      // Table header
+      pdf.setFillColor(...C.primary);
+      setOpacity(0.15);
+      pdf.roundedRect(tableX, ty - 4, tableW, 10, 2, 2, "F");
+      restoreOpacity();
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.primary);
+      const cols = ["Item", "Descrição", "Qtd", "Preço Unit.", "Subtotal"];
+      const colX = [tableX + 4, tableX + 50, tableX + tableW * 0.6, tableX + tableW * 0.72, tableX + tableW * 0.87];
+      cols.forEach((col, i) => pdf.text(col, colX[i], ty + 2));
+
+      pdf.setDrawColor(...C.primary);
+      setOpacity(0.3);
+      pdf.setLineWidth(0.5);
+      pdf.line(tableX, ty + 6, tableX + tableW, ty + 6);
+      restoreOpacity();
+      resetDrawState();
+      ty += 14;
+
+      // Rows from line_items
+      for (const item of lineItems.slice(0, 12)) {
+        if (ty > H - 40) break;
+        const isOdd = lineItems.indexOf(item) % 2 === 0;
+        if (isOdd) {
+          pdf.setFillColor(...C.bgCard);
+          setOpacity(0.3);
+          pdf.rect(tableX, ty - 4, tableW, 8, "F");
+          restoreOpacity();
+        }
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(...C.white);
+        pdf.text(String(item.name || item.sku || "").substring(0, 20), colX[0], ty);
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(...C.lightGray);
+        pdf.text(String(item.desc || "").substring(0, 30), colX[1], ty);
+
+        pdf.setTextColor(...C.midGray);
+        pdf.text(String(item.qty || 1), colX[2], ty);
+
+        pdf.setTextColor(...C.lightGray);
+        pdf.text(`R$ ${Number(item.unit_price || 0).toLocaleString("pt-BR")}`, colX[3], ty);
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(...C.white);
+        pdf.text(`R$ ${Number(item.subtotal || 0).toLocaleString("pt-BR")}`, colX[4], ty);
+
+        ty += 9;
+        resetDrawState();
+      }
+
+      // Totals
+      if (pricingTotals) {
+        ty += 4;
+        pdf.setDrawColor(...C.accent);
+        setOpacity(0.5);
+        pdf.setLineWidth(0.8);
+        pdf.line(tableX + tableW * 0.6, ty, tableX + tableW, ty);
+        restoreOpacity();
+        resetDrawState();
+        ty += 8;
+
+        const totalX = tableX + tableW * 0.72;
+        const valX = tableX + tableW * 0.87;
+
+        if (pricingTotals.discount > 0) {
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(7);
+          pdf.setTextColor(...C.midGray);
+          pdf.text("Subtotal:", totalX, ty);
+          pdf.text(`R$ ${Number(pricingTotals.subtotal).toLocaleString("pt-BR")}`, valX, ty);
+          ty += 6;
+
+          pdf.setTextColor(...C.secondary);
+          pdf.text(`Desconto:`, totalX, ty);
+          pdf.text(`- R$ ${Number(pricingTotals.discount).toLocaleString("pt-BR")}`, valX, ty);
+          ty += 6;
+        }
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.setTextColor(...C.white);
+        pdf.text("TOTAL:", totalX, ty);
+        pdf.setTextColor(...C.accent);
+        pdf.text(`R$ ${Number(pricingTotals.total).toLocaleString("pt-BR")}`, valX, ty);
+      }
+
+      resetDrawState();
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // SLIDE 11 — TERMOS E CONDIÇÕES (from DocumentSpec)
+  // ══════════════════════════════════════════════
+  {
+    const termsSection = docSpec?.sections?.find((s: any) => s.type === "terms");
+    const compliance = docSpec?.compliance;
+    const paymentTerms = docSpec?.quote?.payment_terms;
+    const deliveryTerms = docSpec?.quote?.delivery_terms;
+
+    if (termsSection || compliance || paymentTerms) {
+      newPage();
+      drawSectionHeader("Termos e Condições", "Aspectos Contratuais", 16);
+
+      let ty = 40;
+
+      // Payment terms
+      if (paymentTerms) {
+        drawCard(MX, ty, (W - MX * 2 - 10) / 2, 30, C.accent);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(...C.accent);
+        pdf.text("FORMA DE PAGAMENTO", MX + 10, ty + 10);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(...C.lightGray);
+        const payLines = pdf.splitTextToSize(paymentTerms, (W - MX * 2 - 30) / 2);
+        let py = ty + 18;
+        for (const l of payLines.slice(0, 2)) { pdf.text(l, MX + 10, py); py += 5; }
+      }
+
+      // Delivery terms
+      if (deliveryTerms) {
+        const dtX = MX + (W - MX * 2 - 10) / 2 + 10;
+        drawCard(dtX, ty, (W - MX * 2 - 10) / 2, 30, C.secondary);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(...C.secondary);
+        pdf.text("PRAZO DE ENTREGA", dtX + 10, ty + 10);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(...C.lightGray);
+        const dlLines = pdf.splitTextToSize(deliveryTerms, (W - MX * 2 - 30) / 2);
+        let dy = ty + 18;
+        for (const l of dlLines.slice(0, 2)) { pdf.text(l, dtX + 10, dy); dy += 5; }
+      }
+
+      ty += 40;
+
+      // Terms content
+      if (termsSection?.content_md) {
+        drawCard(MX, ty, W - MX * 2, 50, C.midGray);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(...C.lightGray);
+        const termLines = pdf.splitTextToSize(termsSection.content_md, W - MX * 2 - 20);
+        let tty = ty + 10;
+        for (const l of termLines.slice(0, 8)) { pdf.text(l, MX + 10, tty); tty += 5; }
+      }
+
+      ty += 58;
+
+      // Exclusions & Assumptions from compliance
+      if (compliance?.exclusions?.length || compliance?.assumptions?.length) {
+        const halfW = (W - MX * 2 - 10) / 2;
+
+        if (compliance.assumptions?.filter((a: string) => a?.trim()).length > 0) {
+          drawCard(MX, ty, halfW, 46, C.accent);
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(7);
+          pdf.setTextColor(...C.accent);
+          pdf.text("PREMISSAS", MX + 10, ty + 10);
+          let ay = ty + 18;
+          for (const a of compliance.assumptions.filter((a: string) => a?.trim()).slice(0, 4)) {
+            pdf.setFillColor(...C.accent);
+            pdf.circle(MX + 14, ay - 1, 1.5, "F");
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(7);
+            pdf.setTextColor(...C.lightGray);
+            pdf.text(a.substring(0, 45), MX + 20, ay);
+            ay += 7;
+          }
+        }
+
+        if (compliance.exclusions?.filter((e: string) => e?.trim()).length > 0) {
+          const exX = MX + halfW + 10;
+          drawCard(exX, ty, halfW, 46, [255, 80, 50] as RGB);
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(7);
+          pdf.setTextColor(255, 80, 50);
+          pdf.text("EXCLUSÕES", exX + 10, ty + 10);
+          let ey = ty + 18;
+          for (const e of compliance.exclusions.filter((e: string) => e?.trim()).slice(0, 4)) {
+            pdf.setFillColor(255, 80, 50);
+            pdf.circle(exX + 14, ey - 1, 1.5, "F");
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(7);
+            pdf.setTextColor(...C.lightGray);
+            pdf.text(e.substring(0, 45), exX + 20, ey);
+            ey += 7;
+          }
+        }
+      }
+
+      resetDrawState();
+    }
+  }
+
   const renderDuration = Date.now() - renderStart;
   logProposalEvent("proposal_pdf_generated", proposta.id, {
     render_status: "success",
