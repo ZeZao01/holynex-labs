@@ -49,6 +49,8 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     descricao_projeto: proposta.descricao_projeto,
     proposta_json: proposta.proposta_json,
   });
+  const docSpec = proposta.document_spec;
+  const pricingSheet = proposta.pricing_sheet;
   let logoBase64: string;
   try {
     logoBase64 = await loadImageAsBase64(logoUrl);
