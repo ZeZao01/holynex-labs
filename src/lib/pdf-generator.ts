@@ -669,7 +669,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
         // Checkmark
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(8);
-        pdf.setTextColor(isRec ? C.secondary : C.secondary);
+        pdf.setTextColor(...C.secondary);
         pdf.text("✓", px + 8, fy);
         // Text
         pdf.setFont("helvetica", isRec ? "bold" : "normal");
