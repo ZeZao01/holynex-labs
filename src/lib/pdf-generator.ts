@@ -295,34 +295,65 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   pdf.setFillColor(...C.primary);
   pdf.rect(W / 2 - 25, 122, 50, 1, "F");
 
+  // Cover highlights from DocumentSpec
+  const coverSection = docSpec?.sections?.find((s: any) => s.type === "cover");
+  if (coverSection?.highlights?.length) {
+    const hlY = 126;
+    const hlItems = coverSection.highlights.filter((h: string) => h && h.trim());
+    if (hlItems.length > 0) {
+      const hlW = W * 0.6;
+      const hlX = W / 2 - hlW / 2;
+      hlItems.slice(0, 3).forEach((hl: string, i: number) => {
+        pdf.setFillColor(...C.secondary);
+        pdf.circle(hlX + 4, hlY + i * 6, 1.5, "F");
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(...C.lightGray);
+        pdf.text(hl.substring(0, 60), hlX + 10, hlY + i * 6 + 1);
+      });
+    }
+  }
+
   const clientBoxW = W * 0.45;
-  drawCard(W / 2 - clientBoxW / 2, 134, clientBoxW, 25, C.accent);
+  drawCard(W / 2 - clientBoxW / 2, 145, clientBoxW, 25, C.accent);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(7);
   pdf.setTextColor(...C.midGray);
-  pdf.text("PREPARADO PARA:", W / 2, 142, { align: "center" });
+  pdf.text("PREPARADO PARA:", W / 2, 153, { align: "center" });
   const clientName = proposta.empresa_cliente
     ? `${proposta.nome_cliente} — ${proposta.empresa_cliente}`
     : proposta.nome_cliente;
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(13);
   pdf.setTextColor(...C.white);
-  pdf.text(clientName, W / 2, 152, { align: "center" });
+  pdf.text(clientName, W / 2, 163, { align: "center" });
+
+  // Quote number and validity from DocumentSpec
+  const quoteNumber = docSpec?.quote?.quote_number || "";
+  const validUntil = docSpec?.quote?.valid_until || "";
 
   const dateStr = new Date(proposta.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-  const dateW = pdf.getTextWidth(dateStr) + 16;
+  const dateLabel = quoteNumber ? `${quoteNumber} | ${dateStr}` : dateStr;
+  const dateW = pdf.getTextWidth(dateLabel) + 16;
   setOpacity(0.5);
   pdf.setFillColor(...C.bgCard);
-  pdf.roundedRect(W / 2 - dateW / 2, 167, dateW, 9, 4, 4, "F");
+  pdf.roundedRect(W / 2 - dateW / 2, 176, dateW, 9, 4, 4, "F");
   restoreOpacity();
   pdf.setDrawColor(...C.midGray);
   setOpacity(0.3);
-  pdf.roundedRect(W / 2 - dateW / 2, 167, dateW, 9, 4, 4, "S");
+  pdf.roundedRect(W / 2 - dateW / 2, 176, dateW, 9, 4, 4, "S");
   restoreOpacity();
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(7.5);
   pdf.setTextColor(...C.lightGray);
-  pdf.text(dateStr, W / 2, 173, { align: "center" });
+  pdf.text(dateLabel, W / 2, 182, { align: "center" });
+
+  if (validUntil) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(6);
+    pdf.setTextColor(...C.midGray);
+    pdf.text(`Válido até: ${validUntil}`, W / 2, 190, { align: "center" });
+  }
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(6);
