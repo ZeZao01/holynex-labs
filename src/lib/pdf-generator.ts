@@ -1437,15 +1437,14 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setFillColor(...C.magenta);
     pdf.rect(0, 0, 2, H, "F");
 
-    // Grid pattern
-    pdf.setDrawColor(...C.magenta);
+    // Subtle decorative dots instead of grid (avoids quadriculado artifact)
+    pdf.setFillColor(...C.magenta);
     pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.03 }));
-    for (let gx = 0; gx < W; gx += 15) {
-      pdf.line(gx, 0, gx, H);
-    }
-    for (let gy = 0; gy < H; gy += 15) {
-      pdf.line(0, gy, W, gy);
+    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.06 }));
+    for (let gx = 30; gx < W - 20; gx += 40) {
+      for (let gy = 30; gy < H - 20; gy += 40) {
+        pdf.circle(gx, gy, 0.4, "F");
+      }
     }
     pdf.restoreGraphicsState();
 
