@@ -6,13 +6,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PROMPT_VERSION = "v3.0-structured";
+const PROMPT_VERSION = "v4.0-niche-adaptive";
 
 const SYSTEM_PROMPT = `Voce e o Motor Oficial de Propostas Comerciais da HolyNex Labs.
 
 A HolyNex Labs e uma empresa especializada em desenvolvimento de software sob medida e produtos digitais (SaaS, Micro-SaaS, ERP, CRM, Dashboards, Plataformas com IA, Automacoes, etc).
 
-Sua funcao e analisar os dados do projeto enviado e gerar uma proposta comercial ESTRUTURADA.
+Sua funcao e analisar os dados do projeto enviado e gerar uma proposta comercial ESTRUTURADA e ADAPTADA AO NICHO do cliente.
 
 REGRAS CRITICAS:
 - Responda APENAS com um JSON valido, sem texto adicional, sem markdown, sem code blocks
@@ -23,18 +23,21 @@ REGRAS CRITICAS:
 - Se o orcamento for baixo, foque em MVP com funcionalidades essenciais
 - Funcionalidades avancadas devem aparecer como evolucoes futuras
 - CADA SECAO deve ser concisa e objetiva, sem repeticao entre secoes
+- ADAPTE toda a linguagem, KPIs, riscos e referencias ao nicho/segmento do cliente
+- Use referencias de especialistas REAIS e fontes confiáveis (Gartner, McKinsey, Deloitte, Harvard, Forrester, etc)
+- Crie conteudo ORIGINAL baseado no contexto real do projeto, NAO use templates genericos
 
 ESTRUTURA OBRIGATORIA DO JSON:
 {
-  "resumo_executivo": "string (max 800 chars) - resumo profissional e estrategico",
+  "resumo_executivo": "string (max 800 chars) - resumo profissional e estrategico adaptado ao nicho",
   "tipo_projeto": "string - classificacao (SaaS, ERP, CRM, Dashboard, etc)",
-  "diagnostico": "string (max 600 chars) - analise do problema atual do cliente",
-  "solucao_proposta": "string (max 600 chars) - visao geral da solucao",
+  "diagnostico": "string (max 600 chars) - analise do problema atual do cliente no contexto do segmento",
+  "solucao_proposta": "string (max 600 chars) - visao geral da solucao contextualizada",
   "escopo": ["array de strings - modulos do MVP"],
   "funcionalidades": ["array de strings - funcionalidades principais"],
   "funcionalidades_recomendadas": ["array de strings - evolucoes futuras"],
   "complexidade": "baixa|media|alta|avancada",
-  "analise_estrategica": "string (max 600 chars) - impacto estrategico no negocio",
+  "analise_estrategica": "string (max 600 chars) - impacto estrategico no negocio do cliente",
   "estimativa_esforco": "string (max 200 chars) - estimativa de horas/equipe",
   "financeiro": {
     "valor_minimo": 0,
@@ -46,8 +49,47 @@ ESTRUTURA OBRIGATORIA DO JSON:
   "manutencao": "string (max 300 chars) - sugestao de manutencao mensal",
   "riscos": ["array de strings - riscos identificados"],
   "proximos_passos": ["array de strings - etapas para iniciar"],
-  "proposta_comercial": "string - texto resumido da proposta para uso interno/historico"
+  "proposta_comercial": "string - texto resumido da proposta para uso interno/historico",
+
+  "niche_intelligence": {
+    "segment_detected": "string - nome do segmento identificado (ex: Saude, Educacao, E-commerce, Financeiro, Imobiliario, Coworking, Restaurante, Logistica, Juridico, Beleza, Fitness, etc)",
+    "kpis": [
+      {"label": "string - nome do KPI relevante ao nicho", "metric": "string - valor esperado (ex: +35%, -40%, 99.9%)"},
+      {"label": "string", "metric": "string"},
+      {"label": "string", "metric": "string"},
+      {"label": "string", "metric": "string"}
+    ],
+    "risk_matrix": [
+      {"title": "string - nome do risco", "impact": "string - impacto se ocorrer", "mitigation": "string - como mitigar", "severity": "alto|medio|baixo"},
+      {"title": "string", "impact": "string", "mitigation": "string", "severity": "alto|medio|baixo"},
+      {"title": "string", "impact": "string", "mitigation": "string", "severity": "alto|medio|baixo"}
+    ],
+    "strategic_benefits": [
+      {"title": "string - titulo do beneficio", "desc": "string - descricao com referencia de especialista real (fonte + ano)"},
+      {"title": "string", "desc": "string"},
+      {"title": "string", "desc": "string"}
+    ],
+    "timeline_phases": [
+      {"title": "string - ex: FASE 01", "subtitle": "string - nome da fase", "desc": "string - atividades separadas por \\n"},
+      {"title": "string", "subtitle": "string", "desc": "string"}
+    ],
+    "scope_labels": {
+      "landing": "string - nome contextualizado para a landing page (ex: Portal do Paciente, Loja Online)",
+      "user": "string - nome contextualizado para area do usuario",
+      "admin": "string - nome contextualizado para area administrativa"
+    },
+    "investment_justification": "string - justificativa de investimento com fonte real (ex: Segundo a Gartner 2024...)",
+    "expert_reference": "string - referencia bibliografica completa (ex: Ref: Harvard Business Review - Digital Transformation 2024)",
+    "maintenance_features": ["string - item de manutencao especifico ao nicho", "string", "string", "string"]
+  }
 }
+
+IMPORTANTE SOBRE niche_intelligence:
+- Os KPIs devem ser ESPECIFICOS ao segmento do cliente (ex: para clinica = Retencao de Pacientes, para e-commerce = Taxa de Conversao)
+- Os riscos devem refletir desafios REAIS do setor (ex: conformidade LGPD para saude, PCI-DSS para pagamentos)
+- Os beneficios devem citar fontes REAIS e anos recentes (2023-2025)
+- As fases do cronograma devem ser adaptadas ao tipo de projeto
+- NAO copie templates genericos. Crie conteudo ORIGINAL baseado no contexto do projeto
 
 DIFERENCIAIS DA HOLYNEX LABS:
 - Solucoes sob medida
@@ -65,7 +107,7 @@ function buildUserPrompt(body: Record<string, any>): string {
     link_referencia, observacoes,
   } = body;
 
-  return `Gere a proposta comercial estruturada em JSON:
+  return `Gere a proposta comercial estruturada em JSON com niche_intelligence COMPLETO:
 
 CLIENTE: ${nome_cliente || "Nao informado"}
 EMPRESA: ${empresa_cliente || "Nao informado"}
@@ -85,20 +127,24 @@ NIVEL DE URGENCIA: ${nivel_urgencia || "medio"}
 LINK DE REFERENCIA: ${link_referencia || "Nenhum"}
 OBSERVACOES: ${observacoes || "Nenhuma"}
 
+INSTRUCOES ESPECIAIS:
+1. Analise o SEGMENTO e DESCRICAO para detectar o nicho exato do cliente
+2. Gere KPIs, riscos, beneficios e referencias ESPECIFICOS para esse nicho
+3. Use fontes e referencias de especialistas REAIS (Gartner, McKinsey, Harvard, Forrester, Deloitte, etc)
+4. Adapte a linguagem e terminologia ao contexto do cliente
+5. NAO use conteudo generico - cada proposta deve ser UNICA
+
 IMPORTANTE: Retorne APENAS o JSON estruturado. Sem markdown, sem code blocks, sem texto adicional. Use apenas caracteres ASCII seguros.`;
 }
 
 function cleanJsonResponse(content: string): any {
   let cleaned = content.trim();
-  // Remove markdown code blocks
   cleaned = cleaned.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-  // Remove leading/trailing non-JSON chars
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   if (firstBrace !== -1 && lastBrace !== -1) {
     cleaned = cleaned.slice(firstBrace, lastBrace + 1);
   }
-  // Remove control characters that break JSON
   cleaned = cleaned.replace(/[\x00-\x1F\x7F]/g, (match) => {
     if (match === "\n" || match === "\r" || match === "\t") return match;
     return "";
@@ -114,11 +160,9 @@ interface AIProvider {
   headers?: Record<string, string>;
 }
 
-// Provider policy: Groq (primary) > OpenRouter (fallback) > Lovable AI (last resort)
 function getProviders(): AIProvider[] {
   const providers: AIProvider[] = [];
 
-  // 1. Groq (primary - fastest, best for structured JSON)
   const groqKey = Deno.env.get("GROQ_API_KEY");
   if (groqKey) {
     providers.push({
@@ -129,7 +173,6 @@ function getProviders(): AIProvider[] {
     });
   }
 
-  // 2. OpenRouter (fallback)
   const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
   if (openrouterKey) {
     providers.push({
@@ -144,7 +187,6 @@ function getProviders(): AIProvider[] {
     });
   }
 
-  // 3. Lovable AI (last resort)
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (lovableKey) {
     providers.push({
@@ -173,8 +215,8 @@ async function callProvider(provider: AIProvider, messages: any[]): Promise<stri
     body: JSON.stringify({
       model: provider.model,
       messages,
-      temperature: 0.3,
-      max_tokens: 6000,
+      temperature: 0.4,
+      max_tokens: 8000,
     }),
   });
 
@@ -222,7 +264,6 @@ serve(async (req) => {
         const durationMs = Date.now() - startTime;
         console.log(`[gerar-proposta] Success with: ${provider.name} in ${durationMs}ms`);
 
-        // Return proposal with observability metadata
         return new Response(
           JSON.stringify({
             proposta: proposalJson,
@@ -232,6 +273,7 @@ serve(async (req) => {
               prompt_version: PROMPT_VERSION,
               duration_ms: durationMs,
               output_size: JSON.stringify(proposalJson).length,
+              niche_detected: proposalJson?.niche_intelligence?.segment_detected || "generico",
             },
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -240,7 +282,6 @@ serve(async (req) => {
         console.error(`[gerar-proposta] Provider ${provider.name} failed:`, err);
         lastError = err instanceof Error ? err : new Error(String(err));
 
-        // Don't fallback on rate limit / payment - return immediately
         if (err instanceof Error && (err.message.includes("429") || err.message.includes("402"))) {
           return new Response(
             JSON.stringify({
@@ -261,10 +302,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: `Todos os provedores falharam. Ultimo erro: ${lastError?.message || "desconhecido"}`,
-        _meta: {
-          prompt_version: PROMPT_VERSION,
-          duration_ms: Date.now() - startTime,
-        },
+        _meta: { prompt_version: PROMPT_VERSION, duration_ms: Date.now() - startTime },
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
