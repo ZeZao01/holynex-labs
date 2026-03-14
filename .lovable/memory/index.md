@@ -5,6 +5,9 @@ Design system: dark cyberpunk theme, HSL colors, Space Grotesk + Inter fonts.
 - WhatsApp number: already configured in WhatsAppFloat component
 - Admin routes are hidden (not in navbar): /admin/login, /admin/dashboard, etc.
 - Edge function `gerar-proposta` uses multi-provider AI (Groq > OpenRouter > Lovable AI) for structured JSON proposals
+- Prompt v4.0-niche-adaptive: AI generates `niche_intelligence` object with KPIs, risk_matrix, strategic_benefits, timeline_phases, scope_labels, investment_justification, expert_reference — all specific to detected niche
+- pdf-niche-intelligence.ts extracts AI-generated niche data from proposta_json first, falls back to minimal defaults only when absent
+- No hardcoded niche profiles — all content is AI-generated and original
 - Database tables: `orcamentos`, `propostas`, `pdf_versoes`, `delivered_systems`, `projects`, `project_modules`, `project_accesses`, `project_changes`, `portfolio_items`, `audit_logs`, `project_milestones`, `project_events`
 - Language: Portuguese (BR) with i18n support
 - User prefers: IA calculates all financial values, full proposal + PDF + dashboard
@@ -12,14 +15,12 @@ Design system: dark cyberpunk theme, HSL colors, Space Grotesk + Inter fonts.
 - Reusable admin components: PageHeader, StatCard, StatsGrid, EmptyState, FilterToolbar, StatusBadge, SectionCard
 - Types/constants in src/lib/ (projects.ts, project-modules.ts, audit-logs.ts, etc.)
 - Sidebar groups: Comercial, Operacional, Estrategico, Sistema
-- Phase 15 (QA) refinements: responsive StatCards, skeleton loading, breadcrumb in topbar, real counts in dashboard
 - PWA enabled: vite-plugin-pwa, manifest, service worker auto-update, installable from browser
 - Realtime enabled: all main tables via supabase_realtime publication, useRealtimeSubscription hook
 - Button effect: single-direction neon shimmer with pulsing glow (not splitting)
 - PDF pipeline: normalizer layer (proposal-normalizer.ts) sanitizes AI output before rendering
 - PDF: "Proposta Comercial Completa" section excluded from public PDF, kept for internal history
 - PDF events: proposal_ai_requested/completed/failed, proposal_pdf_render_started/failed/generated logged to audit_logs
-- Prompt version tracking: v3.0-structured with observability metadata (_meta in edge function response)
 - Project statuses: aguardando_inicio, discovery, planejamento, em_design, em_desenvolvimento, em_validacao, aguardando_cliente, entregue, em_manutencao, pausado, cancelado
 - Project detail page: /admin/projetos/:id with milestones, events, links, quick actions
 - Convert proposal to project: action in AdminPropostas table
