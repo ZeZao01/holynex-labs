@@ -3,6 +3,8 @@ import type { Proposta } from "@/lib/propostas";
 import { type PdfTemplate, type RGB, getTemplateById } from "@/lib/pdf-templates";
 import { normalizePropostaJSON, extractDocumentoPublico } from "@/lib/proposal-normalizer";
 import { logProposalEvent } from "@/lib/proposal-events";
+import { getNicheProfile } from "@/lib/pdf-niche-intelligence";
+import { drawBarChart, drawComparisonTable, drawDonutChart, drawKpiCard, drawProgressBar, drawTimeline } from "@/lib/pdf-charts";
 import logoUrl from "@/assets/logo.png";
 
 // ── Image loader ──
@@ -41,6 +43,7 @@ function buildColors(t: PdfTemplate) {
 export async function generatePropostaPdf(proposta: Proposta, templateId?: string, documentCode?: string): Promise<Blob> {
   const template = getTemplateById(templateId || "cyber-magenta");
   const C = buildColors(template);
+  const niche = getNicheProfile(proposta);
   let logoBase64: string;
   try {
     logoBase64 = await loadImageAsBase64(logoUrl);
@@ -74,7 +77,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   const docCode = documentCode || "";
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297, H = 210;
-  const MX = 18; // standard margin
+  const MX = 18;
   let pageNum = 0;
 
   // ── Shared helpers ──
@@ -92,6 +95,8 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.restoreGraphicsState();
   };
 
+  const helpers = { setOpacity, restoreOpacity };
+
   const addGlow = (x: number, y: number, r: number, color: RGB, opacity = 0.12) => {
     setOpacity(opacity);
     pdf.setFillColor(...color);
@@ -107,17 +112,14 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   };
 
   const addPageDecor = () => {
-    // Top border line (gradient-like: primary to secondary)
     pdf.setFillColor(...C.primary);
     pdf.rect(0, 0, W * 0.6, 1.5, "F");
     pdf.setFillColor(...C.secondary);
     pdf.rect(W * 0.6, 0, W * 0.4, 1.5, "F");
-    // Bottom border line
     pdf.setFillColor(...C.accent);
     setOpacity(0.4);
     pdf.rect(0, H - 1.5, W, 1.5, "F");
     restoreOpacity();
-    // Corner glows
     addGlow(W - 30, 30, 60, C.accent, 0.08);
     addGlow(30, H - 30, 50, C.secondary, 0.06);
   };
@@ -148,17 +150,14 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   };
 
   const drawSectionHeader = (subtitle: string, title: string, y: number) => {
-    // Subtitle (small caps)
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
     pdf.setTextColor(...C.primary);
     pdf.text(subtitle.toUpperCase(), MX, y);
-    // Title (large)
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(22);
     pdf.setTextColor(...C.white);
     pdf.text(title.toUpperCase(), MX, y + 12);
-    // Company badge top-right
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7);
     pdf.setTextColor(...C.midGray);
@@ -167,12 +166,10 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   };
 
   const drawCard = (x: number, y: number, w: number, h: number, borderColor: RGB = C.primary) => {
-    // Card fill
     pdf.setFillColor(...C.bgCard);
     setOpacity(0.7);
     pdf.roundedRect(x, y, w, h, 3, 3, "F");
     restoreOpacity();
-    // Border
     pdf.setDrawColor(...borderColor);
     setOpacity(0.35);
     pdf.setLineWidth(0.4);
@@ -181,7 +178,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   };
 
   const drawCardTitle = (icon: string, title: string, x: number, y: number, color: RGB) => {
-    // Icon circle
     pdf.setFillColor(...color);
     setOpacity(0.15);
     pdf.circle(x + 6, y, 5, "F");
@@ -190,12 +186,10 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     setOpacity(0.4);
     pdf.circle(x + 6, y, 5, "S");
     restoreOpacity();
-    // Icon text
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8);
     pdf.setTextColor(...color);
     pdf.text(icon, x + 6, y + 2.5, { align: "center" });
-    // Title
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(12);
     pdf.setTextColor(...C.white);
@@ -203,10 +197,8 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   };
 
   const drawBullet = (text: string, x: number, y: number, maxW: number, color: RGB = C.secondary): number => {
-    // Triangle bullet
     pdf.setFillColor(...color);
     pdf.triangle(x, y - 2.5, x + 2.5, y - 1, x, y + 0.5, "F");
-    // Text (bold label + normal desc if contains ":")
     const colonIdx = text.indexOf(":");
     if (colonIdx > 0 && colonIdx < 40) {
       const label = text.substring(0, colonIdx + 1);
@@ -248,29 +240,24 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   // ══════════════════════════════════════════════
   fillBg();
 
-  // Top border accent
   pdf.setFillColor(...C.primary);
   pdf.rect(0, 0, W * 0.5, 1.5, "F");
   pdf.setFillColor(...C.secondary);
   pdf.rect(W * 0.5, 0, W * 0.5, 1.5, "F");
 
-  // Corner glows
   addGlow(W * 0.3, H * 0.3, 90, C.accent, 0.08);
   addGlow(W * 0.8, H * 0.7, 70, C.secondary, 0.06);
 
-  // Top-left info
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(7);
   pdf.setTextColor(...C.darkGray);
-  pdf.text("SOLUÇÕES DE MAIS", MX, 12);
-  // Top-right date
+  pdf.text("SOLUÇÕES DIGITAIS", MX, 12);
   const dateStr = new Date(proposta.criado_em).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   pdf.text(dateStr.charAt(0).toUpperCase() + dateStr.slice(1), W - MX, 12, { align: "right" });
 
   // Logo centered
   const logoSize = 40;
   addGlow(W / 2, 60, 35, C.primary, 0.1);
-  // Logo background card
   pdf.setFillColor(...C.bgCard);
   setOpacity(0.8);
   pdf.roundedRect(W / 2 - logoSize / 2 - 5, 40, logoSize + 10, logoSize + 10, 4, 4, "F");
@@ -281,7 +268,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   restoreOpacity();
   pdf.addImage(logoBase64, "PNG", W / 2 - logoSize / 2, 45, logoSize, logoSize);
 
-  // Company name
   const companyName = proposta.empresa_cliente || "";
   if (companyName) {
     pdf.setFont("helvetica", "normal");
@@ -290,7 +276,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.text(companyName.toUpperCase(), W / 2, 103, { align: "center" });
   }
 
-  // Project title
   const projectTitle = pj?.titulo_projeto || proposta.tipo_projeto || "SISTEMA PERSONALIZADO";
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(28);
@@ -302,8 +287,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     titleY += 14;
   }
 
-  // Subtitle
-  const subtitle = pj?.subtitulo || pj?.resumo_executivo?.substring(0, 80) || "Plataforma integrada para agendamentos inteligentes e controle operacional";
+  const subtitle = pj?.subtitulo || pj?.resumo_executivo?.substring(0, 80) || "Plataforma integrada para gestão inteligente e controle operacional";
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);
   pdf.setTextColor(...C.midGray);
@@ -314,18 +298,17 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     subY += 5;
   }
 
-  // Bottom info badges (3 columns)
+  // Bottom info badges
   const badgeY = H - 32;
   const badgeW = (W - MX * 2 - 20) / 3;
   const badgeInfos = [
     { icon: "▶", label: "FAIXA OPERACIONAL", value: proposta.complexidade || "Média" },
-    { icon: "◆", label: "EXPERIÊNCIA NO SETOR", value: proposta.segmento || "Tecnologia" },
+    { icon: "◆", label: "SEGMENTO", value: niche.segment || proposta.segmento || "Tecnologia" },
     { icon: "✉", label: "CONTATO", value: proposta.email_cliente || "comercial@holynex.com" },
   ];
 
   badgeInfos.forEach((badge, i) => {
     const bx = MX + i * (badgeW + 10);
-    // Badge background
     pdf.setFillColor(...C.bgCard);
     setOpacity(0.6);
     pdf.roundedRect(bx, badgeY, badgeW, 16, 3, 3, "F");
@@ -334,26 +317,22 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     setOpacity(0.2);
     pdf.roundedRect(bx, badgeY, badgeW, 16, 3, 3, "S");
     restoreOpacity();
-    // Icon
     pdf.setFillColor(...C.primary);
     pdf.circle(bx + 8, badgeY + 8, 3.5, "F");
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(6);
     pdf.setTextColor(...C.bg);
     pdf.text(badge.icon, bx + 8, badgeY + 9.5, { align: "center" });
-    // Label
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(6);
     pdf.setTextColor(...C.darkGray);
     pdf.text(badge.label, bx + 16, badgeY + 6);
-    // Value
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8);
     pdf.setTextColor(...C.white);
     pdf.text(badge.value.substring(0, 28), bx + 16, badgeY + 12);
   });
 
-  // Confidential + doc code
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(6);
   pdf.setTextColor(...C.darkGray);
@@ -362,7 +341,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.text(`Código: ${docCode}`, W / 2, H - 2, { align: "center" });
   }
 
-  // Bottom accent line
   pdf.setFillColor(...C.primary);
   pdf.rect(0, H - 1, W * 0.5, 1, "F");
   pdf.setFillColor(...C.secondary);
@@ -378,7 +356,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     const headerY = 12;
     drawSectionHeader("Análise Inicial", "Contexto do Projeto", headerY);
 
-    // Two cards side by side
     const cardGap = 10;
     const cardW = (W - MX * 2 - cardGap) / 2;
     const cardY = headerY + 24;
@@ -389,9 +366,8 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     drawCardTitle("⚡", "Resumo Executivo", MX + 8, cardY + 14, C.secondary);
 
     let ly = cardY + 26;
-    const resumoItems = [];
+    const resumoItems: string[] = [];
 
-    // Build resume items from proposal data
     if (pj?.resumo_executivo) {
       resumoItems.push(`Desenvolvimento Full-Stack: ${typeof pj.resumo_executivo === "string" ? pj.resumo_executivo.substring(0, 120) : "Criação de sistema robusto."}`);
     }
@@ -405,7 +381,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       resumoItems.push(
         "Desenvolvimento Full-Stack: Criação de sistema robusto focado na disponibilidade em tempo real e facilidade de uso.",
         "Entregas Principais: Landing Page institucional, Painel Administrativo completo e Área do Usuário intuitiva.",
-        "Objetivo Estratégico: Maximizar a eficiência operacional, automatizar processos manuais e elevar a experiência do cliente final."
+        `Objetivo Estratégico: ${niche.strategicBenefits[0]?.desc || "Maximizar a eficiência operacional e automatizar processos."}`
       );
     }
     for (const item of resumoItems) {
@@ -418,7 +394,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     drawCardTitle("⚙", "Diagnóstico Atual", card2X + 8, cardY + 14, C.primary);
 
     let ry = cardY + 26;
-    const diagItems = [];
+    const diagItems: string[] = [];
     if (pj?.diagnostico) {
       const diagParts = pj.diagnostico.split(/[.!]\s+/).filter((s: string) => s.trim().length > 10);
       for (const part of diagParts.slice(0, 3)) {
@@ -427,9 +403,9 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     }
     if (diagItems.length === 0) {
       diagItems.push(
-        "Gestão Descentralizada: Falta de uma ferramenta integrada que centralize reservas, bloqueios de manutenção e agenda.",
-        "Visibilidade Limitada: Necessidade crítica de uma visão clara e imediata de datas, horários disponíveis e conflitos de agenda.",
-        "Controle de Acesso: Carência de um sistema para gestão granular de perfis, permissões e políticas de uso para equipe e clientes."
+        "Gestão Descentralizada: Falta de uma ferramenta integrada que centralize operações e agenda.",
+        "Visibilidade Limitada: Necessidade de uma visão clara e imediata de dados, status e conflitos.",
+        "Controle de Acesso: Carência de sistema para gestão granular de perfis e permissões."
       );
     }
     for (const item of diagItems) {
@@ -445,7 +421,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     const headerY = 12;
     drawSectionHeader("Arquitetura do Sistema", "Solução Proposta", headerY);
 
-    // Scope section subtitle
     let sy = headerY + 22;
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8);
@@ -453,32 +428,28 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.text("⚙ Escopo do Projeto", MX, sy);
     sy += 6;
 
-    // 3 scope cards
     const scopeGap = 8;
     const scopeW = (W - MX * 2 - scopeGap * 2) / 3;
     const scopeH = 55;
 
     const scopeCards = [
-      { icon: "🌐", title: "Landing Page", desc: pj?.escopo?.[0] || "Interface pública para apresentação, vitrine detalhada, FAQs e CTA direto para reservas." },
-      { icon: "👤", title: "Painel de Usuários", desc: pj?.escopo?.[1] || "Área restrita para cadastro, login seguro, visualização de calendário, criação de reservas e histórico de uso." },
-      { icon: "⚙", title: "Painel Administrativo", desc: pj?.escopo?.[2] || "Centro de controle para gestão de recursos, regras, aprovação de cadastros e relatórios." },
+      { icon: "🌐", title: niche.scopeLabels.landing, desc: pj?.escopo?.[0] || "Interface pública para apresentação, vitrine detalhada e CTA direto." },
+      { icon: "👤", title: niche.scopeLabels.user, desc: pj?.escopo?.[1] || "Área restrita para cadastro, login seguro, visualização e histórico." },
+      { icon: "⚙", title: niche.scopeLabels.admin, desc: pj?.escopo?.[2] || "Centro de controle para gestão de recursos, regras e relatórios." },
     ];
 
     scopeCards.forEach((sc, i) => {
       const sx = MX + i * (scopeW + scopeGap);
       drawCard(sx, sy, scopeW, scopeH, i === 0 ? C.secondary : i === 1 ? C.primary : C.accent);
-      // Icon
       const iconColor: RGB = i === 0 ? C.secondary : i === 1 ? C.primary : C.accent;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(14);
       pdf.setTextColor(...iconColor);
       pdf.text(sc.icon, sx + scopeW / 2, sy + 14, { align: "center" });
-      // Title
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(10);
       pdf.setTextColor(...C.white);
       pdf.text(sc.title, sx + scopeW / 2, sy + 24, { align: "center" });
-      // Description
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7.5);
       pdf.setTextColor(...C.lightGray);
@@ -490,7 +461,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       }
     });
 
-    // Key features section
+    // Key features
     const featY = sy + scopeH + 10;
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8);
@@ -501,10 +472,10 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     const featColW = (W - MX * 2 - 10) / 2;
     const feats = pj?.funcionalidades || [];
     const featItems = [
-      { title: feats[0] || "Agendamento Inteligente", desc: feats[1] || "Sistema de verificação automática de conflitos, bloqueios administrativos e suporte a reservas recorrentes.", color: C.primary },
-      { title: feats[2] || "Gestão de Usuários", desc: feats[3] || "Controle granular de perfis com diferentes níveis de permissão e acesso.", color: C.secondary },
-      { title: feats[4] || "Gestão de Horários", desc: feats[5] || "Configuração flexível de janelas de funcionamento, dias indisponíveis e regras de cancelamento.", color: C.primary },
-      { title: feats[6] || "Notificações & Métricas", desc: feats[7] || "Alertas automáticos por e-mail para confirmações e dashboard com métricas essenciais de ocupação.", color: C.accent2 },
+      { title: feats[0] || "Agendamento Inteligente", desc: feats[1] || "Sistema de verificação automática de conflitos e suporte a recorrências.", color: C.primary },
+      { title: feats[2] || "Gestão de Usuários", desc: feats[3] || "Controle granular de perfis com diferentes níveis de permissão.", color: C.secondary },
+      { title: feats[4] || "Gestão Operacional", desc: feats[5] || "Configuração flexível de regras, janelas e políticas de uso.", color: C.primary },
+      { title: feats[6] || "Notificações & Métricas", desc: feats[7] || "Alertas automáticos e dashboard com métricas essenciais.", color: C.accent2 },
     ];
 
     featItems.forEach((feat, i) => {
@@ -513,7 +484,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       const fx = MX + col * (featColW + 10);
       const fy = featStartY + row * 28;
 
-      // Small icon
       pdf.setFillColor(...feat.color);
       setOpacity(0.15);
       pdf.circle(fx + 5, fy + 4, 4, "F");
@@ -523,13 +493,11 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.circle(fx + 5, fy + 4, 4, "S");
       restoreOpacity();
 
-      // Title
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(9);
       pdf.setTextColor(...C.white);
       pdf.text(feat.title.substring(0, 35), fx + 13, fy + 5);
 
-      // Description
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7.5);
       pdf.setTextColor(...C.lightGray);
@@ -543,65 +511,72 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   }
 
   // ══════════════════════════════════════════════
-  // SLIDE 4 — INVESTIMENTO & ANÁLISE
+  // SLIDE 4 — INVESTIMENTO & ANÁLISE (with charts)
   // ══════════════════════════════════════════════
   {
     newPage();
     const headerY = 12;
     drawSectionHeader("Proposta Comercial", "Investimento & Análise", headerY);
 
-    // Right badge
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7);
     pdf.setTextColor(...C.midGray);
     pdf.text("⚡ PLANOS E BENEFÍCIOS", W - MX, headerY + 12, { align: "right" });
 
-    // 3 pricing tiers
-    const tierY = headerY + 24;
-    const tierGap = 8;
-    const tierW = (W - MX * 2 - tierGap * 2) / 3;
-    const tierH = 100;
+    // ── Bar Chart: Investment comparison ──
+    const chartX = MX;
+    const chartY = headerY + 22;
+    const chartW = (W - MX * 2) * 0.38;
+    const chartH = 70;
+
+    drawCard(chartX, chartY - 2, chartW + 8, chartH + 12, C.secondary);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.secondary);
+    pdf.text("📊 COMPARATIVO DE INVESTIMENTO", chartX + 8, chartY + 6);
+
+    const barData = [
+      { label: "Mínimo", value: proposta.valor_minimo || 0, color: C.accent2 },
+      { label: "Ideal", value: proposta.valor_ideal || 0, color: C.primary },
+      { label: "Premium", value: proposta.valor_premium || 0, color: C.secondary },
+    ];
+
+    if (tiers.length >= 3) {
+      barData[0] = { label: tiers[0].name, value: tiers[0].price, color: C.accent2 };
+      barData[1] = { label: tiers[1].name, value: tiers[1].price, color: C.primary };
+      barData[2] = { label: tiers[2].name, value: tiers[2].price, color: C.secondary };
+    }
+
+    drawBarChart(pdf, chartX + 12, chartY + 14, chartW - 14, chartH - 14, barData, helpers, C);
+
+    // ── Pricing Tier Cards (right side) ──
+    const tierStartX = chartX + chartW + 16;
+    const tierAvailW = W - tierStartX - MX;
+    const tierGap = 6;
+    const tierW = (tierAvailW - tierGap * 2) / 3;
+    const tierH = chartH + 10;
+    const tierY = chartY - 2;
 
     const plans = [
       {
-        name: "MÍNIMO",
-        price: proposta.valor_minimo || 0,
-        features: pj?.escopo?.slice(0, 4) || ["Agendamento de salas essencial", "Gestão básica de usuários", "Controle simples de horários", "Suporte por e-mail"],
+        name: "MÍNIMO", price: proposta.valor_minimo || 0,
+        features: pj?.escopo?.slice(0, 4) || ["Funcionalidades essenciais", "Gestão básica", "Controle simples", "Suporte por e-mail"],
         recommended: false,
       },
       {
-        name: "IDEAL",
-        price: proposta.valor_ideal || 0,
-        features: pj?.funcionalidades?.slice(0, 5) || ["Todas as features do Mínimo", "Landing Page completa", "Painel de relatórios gerenciais", "Notificações automáticas", "Histórico de reservas"],
+        name: "IDEAL", price: proposta.valor_ideal || 0,
+        features: pj?.funcionalidades?.slice(0, 5) || ["Todas do Mínimo", "Interface completa", "Relatórios gerenciais", "Notificações", "Histórico"],
         recommended: true,
       },
       {
-        name: "PREMIUM",
-        price: proposta.valor_premium || 0,
-        features: [...(pj?.funcionalidades_recomendadas?.slice(0, 3) || ["Todas as features do Ideal", "Customizações visuais avançadas", "Integrações externas (API)"]), ...(pj?.integ?.slice(0, 2) || ["Suporte prioritário (WhatsApp)", "Treinamento da equipe"])].slice(0, 5),
+        name: "PREMIUM", price: proposta.valor_premium || 0,
+        features: [...(pj?.funcionalidades_recomendadas?.slice(0, 3) || ["Todas do Ideal", "Customizações avançadas", "Integrações externas"]), "Suporte prioritário", "Treinamento"].slice(0, 5),
         recommended: false,
       },
     ];
 
-    // Use tiers from proposal_tiers if available
     if (tiers.length >= 3) {
-      plans[0].name = tiers[0].name.toUpperCase();
-      plans[0].price = tiers[0].price;
-      plans[0].features = tiers[0].scope_modules.filter((m: any) => m.status === "included").map((m: any) => m.label).slice(0, 4);
-      plans[0].recommended = tiers[0].is_recommended;
-
-      plans[1].name = tiers[1].name.toUpperCase();
-      plans[1].price = tiers[1].price;
-      plans[1].features = tiers[1].scope_modules.filter((m: any) => m.status === "included").map((m: any) => m.label).slice(0, 5);
-      plans[1].recommended = tiers[1].is_recommended;
-
-      plans[2].name = tiers[2].name.toUpperCase();
-      plans[2].price = tiers[2].price;
-      plans[2].features = tiers[2].scope_modules.filter((m: any) => m.status === "included").map((m: any) => m.label).slice(0, 5);
-      plans[2].recommended = tiers[2].is_recommended;
-    } else if (tiers.length > 0) {
-      // Use whatever tiers exist
-      tiers.forEach((tier, i) => {
+      tiers.forEach((tier: any, i: number) => {
         if (i < 3) {
           plans[i].name = tier.name.toUpperCase();
           plans[i].price = tier.price;
@@ -612,22 +587,16 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     }
 
     plans.forEach((plan, i) => {
-      const px = MX + i * (tierW + tierGap);
+      const px = tierStartX + i * (tierW + tierGap);
       const isRec = plan.recommended;
-      const py = isRec ? tierY - 4 : tierY;
-      const ph = isRec ? tierH + 8 : tierH;
+      const py = isRec ? tierY - 3 : tierY;
+      const ph = isRec ? tierH + 6 : tierH;
 
-      // Card bg
       drawCard(px, py, tierW, ph, isRec ? C.primary : C.midGray);
 
-      // Top accent
       if (isRec) {
         pdf.setFillColor(...C.primary);
         pdf.rect(px, py, tierW, 2, "F");
-      }
-
-      // Recommended badge
-      if (isRec) {
         const bw = 28;
         pdf.setFillColor(...C.secondary);
         pdf.roundedRect(px + (tierW - bw) / 2, py - 4, bw, 8, 3, 3, "F");
@@ -637,106 +606,134 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
         pdf.text("RECOMENDADO", px + tierW / 2, py, { align: "center" });
       }
 
-      // Plan name
-      let fy = py + 16;
+      let fy = py + 14;
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
+      pdf.setFontSize(9);
       { const tc: RGB = isRec ? C.white : C.midGray; pdf.setTextColor(...tc); }
       pdf.text(plan.name, px + tierW / 2, fy, { align: "center" });
-      fy += 10;
-
-      // Price
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.midGray);
-      pdf.text("R$", px + tierW / 2 - 14, fy - 2);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(22);
-      pdf.setTextColor(...C.white);
-      pdf.text(plan.price > 0 ? plan.price.toLocaleString("pt-BR") : "—", px + tierW / 2 - 6, fy);
       fy += 8;
 
-      // Separator
-      pdf.setDrawColor(...C.midGray);
-      setOpacity(0.15);
-      pdf.line(px + 8, fy, px + tierW - 8, fy);
-      restoreOpacity();
-      fy += 6;
-
-      // Features
-      for (const feat of plan.features) {
-        if (fy > py + ph - 8) break;
-        // Checkmark
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(8);
-        pdf.setTextColor(...C.secondary);
-        pdf.text("✓", px + 8, fy);
-        // Text
-        pdf.setFont("helvetica", isRec ? "bold" : "normal");
-        pdf.setFontSize(8);
-        { const tc: RGB = isRec ? C.white : C.lightGray; pdf.setTextColor(...tc); }
-        pdf.text(feat.substring(0, 30), px + 14, fy);
-        fy += 6;
-      }
-    });
-
-    // Bottom row: Complexity + Strategic Analysis
-    const bottomY = tierY + tierH + 14;
-    const bottomCardW = (W - MX * 2 - 10) / 2;
-
-    // Complexity card
-    drawCard(MX, bottomY, bottomCardW, 24, C.secondary);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.secondary);
-    pdf.text("⚙ NÍVEL DE COMPLEXIDADE", MX + 8, bottomY + 8);
-    // Complexity bar
-    const compLevel = proposta.complexidade || "Média";
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(12);
-    pdf.setTextColor(...C.white);
-    pdf.text(compLevel, MX + 8, bottomY + 18);
-    // Bar visualization
-    const barX = MX + 50, barW = bottomCardW - 62, barH2 = 4;
-    pdf.setFillColor(...C.bgCard);
-    pdf.roundedRect(barX, bottomY + 14, barW, barH2, 2, 2, "F");
-    const fillPct = compLevel === "Baixa" ? 0.3 : compLevel === "Alta" ? 0.9 : 0.6;
-    pdf.setFillColor(...C.primary);
-    pdf.roundedRect(barX, bottomY + 14, barW * fillPct, barH2, 2, 2, "F");
-    // Estimate
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.midGray);
-    pdf.text(pj?.cronograma || "Estimada em 4 semanas", barX, bottomY + 8);
-
-    // Strategic Analysis card
-    const saX = MX + bottomCardW + 10;
-    drawCard(saX, bottomY, bottomCardW, 24, C.accent);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.accent);
-    pdf.text("⚡ ANÁLISE ESTRATÉGICA", saX + 8, bottomY + 8);
-
-    const stratItems = ["Eficiência", "Satisfação", "Dados"];
-    const stratDescs = ["Automatização de processos", "Melhoria na experiência do usuário", "Base sólida para decisões futuras"];
-    const stratW2 = (bottomCardW - 16) / 3;
-
-    stratItems.forEach((s, i) => {
-      const sx = saX + 8 + i * stratW2;
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.white);
-      pdf.text(s, sx, bottomY + 15);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(6);
       pdf.setTextColor(...C.midGray);
-      const sl = pdf.splitTextToSize(stratDescs[i], stratW2 - 5);
-      pdf.text(sl[0] || "", sx, bottomY + 20);
+      pdf.text("R$", px + tierW / 2 - 10, fy - 1);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(16);
+      pdf.setTextColor(...C.white);
+      pdf.text(plan.price > 0 ? plan.price.toLocaleString("pt-BR") : "—", px + tierW / 2 - 3, fy);
+      fy += 6;
+
+      pdf.setDrawColor(...C.midGray);
+      setOpacity(0.15);
+      pdf.line(px + 5, fy, px + tierW - 5, fy);
+      restoreOpacity();
+      fy += 5;
+
+      for (const feat of plan.features) {
+        if (fy > py + ph - 6) break;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(6);
+        pdf.setTextColor(...C.secondary);
+        pdf.text("✓", px + 5, fy);
+        pdf.setFont("helvetica", isRec ? "bold" : "normal");
+        pdf.setFontSize(6.5);
+        { const tc: RGB = isRec ? C.white : C.lightGray; pdf.setTextColor(...tc); }
+        pdf.text(feat.substring(0, 22), px + 10, fy);
+        fy += 5;
+      }
     });
+
+    // ── Bottom row: KPIs + Complexity + Strategic ──
+    const bottomY = tierY + tierH + 18;
+    const kpiW = (W - MX * 2 - 18) / 4;
+    const kpiH = 32;
+
+    niche.kpis.forEach((kpi, i) => {
+      const kx = MX + i * (kpiW + 6);
+      const kpiColors: RGB[] = [C.primary, C.secondary, C.accent, C.accent2];
+      drawKpiCard(pdf, kx, bottomY, kpiW, kpiH, kpi.icon, kpi.metric, kpi.label, helpers, C, kpiColors[i % 4]);
+    });
+
+    // Expert reference footer
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(5.5);
+    pdf.setTextColor(...C.darkGray);
+    pdf.text(niche.expertReference.substring(0, 120), W / 2, bottomY + kpiH + 6, { align: "center" });
   }
 
   // ══════════════════════════════════════════════
-  // SLIDE 5 — CRONOGRAMA & PRÓXIMOS PASSOS
+  // SLIDE 5 — SCOPE COMPARISON TABLE
+  // ══════════════════════════════════════════════
+  if (tiers.length >= 2) {
+    newPage();
+    const headerY = 12;
+    drawSectionHeader("Comparativo Detalhado", "Matriz de Funcionalidades", headerY);
+
+    // Build comparison table from tiers
+    const tierHeaders = tiers.slice(0, 4).map((t: any) => t.name.toUpperCase());
+    const allModules = new Set<string>();
+    tiers.forEach((t: any) => {
+      t.scope_modules?.forEach((m: any) => allModules.add(m.label));
+    });
+
+    const tableRows = Array.from(allModules).slice(0, 15).map(label => ({
+      label,
+      values: tiers.slice(0, 4).map((t: any) => {
+        const mod = t.scope_modules?.find((m: any) => m.label === label);
+        if (!mod) return false;
+        return mod.status === "included";
+      }),
+    }));
+
+    if (tableRows.length > 0) {
+      const tableY = headerY + 24;
+      const tableEndY = drawComparisonTable(
+        pdf, MX, tableY, W - MX * 2,
+        tierHeaders, tableRows, helpers, C
+      );
+
+      // Donut chart: scope coverage
+      const donutY = Math.min(tableEndY + 10, H - 55);
+      const donutCx = W / 2;
+
+      // Calculate coverage per tier
+      const segments = tiers.slice(0, 3).map((t: any, i: number) => {
+        const included = t.scope_modules?.filter((m: any) => m.status === "included").length || 0;
+        const total = allModules.size || 1;
+        const pct = Math.round((included / total) * 100);
+        const segColors: RGB[] = [C.accent2, C.primary, C.secondary];
+        return { label: t.name, pct, color: segColors[i % 3] };
+      });
+
+      if (donutY < H - 50) {
+        drawCard(MX, donutY - 4, W - MX * 2, 44, C.accent);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(...C.accent);
+        pdf.text("📊 COBERTURA DE ESCOPO POR FAIXA", MX + 8, donutY + 4);
+
+        // Progress bars for each tier
+        segments.forEach((seg, i) => {
+          const barX = MX + 80 + i * 62;
+          drawProgressBar(pdf, barX, donutY + 12, 50, seg.pct, seg.label, helpers, { ...C, primary: seg.color });
+        });
+
+        // Investment justification
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(6.5);
+        pdf.setTextColor(...C.lightGray);
+        const justLines = pdf.splitTextToSize(niche.investmentJustification, W - MX * 2 - 16);
+        let jy = donutY + 26;
+        for (const l of justLines.slice(0, 2)) {
+          pdf.text(l, MX + 8, jy);
+          jy += 4;
+        }
+      }
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // SLIDE 6 — CRONOGRAMA & PRÓXIMOS PASSOS
   // ══════════════════════════════════════════════
   {
     newPage();
@@ -748,60 +745,16 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setTextColor(...C.midGray);
     pdf.text("⚡ PLANO DE AÇÃO", W - MX, headerY + 12, { align: "right" });
 
-    // Timeline: 4 numbered steps
+    // Timeline
     const tlY = headerY + 24;
-    const tlSteps = [
-      { num: "01", title: "SEMANA 1", subtitle: "Descoberta & Design", desc: "Definição de UX/UI, arquitetura do sistema e aprovação de protótipos." },
-      { num: "02", title: "SEMANA 2", subtitle: "Backend Core", desc: "Desenvolvimento da lógica de agendamentos, gestão de usuários e regras de horários." },
-      { num: "03", title: "SEMANA 3", subtitle: "Frontend & Integração", desc: "Construção da Landing Page, painéis administrativos e conexão com API." },
-      { num: "04", title: "SEMANA 4", subtitle: "Go-Live", desc: "Testes finais, homologação, treinamento e lançamento oficial." },
+    const phases = niche.timelinePhases || [
+      { title: "SEMANA 1", subtitle: "Descoberta & Design", desc: "Definição UX/UI, arquitetura e aprovação de protótipos." },
+      { title: "SEMANA 2", subtitle: "Backend Core", desc: "Lógica de negócio, APIs e gestão de dados." },
+      { title: "SEMANA 3", subtitle: "Frontend & Integração", desc: "Construção de interfaces e conexão com API." },
+      { title: "SEMANA 4", subtitle: "Go-Live", desc: "Testes, homologação, treinamento e lançamento." },
     ];
 
-    const stepW = (W - MX * 2 - 30) / 4;
-
-    // Connecting line
-    pdf.setDrawColor(...C.midGray);
-    setOpacity(0.2);
-    pdf.setLineWidth(0.5);
-    pdf.line(MX + 15, tlY + 8, W - MX - 15, tlY + 8);
-    restoreOpacity();
-
-    tlSteps.forEach((step, i) => {
-      const sx = MX + i * (stepW + 10);
-      const stepColor: RGB = i === 0 ? C.primary : i === 1 ? C.secondary : i === 2 ? C.accent : C.accent2;
-
-      // Circle with number
-      pdf.setDrawColor(...stepColor);
-      pdf.setLineWidth(0.8);
-      pdf.circle(sx + stepW / 2, tlY + 8, 7, "S");
-      pdf.setFillColor(...C.bg);
-      pdf.circle(sx + stepW / 2, tlY + 8, 6, "F");
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
-      pdf.setTextColor(...stepColor);
-      pdf.text(step.num, sx + stepW / 2, tlY + 11, { align: "center" });
-
-      // Title & subtitle
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.white);
-      pdf.text(step.title, sx + stepW / 2, tlY + 22, { align: "center" });
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(7);
-      pdf.setTextColor(...stepColor);
-      pdf.text(step.subtitle, sx + stepW / 2, tlY + 28, { align: "center" });
-
-      // Description
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7);
-      pdf.setTextColor(...C.lightGray);
-      const dl = pdf.splitTextToSize(step.desc, stepW - 4);
-      let dly = tlY + 34;
-      for (const l of dl.slice(0, 3)) {
-        pdf.text(l, sx + 2, dly);
-        dly += 4;
-      }
-    });
+    drawTimeline(pdf, MX, tlY, W - MX * 2, phases, helpers, C);
 
     // Bottom row: 3 cards
     const bottomY = tlY + 58;
@@ -839,21 +792,20 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setTextColor(...C.midGray);
     pdf.text("/mês", MX + 8 + pdf.getTextWidth(maintPrice.substring(0, 20)) + 2, bottomY + 42);
 
-    // Maintenance features
-    const maintFeats = ["Correções de bugs", "Pequenos ajustes visuais", "Monitoramento de servidor"];
+    const maintFeats = niche.maintenanceFeatures;
     let mfy = bottomY + 50;
-    for (const feat of maintFeats) {
+    for (const feat of maintFeats.slice(0, 4)) {
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(7);
       pdf.setTextColor(...C.secondary);
       pdf.text("✓", MX + 8, mfy);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(...C.lightGray);
-      pdf.text(feat, MX + 14, mfy);
+      pdf.text(feat.substring(0, 35), MX + 14, mfy);
       mfy += 5;
     }
 
-    // Card 2: Matriz de Riscos
+    // Card 2: Matriz de Riscos (niche-adapted)
     const riskX = MX + bottomCardW + bottomGap;
     drawCard(riskX, bottomY, bottomCardW, bottomCardH, C.highlight);
     pdf.setFont("helvetica", "bold");
@@ -861,33 +813,22 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setTextColor(...C.highlight);
     pdf.text("⚠ MATRIZ DE RISCOS", riskX + 8, bottomY + 10);
 
-    const risks = pj?.riscos || [
-      { title: "Atraso no Desenvolvimento", mitigation: "Sprints semanais e buffer de tempo." },
-      { title: "Dificuldade na Integração", mitigation: "Ambiente de staging para testes isolados." },
-      { title: "Mudança de Escopo", mitigation: "Documentação aprovada no kick-off." },
-    ];
-
     let rky = bottomY + 18;
-    const riskItems = Array.isArray(risks) ? risks : [];
-    for (const risk of riskItems.slice(0, 3)) {
-      const rTitle = typeof risk === "string" ? risk : risk.title || risk;
-      const rMitigation = typeof risk === "object" && risk.mitigation ? risk.mitigation : "";
-
-      pdf.setFillColor(...C.primary);
+    for (const risk of niche.risks.slice(0, 3)) {
+      // Severity badge
+      const sevColor: RGB = risk.severity === "alto" ? [255, 60, 60] : risk.severity === "medio" ? [255, 180, 50] : [0, 200, 150];
+      pdf.setFillColor(...sevColor);
       pdf.circle(riskX + 10, rky + 1, 1.5, "F");
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(8);
       pdf.setTextColor(...C.white);
-      pdf.text(String(rTitle).substring(0, 35), riskX + 15, rky + 2);
+      pdf.text(risk.title.substring(0, 30), riskX + 15, rky + 2);
       rky += 6;
-      if (rMitigation) {
-        pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(7);
-        pdf.setTextColor(...C.midGray);
-        pdf.text(`→ Mitigação: ${String(rMitigation).substring(0, 45)}`, riskX + 15, rky);
-        rky += 5;
-      }
-      rky += 3;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.midGray);
+      pdf.text(`-> Mitigação: ${risk.mitigation.substring(0, 40)}`, riskX + 15, rky);
+      rky += 8;
     }
 
     // Card 3: Próximos Passos + CTA
@@ -898,16 +839,11 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setTextColor(...C.secondary);
     pdf.text("📋 PRÓXIMOS PASSOS", ctaX + 8, bottomY + 10);
 
-    const nextSteps = pj?.proximos_passos || [
-      "Reunião de Kick-off",
-      "Assinatura de Contrato",
-      "Início do Projeto",
-    ];
+    const nextSteps = pj?.proximos_passos || ["Reunião de Kick-off", "Assinatura de Contrato", "Início do Projeto"];
 
     let nsy = bottomY + 20;
     for (const step of (Array.isArray(nextSteps) ? nextSteps : []).slice(0, 4)) {
       const stepText = typeof step === "string" ? step : String(step);
-      // Checkmark
       pdf.setFillColor(...C.secondary);
       setOpacity(0.15);
       pdf.roundedRect(ctaX + 8, nsy - 3, 5, 5, 1, 1, "F");
@@ -916,7 +852,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
       pdf.setFontSize(7);
       pdf.setTextColor(...C.secondary);
       pdf.text("✓", ctaX + 10.5, nsy + 0.5, { align: "center" });
-      // Text
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
       pdf.setTextColor(...C.white);
@@ -935,7 +870,116 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   }
 
   // ══════════════════════════════════════════════
-  // SLIDE 6 — CONDIÇÕES COMERCIAIS (if notes exist)
+  // SLIDE 7 — STRATEGIC BENEFITS (niche-adapted)
+  // ══════════════════════════════════════════════
+  {
+    newPage();
+    const headerY = 12;
+    drawSectionHeader("Análise de Impacto", "Benefícios Estratégicos", headerY);
+
+    // 3 benefit cards
+    const cardGap = 10;
+    const cardW = (W - MX * 2 - cardGap * 2) / 3;
+    const cardY = headerY + 24;
+    const cardH = 60;
+
+    const benefitColors: RGB[] = [C.primary, C.secondary, C.accent];
+    niche.strategicBenefits.forEach((benefit, i) => {
+      const cx = MX + i * (cardW + cardGap);
+      const bc = benefitColors[i % 3];
+      drawCard(cx, cardY, cardW, cardH, bc);
+
+      // Number badge
+      pdf.setFillColor(...bc);
+      pdf.roundedRect(cx + 8, cardY + 8, 10, 10, 2, 2, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...C.bg);
+      pdf.text(String(i + 1).padStart(2, "0"), cx + 13, cardY + 15, { align: "center" });
+
+      // Title
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...C.white);
+      pdf.text(benefit.title.substring(0, 25), cx + 22, cardY + 15);
+
+      // Description
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.lightGray);
+      const descL = pdf.splitTextToSize(benefit.desc, cardW - 16);
+      let dy = cardY + 26;
+      for (const l of descL.slice(0, 5)) {
+        pdf.text(l, cx + 8, dy);
+        dy += 4.5;
+      }
+    });
+
+    // Complexity + ROI section
+    const secY = cardY + cardH + 12;
+    const secH = H - secY - 20;
+    const halfW = (W - MX * 2 - 10) / 2;
+
+    // Complexity card
+    drawCard(MX, secY, halfW, secH, C.secondary);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.secondary);
+    pdf.text("⚙ NÍVEL DE COMPLEXIDADE", MX + 8, secY + 10);
+
+    const compLevel = proposta.complexidade || "Média";
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(14);
+    pdf.setTextColor(...C.white);
+    pdf.text(compLevel.toUpperCase(), MX + 8, secY + 22);
+
+    const fillPct = compLevel.toLowerCase() === "baixa" ? 30 : compLevel.toLowerCase() === "alta" ? 90 : 60;
+    drawProgressBar(pdf, MX + 8, secY + 28, halfW - 16, fillPct, pj?.cronograma || "Estimada em 4 semanas", helpers, C);
+
+    // Strategic analysis items
+    const saItems = ["Automação de processos manuais", "Melhoria na experiência do usuário", "Base sólida para decisões futuras", "Escalabilidade para crescimento"];
+    let saY = secY + 42;
+    for (const item of saItems) {
+      pdf.setFillColor(...C.secondary);
+      pdf.triangle(MX + 10, saY - 2, MX + 12.5, saY - 0.5, MX + 10, saY + 1, "F");
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.lightGray);
+      pdf.text(item, MX + 16, saY);
+      saY += 6;
+    }
+
+    // ROI card
+    const roiX = MX + halfW + 10;
+    drawCard(roiX, secY, halfW, secH, C.accent);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.accent);
+    pdf.text("📊 RETORNO SOBRE INVESTIMENTO", roiX + 8, secY + 10);
+
+    // ROI visualization as mini-chart
+    const roiItems = [
+      { label: "Redução de custos operacionais", pct: 35, color: C.primary },
+      { label: "Aumento de produtividade", pct: 45, color: C.secondary },
+      { label: "Satisfação do cliente final", pct: 60, color: C.accent2 },
+      { label: "Retorno no primeiro ano", pct: 80, color: C.accent },
+    ];
+
+    let roiY = secY + 18;
+    for (const item of roiItems) {
+      drawProgressBar(pdf, roiX + 8, roiY, halfW - 16, item.pct, item.label, helpers, { ...C, primary: item.color });
+      roiY += 14;
+    }
+
+    // Expert reference
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(5.5);
+    pdf.setTextColor(...C.darkGray);
+    pdf.text(niche.expertReference.substring(0, 120), W / 2, H - 14, { align: "center" });
+  }
+
+  // ══════════════════════════════════════════════
+  // SLIDE 8 — CONDIÇÕES COMERCIAIS (if notes exist)
   // ══════════════════════════════════════════════
   {
     const notes = proposta.commercial_notes;
@@ -949,7 +993,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       let cy = headerY + 24;
 
-      // Validity & modality badges
       const badgeItems = [
         { label: "VALIDADE", value: validity, color: C.secondary },
         { label: "MODALIDADE", value: isPhased ? "Projeto faseado" : "Entrega única", color: C.primary },
@@ -974,7 +1017,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
 
       cy += 32;
 
-      // Commercial notes sections
       if (notes) {
         const notesSections = [
           { title: "Observação Geral", text: (notes as any).general_note, color: C.secondary },
@@ -1003,7 +1045,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
         }
       }
 
-      // Disclaimer
       if (cy > H - 20) { newPage(); cy = 24; }
       pdf.setDrawColor(...C.midGray);
       setOpacity(0.2);
@@ -1022,33 +1063,28 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   }
 
   // ══════════════════════════════════════════════
-  // SLIDE 7 — ENCERRAMENTO / CTA FINAL
+  // SLIDE FINAL — ENCERRAMENTO / CTA
   // ══════════════════════════════════════════════
   {
     newPage();
-    fillBg(); // Double fill for clean bg
+    fillBg();
 
-    // Full-page centered CTA
     addGlow(W / 2, H / 2, 80, C.primary, 0.08);
     addGlow(W * 0.3, H * 0.7, 60, C.secondary, 0.06);
 
-    // Logo
     const logoS = 25;
     pdf.addImage(logoBase64, "PNG", W / 2 - logoS / 2, 40, logoS, logoS);
 
-    // Title
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(28);
     pdf.setTextColor(...C.white);
     pdf.text("VAMOS COMEÇAR?", W / 2, 85, { align: "center" });
 
-    // Subtitle
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(10);
     pdf.setTextColor(...C.lightGray);
     pdf.text("Aprove o projeto hoje e garanta prioridade no nosso cronograma.", W / 2, 95, { align: "center" });
 
-    // CTA Button
     const btnW = 70, btnH2 = 14;
     pdf.setFillColor(...C.primary);
     pdf.roundedRect(W / 2 - btnW / 2, 110, btnW, btnH2, 4, 4, "F");
@@ -1057,7 +1093,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setTextColor(...C.white);
     pdf.text("APROVAR PROPOSTA  ▶", W / 2, 119, { align: "center" });
 
-    // Contact info
     const contactY2 = 140;
     pdf.setDrawColor(...C.midGray);
     setOpacity(0.15);
@@ -1074,7 +1109,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setTextColor(...C.midGray);
     pdf.text("comercial@aexstudio.com", W / 2, contactY2 + 20, { align: "center" });
 
-    // Website badge
     pdf.setFillColor(...C.primary);
     setOpacity(0.15);
     const webW2 = 42;
@@ -1089,7 +1123,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.setTextColor(...C.primary);
     pdf.text("holynexlabs.com.br", W / 2, contactY2 + 30.5, { align: "center" });
 
-    // Footer
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(6);
     pdf.setTextColor(...C.darkGray);
@@ -1099,7 +1132,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     }
   }
 
-  // Log successful render
   const renderDuration = Date.now() - renderStart;
   logProposalEvent("proposal_pdf_generated", proposta.id, {
     render_status: "success",
@@ -1108,6 +1140,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     output_size: normResult.output_size,
     template_id: templateId || "cyber-magenta",
     pdf_version: pdf.getNumberOfPages(),
+    niche_detected: niche.segment,
   });
 
   return pdf.output("blob");
