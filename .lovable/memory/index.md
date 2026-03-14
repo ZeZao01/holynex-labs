@@ -1,28 +1,17 @@
+# Memory: index.md
+Updated: now
+
 Design system: dark cyberpunk theme, HSL colors, Space Grotesk + Inter fonts.
 
 - Primary: 262 98% 71% (purple)
 - Background: 240 20% 2% (near-black)
 - WhatsApp number: already configured in WhatsAppFloat component
-- Admin routes are hidden (not in navbar): /admin/login, /admin/dashboard, etc.
-- Edge function `gerar-proposta` uses multi-provider AI (Groq > OpenRouter > Lovable AI) for structured JSON proposals
-- Prompt v4.0-niche-adaptive: AI generates `niche_intelligence` object with KPIs, risk_matrix, strategic_benefits, timeline_phases, scope_labels, investment_justification, expert_reference — all specific to detected niche
-- pdf-niche-intelligence.ts is a PURE EXTRACTION layer — NO fallback profiles, NO hardcoded content. Returns empty arrays when AI data is absent.
-- pdf-generator.ts uses ONLY AI-generated content. No pre-defined templates, no hardcoded diagnostic/benefit/metric strings.
-- User preference: ALL content must be 100% AI-generated and original. No pre-built niche profiles allowed.
-- Database tables: `orcamentos`, `propostas`, `pdf_versoes`, `delivered_systems`, `projects`, `project_modules`, `project_accesses`, `project_changes`, `portfolio_items`, `audit_logs`, `project_milestones`, `project_events`
+- Admin routes are hidden (not in navbar): /admin/login, /admin/orcamentos, /admin/propostas
+- Edge function `gerar-proposta` uses 4-agent Genspark pipeline (Normalizer→Pricer→Writer→Assembler)
+- Pipeline output: proposta (PropostaJSON) + document_spec (DocumentSpec) + pricing_sheet (PricingSheet)
+- Database tables: `orcamentos` (quotes), `propostas` (AI-generated proposals)
 - Language: Portuguese (BR) with i18n support
 - User prefers: IA calculates all financial values, full proposal + PDF + dashboard
-- All 15 phases complete + Phase 6 (Projects): Structure, Dashboard, Leads, Proposals, PDFs, Projects, Systems, Accesses, Modules, Maintenance, Portfolio, Models, Financial, Security, QA
-- Reusable admin components: PageHeader, StatCard, StatsGrid, EmptyState, FilterToolbar, StatusBadge, SectionCard
-- Types/constants in src/lib/ (projects.ts, project-modules.ts, audit-logs.ts, etc.)
-- Sidebar groups: Comercial, Operacional, Estrategico, Sistema
-- PWA enabled: vite-plugin-pwa, manifest, service worker auto-update, installable from browser
-- Realtime enabled: all main tables via supabase_realtime publication, useRealtimeSubscription hook
-- Button effect: single-direction neon shimmer with pulsing glow (not splitting)
-- PDF pipeline: normalizer layer (proposal-normalizer.ts) sanitizes AI output before rendering
-- PDF: "Proposta Comercial Completa" section excluded from public PDF, kept for internal history
-- PDF events: proposal_ai_requested/completed/failed, proposal_pdf_render_started/failed/generated logged to audit_logs
-- Project statuses: aguardando_inicio, discovery, planejamento, em_design, em_desenvolvimento, em_validacao, aguardando_cliente, entregue, em_manutencao, pausado, cancelado
-- Project detail page: /admin/projetos/:id with milestones, events, links, quick actions
-- Convert proposal to project: action in AdminPropostas table
-- SectionCard uses `action` prop (not `actions`)
+- PDF generator: NO hardcoded templates/fallbacks, 100% AI-generated content
+- gerarPropostaIA returns GerarPropostaResult { proposta, document_spec, pricing_sheet }
+- PDF includes: pricing table, terms & conditions, compliance (exclusions/assumptions)
