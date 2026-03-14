@@ -389,7 +389,7 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     // Módulos & Integrações cards (bottom row)
     const escopo = pj?.escopo || [];
     const funcionalidades = pj?.funcionalidades || [];
-    const integracoes = pj?.integracoes || proposta.integracoes || [];
+    const integracoes = pj?.integracoes || (proposta as any).integracoes || [];
 
     const modCardY = 108;
     const modCardW = (W - solCardX - MX - 8) / 2;
