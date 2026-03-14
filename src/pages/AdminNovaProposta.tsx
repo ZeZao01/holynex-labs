@@ -137,8 +137,11 @@ export default function AdminNovaProposta() {
     setGenerating(true);
     setResult(null);
     try {
-      const proposta = await gerarPropostaIA(formData);
-      setResult(proposta);
+      const aiResult = await gerarPropostaIA(formData);
+      setResult(aiResult.proposta);
+      // Store document_spec and pricing_sheet for later use
+      (window as any).__lastDocSpec = aiResult.document_spec;
+      (window as any).__lastPricingSheet = aiResult.pricing_sheet;
       toast.success("Proposta gerada com sucesso!");
       setStep("tiers");
     } catch (err: any) { toast.error(err.message || "Erro ao gerar"); } finally { setGenerating(false); }

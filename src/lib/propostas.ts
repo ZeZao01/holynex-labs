@@ -214,6 +214,8 @@ function parseRow(row: any): Proposta {
     proposal_validity: row.proposal_validity || "30 dias",
     is_phased: row.is_phased || false,
     closing_strategy: row.closing_strategy || "",
+    document_spec: null,
+    pricing_sheet: null,
   };
 }
 

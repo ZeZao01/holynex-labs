@@ -79,8 +79,8 @@ export default function AdminPropostaDetalhe() {
         nivel_urgencia: "medio", link_referencia: "", observacoes: orientacoes || "",
         orcamento_id: proposta.orcamento_id || undefined,
       };
-      const nova = await gerarPropostaIA(input);
-      await atualizarProposta(id, nova);
+      const aiResult = await gerarPropostaIA(input);
+      await atualizarProposta(id, aiResult.proposta);
       toast.success("Proposta regenerada!");
       setOrientacoes("");
       loadProposta();
