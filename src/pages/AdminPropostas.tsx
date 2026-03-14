@@ -97,7 +97,6 @@ export default function AdminPropostas() {
       });
       await addProjectEvent(proj.id, "projeto_criado", `Convertido da proposta de ${p.nome_cliente}`);
       // Update proposta status to "aceita" if not already
-      const { supabase } = await import("@/integrations/supabase/client");
       await supabase.from("propostas").update({ status: "aceita" }).eq("id", p.id);
       toast.success("Projeto criado com sucesso!");
       navigate(`/admin/projetos/${proj.id}`);
