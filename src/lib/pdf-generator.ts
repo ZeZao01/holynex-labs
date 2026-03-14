@@ -1,7 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { Proposta } from "@/lib/propostas";
 import { type PdfTemplate, type RGB, getTemplateById } from "@/lib/pdf-templates";
-import { TIER_DEFAULTS, SCOPE_MODULE_DEFAULTS, type ProposalTier, type ScopeStatus } from "@/lib/proposal-tiers";
 import { normalizePropostaJSON, extractDocumentoPublico } from "@/lib/proposal-normalizer";
 import { logProposalEvent } from "@/lib/proposal-events";
 import logoUrl from "@/assets/logo.png";
@@ -23,21 +22,19 @@ function loadImageAsBase64(url: string): Promise<string> {
   });
 }
 
-// ── Build color palette from template ──
 function buildColors(t: PdfTemplate) {
   return {
     bg: t.colors.bg as RGB,
     bgCard: t.colors.bgCard as RGB,
-    magenta: t.colors.primary as RGB,
-    cyan: t.colors.secondary as RGB,
-    purple: t.colors.accent as RGB,
-    purpleDark: [Math.floor(t.colors.accent[0] * 0.5), Math.floor(t.colors.accent[1] * 0.5), Math.floor(t.colors.accent[2] * 0.5)] as RGB,
-    green: t.colors.accent2 as RGB,
+    primary: t.colors.primary as RGB,
+    secondary: t.colors.secondary as RGB,
+    accent: t.colors.accent as RGB,
+    accent2: t.colors.accent2 as RGB,
     white: t.colors.white as RGB,
     lightGray: t.colors.lightGray as RGB,
     midGray: t.colors.midGray as RGB,
     darkGray: t.colors.darkGray as RGB,
-    yellow: t.colors.highlight as RGB,
+    highlight: t.colors.highlight as RGB,
   };
 }
 
@@ -48,7 +45,6 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   try {
     logoBase64 = await loadImageAsBase64(logoUrl);
   } catch {
-    // Fallback: generate a simple placeholder if logo fails
     const c = document.createElement("canvas");
     c.width = 100; c.height = 100;
     const ctx = c.getContext("2d")!;
@@ -61,13 +57,12 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     ctx.fillText("HN", 50, 50);
     logoBase64 = c.toDataURL("image/png");
   }
-  // ── Normalize AI output before rendering ──
+
   const renderStart = Date.now();
   const normResult = normalizePropostaJSON(proposta.proposta_json);
   const pjPublic = extractDocumentoPublico(normResult.data);
   const pj = pjPublic as any;
 
-  // Log render start
   logProposalEvent("proposal_pdf_render_started", proposta.id, {
     schema_valid: normResult.schema_valid,
     output_size: normResult.output_size,
@@ -76,10 +71,10 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
   });
 
   const tiers = proposta.proposal_tiers || [];
-  const addons = (proposta.proposal_addons || []).filter(a => a.is_active && a.is_selected);
   const docCode = documentCode || "";
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297, H = 210;
+  const MX = 18; // standard margin
   let pageNum = 0;
 
   // ── Shared helpers ──
@@ -88,1564 +83,1020 @@ export async function generatePropostaPdf(proposta: Proposta, templateId?: strin
     pdf.rect(0, 0, W, H, "F");
   };
 
-  const addGlow = (x: number, y: number, r: number, color: RGB, opacity = 0.12) => {
+  const setOpacity = (opacity: number) => {
     pdf.saveGraphicsState();
     (pdf as any).setGState(new (pdf as any).GState({ opacity }));
+  };
+
+  const restoreOpacity = () => {
+    pdf.restoreGraphicsState();
+  };
+
+  const addGlow = (x: number, y: number, r: number, color: RGB, opacity = 0.12) => {
+    setOpacity(opacity);
     pdf.setFillColor(...color);
     pdf.circle(x, y, r, "F");
-    pdf.restoreGraphicsState();
+    restoreOpacity();
   };
 
   const addWatermark = () => {
-    const s = 60;
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.04 }));
+    const s = 50;
+    setOpacity(0.03);
     pdf.addImage(logoBase64, "PNG", (W - s) / 2, (H - s) / 2, s, s);
-    pdf.restoreGraphicsState();
+    restoreOpacity();
   };
 
-  const addCorners = () => {
-    const m = 12, sz = 8;
-    pdf.setDrawColor(...C.cyan);
-    pdf.setLineWidth(0.5);
-    // TL
-    pdf.line(m, m, m + sz, m); pdf.line(m, m, m, m + sz);
-    // TR
-    pdf.line(W - m, m, W - m - sz, m); pdf.line(W - m, m, W - m, m + sz);
-    // BL
-    pdf.line(m, H - m, m + sz, H - m); pdf.line(m, H - m, m, H - m - sz);
-    // BR
-    pdf.line(W - m, H - m, W - m - sz, H - m); pdf.line(W - m, H - m, W - m, H - m - sz);
+  const addPageDecor = () => {
+    // Top border line (gradient-like: primary to secondary)
+    pdf.setFillColor(...C.primary);
+    pdf.rect(0, 0, W * 0.6, 1.5, "F");
+    pdf.setFillColor(...C.secondary);
+    pdf.rect(W * 0.6, 0, W * 0.4, 1.5, "F");
+    // Bottom border line
+    pdf.setFillColor(...C.accent);
+    setOpacity(0.4);
+    pdf.rect(0, H - 1.5, W, 1.5, "F");
+    restoreOpacity();
+    // Corner glows
+    addGlow(W - 30, 30, 60, C.accent, 0.08);
+    addGlow(30, H - 30, 50, C.secondary, 0.06);
   };
 
   const addPageNumber = () => {
     pageNum++;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.darkGray);
-    pdf.text(`${pageNum}`, W / 2, H - 6, { align: "center" });
-  };
-
-  const addFooterLogo = () => {
-    pdf.addImage(logoBase64, "PNG", W - 22, H - 14, 8, 8);
     pdf.setFontSize(7);
     pdf.setTextColor(...C.darkGray);
-    pdf.text("HolyNex Labs", W - 24, H - 8, { align: "right" });
+    pdf.text(`${String(pageNum).padStart(2, "0")}`, W - MX, H - 6, { align: "right" });
+  };
+
+  const addFooterBrand = () => {
+    pdf.addImage(logoBase64, "PNG", MX, H - 12, 6, 6);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(6);
+    pdf.setTextColor(...C.darkGray);
+    pdf.text("HOLYNEX LABS", MX + 8, H - 7);
   };
 
   const newPage = () => {
     pdf.addPage();
     fillBg();
     addWatermark();
-    addCorners();
+    addPageDecor();
     addPageNumber();
-    addFooterLogo();
-    // Glows
-    addGlow(W - 20, 20, 80, C.purpleDark, 0.10);
-    addGlow(40, H - 20, 60, [0, 51, 51], 0.08);
+    addFooterBrand();
   };
 
-  const drawSectionBadge = (text: string, x: number, y: number) => {
-    pdf.setFillColor(255, 0, 255);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.15 }));
-    pdf.roundedRect(x, y, pdf.getTextWidth(text) + 12, 7, 3, 3, "F");
-    pdf.restoreGraphicsState();
-    pdf.setDrawColor(...C.magenta);
-    pdf.setLineWidth(0.3);
-    pdf.roundedRect(x, y, pdf.getTextWidth(text) + 12, 7, 3, 3, "S");
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.magenta);
-    pdf.text(text.toUpperCase(), x + 6, y + 5);
-  };
-
-  const drawCard = (x: number, y: number, w: number, h: number, borderColor: RGB = C.magenta) => {
-    // Card bg
-    pdf.setFillColor(255, 255, 255);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.03 }));
-    pdf.roundedRect(x, y, w, h, 4, 4, "F");
-    pdf.restoreGraphicsState();
-    // Border
-    pdf.setDrawColor(...borderColor);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.setLineWidth(0.4);
-    pdf.roundedRect(x, y, w, h, 4, 4, "S");
-    pdf.restoreGraphicsState();
-    // Left accent
-    pdf.setFillColor(...borderColor);
-    pdf.rect(x, y + 3, 1.2, h - 6, "F");
-  };
-
-  const drawTitle = (text: string, x: number, y: number, size = 18) => {
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(size);
-    pdf.setTextColor(...C.white);
-    pdf.text(text, x, y);
-  };
-
-  const drawSubtitle = (text: string, x: number, y: number, color: RGB = C.cyan) => {
+  const drawSectionHeader = (subtitle: string, title: string, y: number) => {
+    // Subtitle (small caps)
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
+    pdf.setTextColor(...C.primary);
+    pdf.text(subtitle.toUpperCase(), MX, y);
+    // Title (large)
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(22);
+    pdf.setTextColor(...C.white);
+    pdf.text(title.toUpperCase(), MX, y + 12);
+    // Company badge top-right
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.midGray);
+    const companyName = proposta.empresa_cliente || proposta.nome_cliente;
+    pdf.text(companyName.toUpperCase(), W - MX, y + 6, { align: "right" });
+  };
+
+  const drawCard = (x: number, y: number, w: number, h: number, borderColor: RGB = C.primary) => {
+    // Card fill
+    pdf.setFillColor(...C.bgCard);
+    setOpacity(0.7);
+    pdf.roundedRect(x, y, w, h, 3, 3, "F");
+    restoreOpacity();
+    // Border
+    pdf.setDrawColor(...borderColor);
+    setOpacity(0.35);
+    pdf.setLineWidth(0.4);
+    pdf.roundedRect(x, y, w, h, 3, 3, "S");
+    restoreOpacity();
+  };
+
+  const drawCardTitle = (icon: string, title: string, x: number, y: number, color: RGB) => {
+    // Icon circle
+    pdf.setFillColor(...color);
+    setOpacity(0.15);
+    pdf.circle(x + 6, y, 5, "F");
+    restoreOpacity();
+    pdf.setDrawColor(...color);
+    setOpacity(0.4);
+    pdf.circle(x + 6, y, 5, "S");
+    restoreOpacity();
+    // Icon text
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
     pdf.setTextColor(...color);
-    pdf.text(text.toUpperCase(), x, y);
+    pdf.text(icon, x + 6, y + 2.5, { align: "center" });
+    // Title
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(...C.white);
+    pdf.text(title, x + 14, y + 3);
   };
 
-  const drawParagraph = (text: string, x: number, y: number, maxW: number): number => {
-    if (!text) return y;
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9.5);
-    pdf.setTextColor(...C.lightGray);
-    const lines = pdf.splitTextToSize(text, maxW);
-    for (const line of lines) {
-      if (y > H - 18) { newPage(); y = 24; }
-      pdf.text(line, x, y);
-      y += 5;
-    }
-    return y;
-  };
-
-  const drawBulletList = (items: string[], x: number, y: number, maxW: number, dotColor: RGB = C.cyan): number => {
-    if (!items?.length) return y;
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9.5);
-    pdf.setTextColor(...C.lightGray);
-    for (const item of items) {
-      const lines = pdf.splitTextToSize(item, maxW - 6);
-      if (y + lines.length * 5 > H - 18) { newPage(); y = 24; }
-      pdf.setFillColor(...dotColor);
-      pdf.circle(x + 1.5, y - 1.2, 1, "F");
-      for (let i = 0; i < lines.length; i++) {
-        pdf.text(lines[i], x + 5, y);
-        y += 5;
+  const drawBullet = (text: string, x: number, y: number, maxW: number, color: RGB = C.secondary): number => {
+    // Triangle bullet
+    pdf.setFillColor(...color);
+    pdf.triangle(x, y - 2.5, x + 2.5, y - 1, x, y + 0.5, "F");
+    // Text (bold label + normal desc if contains ":")
+    const colonIdx = text.indexOf(":");
+    if (colonIdx > 0 && colonIdx < 40) {
+      const label = text.substring(0, colonIdx + 1);
+      const desc = text.substring(colonIdx + 1).trim();
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(...C.white);
+      pdf.text(label, x + 5, y);
+      const labelW = pdf.getTextWidth(label) + 1;
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(...C.lightGray);
+      const descLines = pdf.splitTextToSize(desc, maxW - 5 - labelW);
+      if (descLines.length <= 1) {
+        pdf.text(desc, x + 5 + labelW, y);
+        return y + 6;
+      } else {
+        pdf.text(descLines[0], x + 5 + labelW, y);
+        let ny = y + 5;
+        for (let i = 1; i < descLines.length; i++) {
+          pdf.text(descLines[i], x + 5, ny);
+          ny += 4.5;
+        }
+        return ny + 2;
       }
-      y += 1.5;
+    } else {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(...C.lightGray);
+      const lines = pdf.splitTextToSize(text, maxW - 5);
+      for (let i = 0; i < lines.length; i++) {
+        pdf.text(lines[i], x + 5, y + i * 4.5);
+      }
+      return y + lines.length * 4.5 + 2;
     }
-    return y;
   };
 
   // ══════════════════════════════════════════════
-  // SLIDE 1 — COVER PAGE
+  // SLIDE 1 — CAPA
   // ══════════════════════════════════════════════
   fillBg();
-  addCorners();
 
-  // Glows
-  addGlow(40, 40, 80, C.purpleDark, 0.15);
-  addGlow(W - 50, H - 30, 60, [0, 51, 51], 0.10);
+  // Top border accent
+  pdf.setFillColor(...C.primary);
+  pdf.rect(0, 0, W * 0.5, 1.5, "F");
+  pdf.setFillColor(...C.secondary);
+  pdf.rect(W * 0.5, 0, W * 0.5, 1.5, "F");
 
-  // Tech lines
-  pdf.setDrawColor(...C.cyan);
-  pdf.saveGraphicsState();
-  (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.15 }));
-  pdf.setLineWidth(0.3);
-  pdf.line(0, H * 0.15, W * 0.3, H * 0.15);
-  pdf.line(W * 0.6, H * 0.85, W, H * 0.85);
-  pdf.line(W * 0.85, 0, W * 0.85, H * 0.2);
-  pdf.line(W * 0.15, H * 0.7, W * 0.15, H);
-  pdf.restoreGraphicsState();
+  // Corner glows
+  addGlow(W * 0.3, H * 0.3, 90, C.accent, 0.08);
+  addGlow(W * 0.8, H * 0.7, 70, C.secondary, 0.06);
 
-  // Logo with glow
-  const logoSize = 35;
-  addGlow(W / 2, 55, 30, C.magenta, 0.08);
-  pdf.addImage(logoBase64, "PNG", (W - logoSize) / 2, 35, logoSize, logoSize);
+  // Top-left info
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7);
+  pdf.setTextColor(...C.darkGray);
+  pdf.text("SOLUÇÕES DE MAIS", MX, 12);
+  // Top-right date
+  const dateStr = new Date(proposta.criado_em).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  pdf.text(dateStr.charAt(0).toUpperCase() + dateStr.slice(1), W - MX, 12, { align: "right" });
 
-  // Title
+  // Logo centered
+  const logoSize = 40;
+  addGlow(W / 2, 60, 35, C.primary, 0.1);
+  // Logo background card
+  pdf.setFillColor(...C.bgCard);
+  setOpacity(0.8);
+  pdf.roundedRect(W / 2 - logoSize / 2 - 5, 40, logoSize + 10, logoSize + 10, 4, 4, "F");
+  restoreOpacity();
+  pdf.setDrawColor(...C.accent);
+  setOpacity(0.3);
+  pdf.roundedRect(W / 2 - logoSize / 2 - 5, 40, logoSize + 10, logoSize + 10, 4, 4, "S");
+  restoreOpacity();
+  pdf.addImage(logoBase64, "PNG", W / 2 - logoSize / 2, 45, logoSize, logoSize);
+
+  // Company name
+  const companyName = proposta.empresa_cliente || "";
+  if (companyName) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...C.midGray);
+    pdf.text(companyName.toUpperCase(), W / 2, 103, { align: "center" });
+  }
+
+  // Project title
+  const projectTitle = pj?.titulo_projeto || proposta.tipo_projeto || "SISTEMA PERSONALIZADO";
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(28);
   pdf.setTextColor(...C.white);
-  pdf.text("PROPOSTA COMERCIAL", W / 2, 90, { align: "center" });
+  const titleLines = pdf.splitTextToSize(projectTitle.toUpperCase(), W * 0.7);
+  let titleY = 118;
+  for (const line of titleLines.slice(0, 2)) {
+    pdf.text(line, W / 2, titleY, { align: "center" });
+    titleY += 14;
+  }
 
-  // Subtitle with accent line
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(11);
-  pdf.setTextColor(...C.cyan);
-  pdf.text("INOVAÇÃO EM DESENVOLVIMENTO DE SOFTWARE", W / 2, 100, { align: "center" });
-  // Magenta accent line under subtitle
-  pdf.setDrawColor(...C.magenta);
-  pdf.setLineWidth(0.8);
-  pdf.line(W / 2 - 15, 104, W / 2 + 15, 104);
-
-  // Client info box
-  const boxW = 140, boxH = 28;
-  const boxX = (W - boxW) / 2, boxY = 115;
-  pdf.setFillColor(255, 255, 255);
-  pdf.saveGraphicsState();
-  (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.05 }));
-  pdf.roundedRect(boxX, boxY, boxW, boxH, 4, 4, "F");
-  pdf.restoreGraphicsState();
-  pdf.setDrawColor(...C.magenta);
-  pdf.saveGraphicsState();
-  (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-  pdf.setLineWidth(0.4);
-  pdf.roundedRect(boxX, boxY, boxW, boxH, 4, 4, "S");
-  pdf.restoreGraphicsState();
-  // Cyan left accent on box
-  pdf.setFillColor(...C.cyan);
-  pdf.rect(boxX, boxY + 2, 1.2, boxH - 4, "F");
-
+  // Subtitle
+  const subtitle = pj?.subtitulo || pj?.resumo_executivo?.substring(0, 80) || "Plataforma integrada para agendamentos inteligentes e controle operacional";
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(8);
+  pdf.setFontSize(9);
   pdf.setTextColor(...C.midGray);
-  pdf.text("PREPARADO PARA:", W / 2, boxY + 10, { align: "center" });
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(14);
-  pdf.setTextColor(...C.white);
-  const clientText = proposta.empresa_cliente
-    ? `${proposta.nome_cliente} — ${proposta.empresa_cliente}`
-    : proposta.nome_cliente;
-  pdf.text(clientText, W / 2, boxY + 20, { align: "center" });
+  const subLines = pdf.splitTextToSize(subtitle, W * 0.6);
+  let subY = titleY + 4;
+  for (const line of subLines.slice(0, 2)) {
+    pdf.text(line, W / 2, subY, { align: "center" });
+    subY += 5;
+  }
 
-  // Date badge
-  const dateStr = new Date(proposta.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-  const dateBoxW = pdf.getTextWidth(dateStr) * 1.3 + 10;
-  const dateBoxX = (W - dateBoxW) / 2;
-  pdf.setFillColor(0, 0, 0);
-  pdf.saveGraphicsState();
-  (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-  pdf.roundedRect(dateBoxX, 155, dateBoxW, 8, 4, 4, "F");
-  pdf.restoreGraphicsState();
-  pdf.setDrawColor(255, 255, 255);
-  pdf.saveGraphicsState();
-  (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.2 }));
-  pdf.setLineWidth(0.3);
-  pdf.roundedRect(dateBoxX, 155, dateBoxW, 8, 4, 4, "S");
-  pdf.restoreGraphicsState();
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(8);
-  pdf.setTextColor(255, 255, 255);
-  pdf.saveGraphicsState();
-  (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.6 }));
-  pdf.text(dateStr, W / 2, 160.5, { align: "center" });
-  pdf.restoreGraphicsState();
+  // Bottom info badges (3 columns)
+  const badgeY = H - 32;
+  const badgeW = (W - MX * 2 - 20) / 3;
+  const badgeInfos = [
+    { icon: "▶", label: "FAIXA OPERACIONAL", value: proposta.complexidade || "Média" },
+    { icon: "◆", label: "EXPERIÊNCIA NO SETOR", value: proposta.segmento || "Tecnologia" },
+    { icon: "✉", label: "CONTATO", value: proposta.email_cliente || "comercial@holynex.com" },
+  ];
 
-  // Confidential + Document code
-    pdf.setFontSize(7);
+  badgeInfos.forEach((badge, i) => {
+    const bx = MX + i * (badgeW + 10);
+    // Badge background
+    pdf.setFillColor(...C.bgCard);
+    setOpacity(0.6);
+    pdf.roundedRect(bx, badgeY, badgeW, 16, 3, 3, "F");
+    restoreOpacity();
+    pdf.setDrawColor(...C.accent);
+    setOpacity(0.2);
+    pdf.roundedRect(bx, badgeY, badgeW, 16, 3, 3, "S");
+    restoreOpacity();
+    // Icon
+    pdf.setFillColor(...C.primary);
+    pdf.circle(bx + 8, badgeY + 8, 3.5, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(6);
+    pdf.setTextColor(...C.bg);
+    pdf.text(badge.icon, bx + 8, badgeY + 9.5, { align: "center" });
+    // Label
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(6);
     pdf.setTextColor(...C.darkGray);
-    pdf.text("Documento confidencial — destinado exclusivamente ao destinatário", W / 2, H - 14, { align: "center" });
-    if (docCode) {
-      pdf.text(`Código: ${docCode}`, W / 2, H - 8, { align: "center" });
-    }
+    pdf.text(badge.label, bx + 16, badgeY + 6);
+    // Value
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.white);
+    pdf.text(badge.value.substring(0, 28), bx + 16, badgeY + 12);
+  });
+
+  // Confidential + doc code
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6);
+  pdf.setTextColor(...C.darkGray);
+  pdf.text("Documento confidencial — destinado exclusivamente ao destinatário", W / 2, H - 6, { align: "center" });
+  if (docCode) {
+    pdf.text(`Código: ${docCode}`, W / 2, H - 2, { align: "center" });
+  }
+
+  // Bottom accent line
+  pdf.setFillColor(...C.primary);
+  pdf.rect(0, H - 1, W * 0.5, 1, "F");
+  pdf.setFillColor(...C.secondary);
+  pdf.rect(W * 0.5, H - 1, W * 0.5, 1, "F");
 
   pageNum = 0;
 
   // ══════════════════════════════════════════════
-  // SLIDE 2 — RESUMO EXECUTIVO
-  // ══════════════════════════════════════════════
-  if (pj?.resumo_executivo) {
-    newPage();
-    const mx = 20, my = 20;
-
-    drawSectionBadge("Visão Geral do Projeto", mx, my);
-    drawTitle("Resumo Executivo", mx, my + 16, 22);
-
-    // Quote-style box
-    if (pj.resumo_executivo) {
-      const qx = mx, qy = my + 22;
-      pdf.setFillColor(...C.cyan);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.05 }));
-      pdf.roundedRect(qx, qy, W - mx * 2, 18, 2, 2, "F");
-      pdf.restoreGraphicsState();
-      pdf.setFillColor(...C.cyan);
-      pdf.rect(qx, qy, 1.2, 18, "F");
-
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
-      pdf.setTextColor(...C.lightGray);
-      const summaryLines = pdf.splitTextToSize(
-        typeof pj.resumo_executivo === "string" ? pj.resumo_executivo.substring(0, 300) : "",
-        W - mx * 2 - 8
-      );
-      let sy = qy + 6;
-      for (const line of summaryLines.slice(0, 4)) {
-        pdf.text(line, qx + 5, sy);
-        sy += 4.5;
-      }
-    }
-
-    // Content - split into two columns
-    let leftY = my + 48;
-    const colW = (W - mx * 2 - 10) / 2;
-
-    // Left: Objectives from diagnostico
-    if (pj.diagnostico) {
-      drawSubtitle("Objetivos Estratégicos", mx, leftY, C.cyan);
-      leftY += 8;
-      leftY = drawParagraph(pj.diagnostico, mx, leftY, colW);
-    }
-
-    // Right: Pillar cards
-    let rightY = my + 48;
-    const rx = mx + colW + 10;
-
-    if (pj.solucao_proposta) {
-      drawCard(rx, rightY, colW, 40, C.magenta);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
-      pdf.setTextColor(...C.white);
-      pdf.text("Solução Proposta", rx + 5, rightY + 10);
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.midGray);
-      const solLines = pdf.splitTextToSize(pj.solucao_proposta.substring(0, 200), colW - 10);
-      let slY = rightY + 16;
-      for (const line of solLines.slice(0, 5)) {
-        pdf.text(line, rx + 5, slY);
-        slY += 4;
-      }
-      rightY += 46;
-    }
-
-    // Escopo mini cards
-    if (pj.escopo?.length) {
-      const half = Math.ceil(pj.escopo.length / 2);
-      const escopoCards = [pj.escopo.slice(0, half), pj.escopo.slice(half)];
-      escopoCards.forEach((group, gi) => {
-        const cx = rx + gi * (colW / 2 + 2);
-        const cw = colW / 2 - 2;
-        drawCard(cx, rightY, cw, 50, gi === 0 ? C.cyan : C.magenta);
-        let cy = rightY + 8;
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(8);
-        pdf.setTextColor(...C.white);
-        pdf.text(gi === 0 ? "Módulos" : "Integrações", cx + 5, cy);
-        cy += 6;
-        pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(7.5);
-        pdf.setTextColor(...C.lightGray);
-        for (const item of group.slice(0, 5)) {
-          pdf.setFillColor(...(gi === 0 ? C.cyan : C.magenta));
-          pdf.circle(cx + 4, cy - 0.8, 0.6, "F");
-          pdf.text(item.substring(0, 40), cx + 7, cy);
-          cy += 4;
-        }
-      });
-    }
-  }
-
-  // ══════════════════════════════════════════════
-  // SLIDE 3 — DIAGNÓSTICO E SOLUÇÃO (Flow cards)
-  // ══════════════════════════════════════════════
-  if (pj?.diagnostico || pj?.solucao_proposta) {
-    newPage();
-    const mx = 20, my = 18;
-
-    drawSectionBadge("Análise de Cenário", mx, my);
-    drawTitle("Diagnóstico e Solução", mx, my + 16, 22);
-
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.setTextColor(...C.midGray);
-    const descLines = pdf.splitTextToSize(
-      "Entendendo os desafios atuais e como nossa tecnologia transformará a operação.",
-      200
-    );
-    let dy = my + 22;
-    for (const l of descLines) { pdf.text(l, mx, dy); dy += 4.5; }
-
-    // Logo top-right
-    pdf.addImage(logoBase64, "PNG", W - 32, my, 12, 12);
-
-    // 4 flow cards
-    const flowCards = [
-      { step: "1", title: "O Problema", text: pj.diagnostico?.substring(0, 150) || "Processos manuais e limitações tecnológicas.", color: C.magenta, tags: ["Manual", "Limitado"] },
-      { step: "2", title: "A Causa", text: "Falta de um sistema centralizado e especializado para gestão eficiente.", color: C.purple, tags: ["Sem Sistema", "Descentralizado"] },
-      { step: "3", title: "A Solução", text: pj.solucao_proposta?.substring(0, 150) || "Plataforma personalizada com tecnologia de ponta.", color: C.cyan, tags: ["Personalizado", "Integrado"] },
-      { step: "4", title: "Resultados", text: pj.analise_estrategica?.substring(0, 150) || "Eficiência operacional, melhor experiência e crescimento.", color: C.green, tags: ["Eficiência", "Crescimento"] },
-    ];
-
-    const cardW = 60, cardH = 100, gap = 6;
-    const startX = (W - (cardW * 4 + gap * 3)) / 2;
-    const cardY = my + 40;
-
-    // Connecting dashed line
-    pdf.setDrawColor(...C.midGray);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.setLineWidth(0.5);
-    // Dashed effect: draw multiple short segments
-    for (let i = 0; i < 3; i++) {
-      const x1 = startX + cardW + i * (cardW + gap);
-      const x2 = x1 + gap;
-      const y = cardY + cardH / 2;
-      pdf.line(x1, y, x2, y);
-    }
-    pdf.restoreGraphicsState();
-
-    flowCards.forEach((card, i) => {
-      const cx = startX + i * (cardW + gap);
-      const isHighlighted = i === 2; // Solution card
-
-      // Card background
-      { const fc: RGB = isHighlighted ? [0, 255, 255] : [255, 255, 255]; pdf.setFillColor(...fc); }
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: isHighlighted ? 0.05 : 0.03 }));
-      pdf.roundedRect(cx, cardY, cardW, cardH, 4, 4, "F");
-      pdf.restoreGraphicsState();
-
-      // Top border
-      pdf.setFillColor(...card.color);
-      pdf.rect(cx, cardY, cardW, 1.5, "F");
-
-      // Card border
-      pdf.setDrawColor(...card.color);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: isHighlighted ? 0.5 : 0.2 }));
-      pdf.setLineWidth(0.4);
-      pdf.roundedRect(cx, cardY, cardW, cardH, 4, 4, "S");
-      pdf.restoreGraphicsState();
-
-      // Step badge
-      pdf.setFillColor(...C.bg);
-      pdf.setDrawColor(...card.color);
-      pdf.setLineWidth(0.5);
-      pdf.circle(cx + cardW / 2, cardY - 3, 5, "FD");
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...card.color);
-      pdf.text(card.step, cx + cardW / 2, cardY - 1, { align: "center" });
-
-      // Title
-      let ty = cardY + 14;
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
-      { const tc = isHighlighted ? C.cyan : C.white; pdf.setTextColor(...tc); }
-      pdf.text(card.title, cx + 5, ty);
-      ty += 8;
-
-      // Text
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.lightGray);
-      const lines = pdf.splitTextToSize(card.text, cardW - 10);
-      for (const l of lines.slice(0, 8)) {
-        pdf.text(l, cx + 5, ty);
-        ty += 4;
-      }
-
-      // Tags
-      let tagX = cx + 5;
-      const tagY = cardY + cardH - 10;
-      pdf.setFontSize(7);
-      for (const tag of card.tags) {
-        pdf.setFillColor(...card.color);
-        pdf.saveGraphicsState();
-        (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.15 }));
-        const tw = pdf.getTextWidth(tag) + 6;
-        pdf.roundedRect(tagX, tagY, tw, 5, 2, 2, "F");
-        pdf.restoreGraphicsState();
-        pdf.setTextColor(...card.color);
-        pdf.text(tag, tagX + 3, tagY + 3.5);
-        tagX += tw + 3;
-      }
-    });
-
-    // Cyan footer line
-    pdf.setFillColor(...C.cyan);
-    pdf.rect(0, H - 2, W, 2, "F");
-  }
-
-  // ══════════════════════════════════════════════
-  // SLIDE 4 — ESCOPO DO PROJETO (Table)
-  // ══════════════════════════════════════════════
-  if (pj?.escopo?.length || pj?.funcionalidades?.length) {
-    newPage();
-    const mx = 20, my = 18;
-
-    // Magenta header bar
-    pdf.setFillColor(...C.magenta);
-    pdf.rect(0, 0, W, 4, "F");
-
-    pdf.addImage(logoBase64, "PNG", mx, my, 12, 12);
-    drawSubtitle("Estrutura e Funcionalidades", mx, my + 18, C.cyan);
-    drawTitle("Escopo do Projeto", mx, my + 26, 22);
-
-    // Table headers
-    let ty = my + 38;
-    const cols = [mx, mx + 65, W - mx - 35];
-    const colWidths = [65, W - mx * 2 - 100, 35];
-
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.cyan);
-    pdf.text("MÓDULO", cols[0], ty);
-    pdf.text("DETALHAMENTO", cols[1], ty);
-    pdf.text("STATUS", cols[2], ty);
-    ty += 3;
-    pdf.setDrawColor(...C.cyan);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.setLineWidth(0.3);
-    pdf.line(mx, ty, W - mx, ty);
-    pdf.restoreGraphicsState();
-    ty += 6;
-
-    // Build rows from data
-    const rows: Array<{module: string; items: string[]; status: string; color: RGB}> = [];
-
-    if (pj.escopo?.length) {
-      rows.push({ module: "Escopo MVP", items: pj.escopo.slice(0, 6), status: "Incluído", color: C.cyan });
-    }
-    if (pj.funcionalidades?.length) {
-      rows.push({ module: "Funcionalidades", items: pj.funcionalidades.slice(0, 6), status: "Incluído", color: C.magenta });
-    }
-    if (pj.funcionalidades_recomendadas?.length) {
-      rows.push({ module: "Expansão", items: pj.funcionalidades_recomendadas.slice(0, 4), status: "Opcional", color: C.purple });
-    }
-
-    for (const row of rows) {
-      // Row background
-      pdf.setFillColor(255, 255, 255);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.04 }));
-      pdf.roundedRect(mx, ty - 4, W - mx * 2, 22, 3, 3, "F");
-      pdf.restoreGraphicsState();
-
-      // Left accent
-      pdf.setFillColor(...row.color);
-      pdf.rect(mx, ty - 2, 1.2, 18, "F");
-
-      // Module name
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(9);
-      pdf.setTextColor(...C.white);
-      pdf.text(row.module, cols[0] + 4, ty + 5);
-
-      // Items as tags
-      let tagX = cols[1];
-      let tagRow = ty + 2;
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7);
-      for (const item of row.items) {
-        const tw = Math.min(pdf.getTextWidth(item) + 8, 55);
-        if (tagX + tw > cols[2] - 5) {
-          tagX = cols[1];
-          tagRow += 7;
-        }
-        pdf.setFillColor(255, 255, 255);
-        pdf.saveGraphicsState();
-        (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.08 }));
-        pdf.roundedRect(tagX, tagRow - 3, tw, 6, 2, 2, "F");
-        pdf.restoreGraphicsState();
-        pdf.setTextColor(...C.lightGray);
-        pdf.text(item.substring(0, 25), tagX + 4, tagRow + 1);
-        tagX += tw + 3;
-      }
-
-      // Status badge
-      const isOptional = row.status === "Opcional";
-      const badgeColor = isOptional ? C.magenta : C.cyan;
-      pdf.setFillColor(...badgeColor);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.15 }));
-      pdf.roundedRect(cols[2], ty, 30, 7, 3, 3, "F");
-      pdf.restoreGraphicsState();
-      pdf.setDrawColor(...badgeColor);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-      pdf.roundedRect(cols[2], ty, 30, 7, 3, 3, "S");
-      pdf.restoreGraphicsState();
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(7);
-      pdf.setTextColor(...badgeColor);
-      pdf.text(row.status.toUpperCase(), cols[2] + 15, ty + 5, { align: "center" });
-
-      ty += 28;
-    }
-
-    // Bottom summary bar
-    const barY = H - 30;
-    pdf.setFillColor(...C.bgCard);
-    pdf.setDrawColor(...C.cyan);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.roundedRect(mx, barY, W - mx * 2, 16, 3, 3, "S");
-    pdf.restoreGraphicsState();
-    pdf.setFillColor(...C.bgCard);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.8 }));
-    pdf.roundedRect(mx, barY, W - mx * 2, 16, 3, 3, "F");
-    pdf.restoreGraphicsState();
-
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.lightGray);
-    pdf.text("Escopo inclui personalização completa conforme identidade visual do cliente.", mx + 10, barY + 10);
-
-    if (pj.cronograma) {
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.magenta);
-      pdf.text("Prazo:", W - mx - 60, barY + 7);
-      pdf.setTextColor(...C.white);
-      pdf.text(pj.cronograma.substring(0, 30), W - mx - 45, barY + 7);
-    }
-  }
-
-  // ══════════════════════════════════════════════
-  // SLIDE 5 — PLANOS DE INVESTIMENTO
+  // SLIDE 2 — CONTEXTO DO PROJETO
   // ══════════════════════════════════════════════
   {
     newPage();
-    const mx = 20, my = 18;
+    const headerY = 12;
+    drawSectionHeader("Análise Inicial", "Contexto do Projeto", headerY);
 
-    // Header
-    pdf.addImage(logoBase64, "PNG", mx, my, 12, 12);
-    drawSubtitle("Análise Financeira", mx + 16, my + 4, C.cyan);
-    drawTitle("Planos de Investimento", mx + 16, my + 12, 20);
+    // Two cards side by side
+    const cardGap = 10;
+    const cardW = (W - MX * 2 - cardGap) / 2;
+    const cardY = headerY + 24;
+    const cardH = H - cardY - 20;
 
-    // Payment badge
-    pdf.setFillColor(255, 255, 255);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.05 }));
-    pdf.roundedRect(W - mx - 45, my, 45, 8, 4, 4, "F");
-    pdf.restoreGraphicsState();
-    pdf.setDrawColor(...C.cyan);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.roundedRect(W - mx - 45, my, 45, 8, 4, 4, "S");
-    pdf.restoreGraphicsState();
-    pdf.setFillColor(...C.cyan);
-    pdf.circle(W - mx - 41, my + 4, 1, "F");
+    // Card 1: Resumo Executivo
+    drawCard(MX, cardY, cardW, cardH, C.secondary);
+    drawCardTitle("⚡", "Resumo Executivo", MX + 8, cardY + 14, C.secondary);
+
+    let ly = cardY + 26;
+    const resumoItems = [];
+
+    // Build resume items from proposal data
+    if (pj?.resumo_executivo) {
+      resumoItems.push(`Desenvolvimento Full-Stack: ${typeof pj.resumo_executivo === "string" ? pj.resumo_executivo.substring(0, 120) : "Criação de sistema robusto."}`);
+    }
+    if (pj?.escopo?.length) {
+      resumoItems.push(`Entregas Principais: ${pj.escopo.slice(0, 3).join(", ")}.`);
+    }
+    if (pj?.analise_estrategica) {
+      resumoItems.push(`Objetivo Estratégico: ${pj.analise_estrategica.substring(0, 120)}`);
+    }
+    if (resumoItems.length === 0) {
+      resumoItems.push(
+        "Desenvolvimento Full-Stack: Criação de sistema robusto focado na disponibilidade em tempo real e facilidade de uso.",
+        "Entregas Principais: Landing Page institucional, Painel Administrativo completo e Área do Usuário intuitiva.",
+        "Objetivo Estratégico: Maximizar a eficiência operacional, automatizar processos manuais e elevar a experiência do cliente final."
+      );
+    }
+    for (const item of resumoItems) {
+      ly = drawBullet(item, MX + 8, ly, cardW - 18, C.secondary);
+    }
+
+    // Card 2: Diagnóstico Atual
+    const card2X = MX + cardW + cardGap;
+    drawCard(card2X, cardY, cardW, cardH, C.primary);
+    drawCardTitle("⚙", "Diagnóstico Atual", card2X + 8, cardY + 14, C.primary);
+
+    let ry = cardY + 26;
+    const diagItems = [];
+    if (pj?.diagnostico) {
+      const diagParts = pj.diagnostico.split(/[.!]\s+/).filter((s: string) => s.trim().length > 10);
+      for (const part of diagParts.slice(0, 3)) {
+        diagItems.push(part.trim() + ".");
+      }
+    }
+    if (diagItems.length === 0) {
+      diagItems.push(
+        "Gestão Descentralizada: Falta de uma ferramenta integrada que centralize reservas, bloqueios de manutenção e agenda.",
+        "Visibilidade Limitada: Necessidade crítica de uma visão clara e imediata de datas, horários disponíveis e conflitos de agenda.",
+        "Controle de Acesso: Carência de um sistema para gestão granular de perfis, permissões e políticas de uso para equipe e clientes."
+      );
+    }
+    for (const item of diagItems) {
+      ry = drawBullet(item, card2X + 8, ry, cardW - 18, C.primary);
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // SLIDE 3 — SOLUÇÃO PROPOSTA
+  // ══════════════════════════════════════════════
+  {
+    newPage();
+    const headerY = 12;
+    drawSectionHeader("Arquitetura do Sistema", "Solução Proposta", headerY);
+
+    // Scope section subtitle
+    let sy = headerY + 22;
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.white);
-    pdf.text("PAGAMENTO ÚNICO", W - mx - 37, my + 5.5);
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.secondary);
+    pdf.text("⚙ Escopo do Projeto", MX, sy);
+    sy += 6;
 
-    // Left: Comparativo chart (simulated with bars)
-    const chartX = mx, chartY = my + 26;
-    const chartW = 75, chartH = 100;
-    drawCard(chartX, chartY, chartW, chartH, C.magenta);
+    // 3 scope cards
+    const scopeGap = 8;
+    const scopeW = (W - MX * 2 - scopeGap * 2) / 3;
+    const scopeH = 55;
 
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.setTextColor(...C.white);
-    pdf.text("Comparativo", chartX + 8, chartY + 12);
-
-    // Bar chart
-    const vals = [proposta.valor_minimo || 0, proposta.valor_ideal || 0, proposta.valor_premium || 0];
-    const maxVal = Math.max(...vals, 1);
-    const barLabels = ["Mínimo", "Ideal", "Premium"];
-    const barColors: RGB[] = [[255, 255, 255], C.magenta, C.cyan];
-    const barX = chartX + 12, barMaxH = 45;
-
-    vals.forEach((v, i) => {
-      const bx = barX + i * 20;
-      const bh = (v / maxVal) * barMaxH;
-      const by = chartY + 65 - bh;
-
-      pdf.setFillColor(...barColors[i]);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: i === 1 ? 0.8 : 0.5 }));
-      pdf.roundedRect(bx, by, 14, bh, 2, 2, "F");
-      pdf.restoreGraphicsState();
-
-      // Label
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(7);
-      pdf.setTextColor(...C.lightGray);
-      pdf.text(barLabels[i], bx + 7, chartY + 72, { align: "center" });
-    });
-
-    // Maintenance card
-    const maintY = chartY + chartH + 6;
-    drawCard(chartX, maintY, chartW, 25, C.cyan);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.cyan);
-    pdf.text("MANUTENÇÃO MENSAL", chartX + 5, maintY + 8);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(14);
-    pdf.setTextColor(...C.white);
-    pdf.text(pj?.manutencao ? "Sob consulta" : "Sob consulta", chartX + 5, maintY + 18);
-
-    // Right: 3 Pricing cards
-    const pricingStartX = mx + chartW + 10;
-    const pricingW = (W - pricingStartX - mx - 10) / 3;
-
-    const plans = [
-      { name: "Mínimo", price: proposta.valor_minimo || 0, features: pj?.escopo?.slice(0, 4) || [], featured: false, btn: "Entrada" },
-      { name: "Ideal", price: proposta.valor_ideal || 0, features: pj?.funcionalidades?.slice(0, 5) || [], featured: true, btn: "Melhor Custo-Benefício" },
-      { name: "Premium", price: proposta.valor_premium || 0, features: [...(pj?.funcionalidades?.slice(0, 3) || []), ...(pj?.funcionalidades_recomendadas?.slice(0, 2) || [])], featured: false, btn: "Completo" },
+    const scopeCards = [
+      { icon: "🌐", title: "Landing Page", desc: pj?.escopo?.[0] || "Interface pública para apresentação, vitrine detalhada, FAQs e CTA direto para reservas." },
+      { icon: "👤", title: "Painel de Usuários", desc: pj?.escopo?.[1] || "Área restrita para cadastro, login seguro, visualização de calendário, criação de reservas e histórico de uso." },
+      { icon: "⚙", title: "Painel Administrativo", desc: pj?.escopo?.[2] || "Centro de controle para gestão de recursos, regras, aprovação de cadastros e relatórios." },
     ];
 
-    plans.forEach((plan, i) => {
-      const px = pricingStartX + i * (pricingW + 5);
-      const py = plan.featured ? my + 20 : my + 26;
-      const ph = plan.featured ? H - my - 30 : H - my - 40;
+    scopeCards.forEach((sc, i) => {
+      const sx = MX + i * (scopeW + scopeGap);
+      drawCard(sx, sy, scopeW, scopeH, i === 0 ? C.secondary : i === 1 ? C.primary : C.accent);
+      // Icon
+      const iconColor: RGB = i === 0 ? C.secondary : i === 1 ? C.primary : C.accent;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.setTextColor(...iconColor);
+      pdf.text(sc.icon, sx + scopeW / 2, sy + 14, { align: "center" });
+      // Title
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...C.white);
+      pdf.text(sc.title, sx + scopeW / 2, sy + 24, { align: "center" });
+      // Description
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.lightGray);
+      const descLines = pdf.splitTextToSize(sc.desc.substring(0, 120), scopeW - 14);
+      let dy = sy + 30;
+      for (const l of descLines.slice(0, 4)) {
+        pdf.text(l, sx + 7, dy);
+        dy += 4;
+      }
+    });
 
-      // Card
-      const borderColor = plan.featured ? C.magenta : [255, 255, 255] as RGB;
-      pdf.setFillColor(plan.featured ? 20 : 255, plan.featured ? 5 : 255, plan.featured ? 40 : 255);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: plan.featured ? 0.6 : 0.03 }));
-      pdf.roundedRect(px, py, pricingW, ph, 4, 4, "F");
-      pdf.restoreGraphicsState();
-      pdf.setDrawColor(...borderColor);
-      pdf.setLineWidth(plan.featured ? 0.6 : 0.3);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: plan.featured ? 0.8 : 0.2 }));
-      pdf.roundedRect(px, py, pricingW, ph, 4, 4, "S");
-      pdf.restoreGraphicsState();
+    // Key features section
+    const featY = sy + scopeH + 10;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.secondary);
+    pdf.text("⚙ Funcionalidades Chave", MX, featY);
+
+    const featStartY = featY + 6;
+    const featColW = (W - MX * 2 - 10) / 2;
+    const feats = pj?.funcionalidades || [];
+    const featItems = [
+      { title: feats[0] || "Agendamento Inteligente", desc: feats[1] || "Sistema de verificação automática de conflitos, bloqueios administrativos e suporte a reservas recorrentes.", color: C.primary },
+      { title: feats[2] || "Gestão de Usuários", desc: feats[3] || "Controle granular de perfis com diferentes níveis de permissão e acesso.", color: C.secondary },
+      { title: feats[4] || "Gestão de Horários", desc: feats[5] || "Configuração flexível de janelas de funcionamento, dias indisponíveis e regras de cancelamento.", color: C.primary },
+      { title: feats[6] || "Notificações & Métricas", desc: feats[7] || "Alertas automáticos por e-mail para confirmações e dashboard com métricas essenciais de ocupação.", color: C.accent2 },
+    ];
+
+    featItems.forEach((feat, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const fx = MX + col * (featColW + 10);
+      const fy = featStartY + row * 28;
+
+      // Small icon
+      pdf.setFillColor(...feat.color);
+      setOpacity(0.15);
+      pdf.circle(fx + 5, fy + 4, 4, "F");
+      restoreOpacity();
+      pdf.setDrawColor(...feat.color);
+      setOpacity(0.3);
+      pdf.circle(fx + 5, fy + 4, 4, "S");
+      restoreOpacity();
+
+      // Title
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.white);
+      pdf.text(feat.title.substring(0, 35), fx + 13, fy + 5);
+
+      // Description
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.lightGray);
+      const dl = pdf.splitTextToSize(feat.desc.substring(0, 100), featColW - 16);
+      let dly = fy + 11;
+      for (const l of dl.slice(0, 2)) {
+        pdf.text(l, fx + 13, dly);
+        dly += 4;
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════
+  // SLIDE 4 — INVESTIMENTO & ANÁLISE
+  // ══════════════════════════════════════════════
+  {
+    newPage();
+    const headerY = 12;
+    drawSectionHeader("Proposta Comercial", "Investimento & Análise", headerY);
+
+    // Right badge
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.midGray);
+    pdf.text("⚡ PLANOS E BENEFÍCIOS", W - MX, headerY + 12, { align: "right" });
+
+    // 3 pricing tiers
+    const tierY = headerY + 24;
+    const tierGap = 8;
+    const tierW = (W - MX * 2 - tierGap * 2) / 3;
+    const tierH = 100;
+
+    const plans = [
+      {
+        name: "MÍNIMO",
+        price: proposta.valor_minimo || 0,
+        features: pj?.escopo?.slice(0, 4) || ["Agendamento de salas essencial", "Gestão básica de usuários", "Controle simples de horários", "Suporte por e-mail"],
+        recommended: false,
+      },
+      {
+        name: "IDEAL",
+        price: proposta.valor_ideal || 0,
+        features: pj?.funcionalidades?.slice(0, 5) || ["Todas as features do Mínimo", "Landing Page completa", "Painel de relatórios gerenciais", "Notificações automáticas", "Histórico de reservas"],
+        recommended: true,
+      },
+      {
+        name: "PREMIUM",
+        price: proposta.valor_premium || 0,
+        features: [...(pj?.funcionalidades_recomendadas?.slice(0, 3) || ["Todas as features do Ideal", "Customizações visuais avançadas", "Integrações externas (API)"]), ...(pj?.integ?.slice(0, 2) || ["Suporte prioritário (WhatsApp)", "Treinamento da equipe"])].slice(0, 5),
+        recommended: false,
+      },
+    ];
+
+    // Use tiers from proposal_tiers if available
+    if (tiers.length >= 3) {
+      plans[0].name = tiers[0].name.toUpperCase();
+      plans[0].price = tiers[0].price;
+      plans[0].features = tiers[0].scope_modules.filter((m: any) => m.status === "included").map((m: any) => m.label).slice(0, 4);
+      plans[0].recommended = tiers[0].is_recommended;
+
+      plans[1].name = tiers[1].name.toUpperCase();
+      plans[1].price = tiers[1].price;
+      plans[1].features = tiers[1].scope_modules.filter((m: any) => m.status === "included").map((m: any) => m.label).slice(0, 5);
+      plans[1].recommended = tiers[1].is_recommended;
+
+      plans[2].name = tiers[2].name.toUpperCase();
+      plans[2].price = tiers[2].price;
+      plans[2].features = tiers[2].scope_modules.filter((m: any) => m.status === "included").map((m: any) => m.label).slice(0, 5);
+      plans[2].recommended = tiers[2].is_recommended;
+    } else if (tiers.length > 0) {
+      // Use whatever tiers exist
+      tiers.forEach((tier, i) => {
+        if (i < 3) {
+          plans[i].name = tier.name.toUpperCase();
+          plans[i].price = tier.price;
+          plans[i].features = tier.scope_modules.filter((m: any) => m.status === "included").map((m: any) => m.label).slice(0, 5);
+          plans[i].recommended = tier.is_recommended;
+        }
+      });
+    }
+
+    plans.forEach((plan, i) => {
+      const px = MX + i * (tierW + tierGap);
+      const isRec = plan.recommended;
+      const py = isRec ? tierY - 4 : tierY;
+      const ph = isRec ? tierH + 8 : tierH;
+
+      // Card bg
+      drawCard(px, py, tierW, ph, isRec ? C.primary : C.midGray);
+
+      // Top accent
+      if (isRec) {
+        pdf.setFillColor(...C.primary);
+        pdf.rect(px, py, tierW, 2, "F");
+      }
 
       // Recommended badge
-      if (plan.featured) {
-        const badgeW = 30;
-        pdf.setFillColor(...C.magenta);
-        pdf.roundedRect(px + (pricingW - badgeW) / 2, py - 4, badgeW, 8, 4, 4, "F");
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(7);
-      pdf.setTextColor(...C.white);
-      pdf.text("RECOMENDADO", px + pricingW / 2, py, { align: "center" });
+      if (isRec) {
+        const bw = 28;
+        pdf.setFillColor(...C.secondary);
+        pdf.roundedRect(px + (tierW - bw) / 2, py - 4, bw, 8, 3, 3, "F");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(6);
+        pdf.setTextColor(...C.bg);
+        pdf.text("RECOMENDADO", px + tierW / 2, py, { align: "center" });
       }
 
       // Plan name
-      let fy = py + 14;
+      let fy = py + 16;
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(8);
-      { const tc = plan.featured ? C.magenta : C.midGray; pdf.setTextColor(...tc); }
-      pdf.text(plan.name.toUpperCase(), px + pricingW / 2, fy, { align: "center" });
+      pdf.setFontSize(10);
+      pdf.setTextColor(isRec ? C.white : C.midGray);
+      pdf.text(plan.name, px + tierW / 2, fy, { align: "center" });
       fy += 10;
 
       // Price
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
-      pdf.setTextColor(...C.cyan);
-      pdf.text("R$", px + pricingW / 2 - 14, fy);
-      pdf.setFontSize(18);
+      pdf.setTextColor(...C.midGray);
+      pdf.text("R$", px + tierW / 2 - 14, fy - 2);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(22);
       pdf.setTextColor(...C.white);
-      pdf.text(plan.price.toLocaleString("pt-BR"), px + pricingW / 2 - 8, fy);
+      pdf.text(plan.price > 0 ? plan.price.toLocaleString("pt-BR") : "—", px + tierW / 2 - 6, fy);
       fy += 8;
 
       // Separator
-      pdf.setDrawColor(255, 255, 255);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-      pdf.line(px + 5, fy, px + pricingW - 5, fy);
-      pdf.restoreGraphicsState();
+      pdf.setDrawColor(...C.midGray);
+      setOpacity(0.15);
+      pdf.line(px + 8, fy, px + tierW - 8, fy);
+      restoreOpacity();
       fy += 6;
 
       // Features
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7);
       for (const feat of plan.features) {
-        { const fc = plan.featured ? C.magenta : C.cyan; pdf.setFillColor(...fc); }
-        pdf.circle(px + 7, fy - 0.8, 0.8, "F");
-        pdf.setTextColor(...C.lightGray);
-        pdf.text(feat.substring(0, 30), px + 11, fy);
-        fy += 5;
+        if (fy > py + ph - 8) break;
+        // Checkmark
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8);
+        pdf.setTextColor(isRec ? C.secondary : C.secondary);
+        pdf.text("✓", px + 8, fy);
+        // Text
+        pdf.setFont("helvetica", isRec ? "bold" : "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(isRec ? C.white : C.lightGray);
+        pdf.text(feat.substring(0, 30), px + 14, fy);
+        fy += 6;
       }
+    });
 
-      // Button
-      const btnY = py + ph - 14;
-      { const fc = plan.featured ? C.magenta : [255, 255, 255] as RGB; pdf.setFillColor(...fc); }
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: plan.featured ? 0.2 : 0.05 }));
-      pdf.roundedRect(px + 5, btnY, pricingW - 10, 8, 3, 3, "F");
-      pdf.restoreGraphicsState();
-      { const dc = plan.featured ? C.magenta : [255, 255, 255] as RGB; pdf.setDrawColor(...dc); }
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: plan.featured ? 0.8 : 0.2 }));
-      pdf.roundedRect(px + 5, btnY, pricingW - 10, 8, 3, 3, "S");
-      pdf.restoreGraphicsState();
+    // Bottom row: Complexity + Strategic Analysis
+    const bottomY = tierY + tierH + 14;
+    const bottomCardW = (W - MX * 2 - 10) / 2;
+
+    // Complexity card
+    drawCard(MX, bottomY, bottomCardW, 24, C.secondary);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.secondary);
+    pdf.text("⚙ NÍVEL DE COMPLEXIDADE", MX + 8, bottomY + 8);
+    // Complexity bar
+    const compLevel = proposta.complexidade || "Média";
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(...C.white);
+    pdf.text(compLevel, MX + 8, bottomY + 18);
+    // Bar visualization
+    const barX = MX + 50, barW = bottomCardW - 62, barH2 = 4;
+    pdf.setFillColor(...C.bgCard);
+    pdf.roundedRect(barX, bottomY + 14, barW, barH2, 2, 2, "F");
+    const fillPct = compLevel === "Baixa" ? 0.3 : compLevel === "Alta" ? 0.9 : 0.6;
+    pdf.setFillColor(...C.primary);
+    pdf.roundedRect(barX, bottomY + 14, barW * fillPct, barH2, 2, 2, "F");
+    // Estimate
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.midGray);
+    pdf.text(pj?.cronograma || "Estimada em 4 semanas", barX, bottomY + 8);
+
+    // Strategic Analysis card
+    const saX = MX + bottomCardW + 10;
+    drawCard(saX, bottomY, bottomCardW, 24, C.accent);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.accent);
+    pdf.text("⚡ ANÁLISE ESTRATÉGICA", saX + 8, bottomY + 8);
+
+    const stratItems = ["Eficiência", "Satisfação", "Dados"];
+    const stratDescs = ["Automatização de processos", "Melhoria na experiência do usuário", "Base sólida para decisões futuras"];
+    const stratW2 = (bottomCardW - 16) / 3;
+
+    stratItems.forEach((s, i) => {
+      const sx = saX + 8 + i * stratW2;
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(7);
-      { const tc = plan.featured ? C.white : C.lightGray; pdf.setTextColor(...tc); }
-      pdf.text(plan.btn.toUpperCase(), px + pricingW / 2, btnY + 5.5, { align: "center" });
+      pdf.setFontSize(8);
+      pdf.setTextColor(...C.white);
+      pdf.text(s, sx, bottomY + 15);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(6);
+      pdf.setTextColor(...C.midGray);
+      const sl = pdf.splitTextToSize(stratDescs[i], stratW2 - 5);
+      pdf.text(sl[0] || "", sx, bottomY + 20);
     });
   }
 
   // ══════════════════════════════════════════════
-  // SLIDE 5B — FAIXAS COMERCIAIS (TIERS)
+  // SLIDE 5 — CRONOGRAMA & PRÓXIMOS PASSOS
   // ══════════════════════════════════════════════
-  if (tiers.length > 0) {
+  {
     newPage();
-    const mx = 20, my = 18;
-    drawSectionBadge("Faixas Comerciais", mx, my);
-    drawTitle("Planos Disponíveis", mx, my + 16, 22);
-    const tierW = Math.min((W - mx * 2 - (tiers.length - 1) * 6) / tiers.length, 65);
-    const tierStartX = (W - (tierW * tiers.length + (tiers.length - 1) * 6)) / 2;
-    const tierY = my + 30;
-    const tierH = H - tierY - 20;
-    tiers.forEach((tier, i) => {
-      const tx = tierStartX + i * (tierW + 6);
-      const isRec = tier.is_recommended;
-      pdf.setFillColor(255, 255, 255);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: isRec ? 0.06 : 0.03 }));
-      pdf.roundedRect(tx, tierY, tierW, tierH, 4, 4, "F");
-      pdf.restoreGraphicsState();
-      const borderCol: RGB = isRec ? C.magenta : C.midGray;
-      pdf.setDrawColor(...borderCol);
-      pdf.setLineWidth(isRec ? 0.8 : 0.3);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: isRec ? 0.8 : 0.2 }));
-      pdf.roundedRect(tx, tierY, tierW, tierH, 4, 4, "S");
-      pdf.restoreGraphicsState();
-      if (isRec) {
-        const bw = 28;
-        pdf.setFillColor(...C.magenta);
-        pdf.roundedRect(tx + (tierW - bw) / 2, tierY - 4, bw, 8, 4, 4, "F");
+    const headerY = 12;
+    drawSectionHeader("Planejamento e Execução", "Cronograma & Próximos Passos", headerY);
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.midGray);
+    pdf.text("⚡ PLANO DE AÇÃO", W - MX, headerY + 12, { align: "right" });
+
+    // Timeline: 4 numbered steps
+    const tlY = headerY + 24;
+    const tlSteps = [
+      { num: "01", title: "SEMANA 1", subtitle: "Descoberta & Design", desc: "Definição de UX/UI, arquitetura do sistema e aprovação de protótipos." },
+      { num: "02", title: "SEMANA 2", subtitle: "Backend Core", desc: "Desenvolvimento da lógica de agendamentos, gestão de usuários e regras de horários." },
+      { num: "03", title: "SEMANA 3", subtitle: "Frontend & Integração", desc: "Construção da Landing Page, painéis administrativos e conexão com API." },
+      { num: "04", title: "SEMANA 4", subtitle: "Go-Live", desc: "Testes finais, homologação, treinamento e lançamento oficial." },
+    ];
+
+    const stepW = (W - MX * 2 - 30) / 4;
+
+    // Connecting line
+    pdf.setDrawColor(...C.midGray);
+    setOpacity(0.2);
+    pdf.setLineWidth(0.5);
+    pdf.line(MX + 15, tlY + 8, W - MX - 15, tlY + 8);
+    restoreOpacity();
+
+    tlSteps.forEach((step, i) => {
+      const sx = MX + i * (stepW + 10);
+      const stepColor: RGB = i === 0 ? C.primary : i === 1 ? C.secondary : i === 2 ? C.accent : C.accent2;
+
+      // Circle with number
+      pdf.setDrawColor(...stepColor);
+      pdf.setLineWidth(0.8);
+      pdf.circle(sx + stepW / 2, tlY + 8, 7, "S");
+      pdf.setFillColor(...C.bg);
+      pdf.circle(sx + stepW / 2, tlY + 8, 6, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...stepColor);
+      pdf.text(step.num, sx + stepW / 2, tlY + 11, { align: "center" });
+
+      // Title & subtitle
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(...C.white);
+      pdf.text(step.title, sx + stepW / 2, tlY + 22, { align: "center" });
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(7);
-      pdf.setTextColor(...C.white);
-      pdf.text("RECOMENDADO", tx + tierW / 2, tierY, { align: "center" });
+      pdf.setTextColor(...stepColor);
+      pdf.text(step.subtitle, sx + stepW / 2, tlY + 28, { align: "center" });
+
+      // Description
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.lightGray);
+      const dl = pdf.splitTextToSize(step.desc, stepW - 4);
+      let dly = tlY + 34;
+      for (const l of dl.slice(0, 3)) {
+        pdf.text(l, sx + 2, dly);
+        dly += 4;
       }
-      let ty = tierY + 12;
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(9);
-      { const nc: RGB = isRec ? C.magenta : C.white; pdf.setTextColor(...nc); }
-      pdf.text(tier.name.toUpperCase(), tx + tierW / 2, ty, { align: "center" });
-      ty += 10;
+    });
+
+    // Bottom row: 3 cards
+    const bottomY = tlY + 58;
+    const bottomGap = 8;
+    const bottomCardW = (W - MX * 2 - bottomGap * 2) / 3;
+    const bottomCardH = H - bottomY - 18;
+
+    // Card 1: Plano de Manutenção
+    drawCard(MX, bottomY, bottomCardW, bottomCardH, C.highlight);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.highlight);
+    pdf.text("⚡ PLANO DE MANUTENÇÃO", MX + 8, bottomY + 10);
+
+    pdf.setFillColor(...C.highlight);
+    setOpacity(0.1);
+    pdf.circle(MX + 12, bottomY + 22, 4, "F");
+    restoreOpacity();
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.white);
+    pdf.text("Suporte Mensal", MX + 20, bottomY + 22);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.midGray);
+    pdf.text("Monitoramento Contínuo", MX + 20, bottomY + 28);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(16);
+    pdf.setTextColor(...C.white);
+    const maintPrice = pj?.manutencao || "R$ 40,00";
+    pdf.text(maintPrice.substring(0, 20), MX + 8, bottomY + 42);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.midGray);
+    pdf.text("/mês", MX + 8 + pdf.getTextWidth(maintPrice.substring(0, 20)) + 2, bottomY + 42);
+
+    // Maintenance features
+    const maintFeats = ["Correções de bugs", "Pequenos ajustes visuais", "Monitoramento de servidor"];
+    let mfy = bottomY + 50;
+    for (const feat of maintFeats) {
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(7);
-      pdf.setTextColor(...C.cyan);
-      pdf.text("R$", tx + tierW / 2 - 10, ty);
-      pdf.setFontSize(16);
+      pdf.setTextColor(...C.secondary);
+      pdf.text("✓", MX + 8, mfy);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(...C.lightGray);
+      pdf.text(feat, MX + 14, mfy);
+      mfy += 5;
+    }
+
+    // Card 2: Matriz de Riscos
+    const riskX = MX + bottomCardW + bottomGap;
+    drawCard(riskX, bottomY, bottomCardW, bottomCardH, C.highlight);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.highlight);
+    pdf.text("⚠ MATRIZ DE RISCOS", riskX + 8, bottomY + 10);
+
+    const risks = pj?.riscos || [
+      { title: "Atraso no Desenvolvimento", mitigation: "Sprints semanais e buffer de tempo." },
+      { title: "Dificuldade na Integração", mitigation: "Ambiente de staging para testes isolados." },
+      { title: "Mudança de Escopo", mitigation: "Documentação aprovada no kick-off." },
+    ];
+
+    let rky = bottomY + 18;
+    const riskItems = Array.isArray(risks) ? risks : [];
+    for (const risk of riskItems.slice(0, 3)) {
+      const rTitle = typeof risk === "string" ? risk : risk.title || risk;
+      const rMitigation = typeof risk === "object" && risk.mitigation ? risk.mitigation : "";
+
+      pdf.setFillColor(...C.primary);
+      pdf.circle(riskX + 10, rky + 1, 1.5, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8);
       pdf.setTextColor(...C.white);
-      pdf.text(tier.price > 0 ? tier.price.toLocaleString("pt-BR") : "—", tx + tierW / 2 - 4, ty);
-      ty += 6;
-      if (tier.estimated_days > 0) {
+      pdf.text(String(rTitle).substring(0, 35), riskX + 15, rky + 2);
+      rky += 6;
+      if (rMitigation) {
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(7);
         pdf.setTextColor(...C.midGray);
-        pdf.text(`${tier.estimated_days} dias`, tx + tierW / 2, ty, { align: "center" });
+        pdf.text(`→ Mitigação: ${String(rMitigation).substring(0, 45)}`, riskX + 15, rky);
+        rky += 5;
       }
-      ty += 8;
-      pdf.setDrawColor(255, 255, 255);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-      pdf.line(tx + 5, ty, tx + tierW - 5, ty);
-      pdf.restoreGraphicsState();
-      ty += 5;
-    pdf.setFontSize(7);
-    for (const mod of tier.scope_modules.slice(0, 12)) {
-        if (ty > tierY + tierH - 8) break;
-        const statusSymbol = mod.status === "included" ? "+" : mod.status === "optional" ? "~" : "-";
-        const statusColor: RGB = mod.status === "included" ? C.green : mod.status === "optional" ? C.yellow : C.darkGray;
-        pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(...statusColor);
-        pdf.text(statusSymbol, tx + 5, ty);
-        pdf.setFont("helvetica", "normal");
-        { const tc: RGB = mod.status === "not_included" ? C.darkGray : C.lightGray; pdf.setTextColor(...tc); }
-        pdf.text(mod.label.substring(0, 18), tx + 10, ty);
-        ty += 4.2;
-      }
-    });
-  }
-
-  // ══════════════════════════════════════════════
-  // SLIDE 5C — ADD-ONS
-  // ══════════════════════════════════════════════
-  if (addons.length > 0) {
-    newPage();
-    const mx = 20, my = 18;
-    drawSectionBadge("Serviços Adicionais", mx, my);
-    drawTitle("Add-ons Selecionados", mx, my + 16, 22);
-    let addonStartY = my + 32;
-    const addonW = (W - mx * 2 - 10) / 2;
-    addons.forEach((addon, i) => {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      const ax = mx + col * (addonW + 10);
-      const aRowY = addonStartY + row * 28;
-      if (aRowY > H - 30) return;
-      drawCard(ax, aRowY, addonW, 22, C.cyan);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(9);
-      pdf.setTextColor(...C.white);
-      pdf.text(addon.name, ax + 5, aRowY + 8);
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7);
-      pdf.setTextColor(...C.lightGray);
-      pdf.text(addon.description.substring(0, 50), ax + 5, aRowY + 14);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(9);
-      pdf.setTextColor(...C.cyan);
-      pdf.text("R$ " + addon.price.toLocaleString("pt-BR"), ax + addonW - 5, aRowY + 8, { align: "right" });
-      pdf.setFontSize(7);
-      pdf.setTextColor(...C.midGray);
-      pdf.text(addon.category, ax + addonW - 5, aRowY + 14, { align: "right" });
-    });
-    const totalAddons = addons.reduce((s, a) => s + a.price, 0);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.setTextColor(...C.white);
-    pdf.text("Total Add-ons:", mx, H - 25);
-    pdf.setTextColor(...C.cyan);
-    pdf.text("R$ " + totalAddons.toLocaleString("pt-BR"), mx + 50, H - 25);
-  }
-
-
-  // ══════════════════════════════════════════════
-  // SLIDE 5D — SCOPE COMPARISON TABLE
-  // ══════════════════════════════════════════════
-  if (tiers.length > 1) {
-    newPage();
-    const mx = 20, my = 18;
-    drawSectionBadge("Análise Comparativa", mx, my);
-    drawTitle("Comparativo entre Faixas", mx, my + 16, 22);
-
-    const modules = SCOPE_MODULE_DEFAULTS;
-    const colW = Math.min((W - mx * 2 - 50) / tiers.length, 55);
-    const labelW = 50;
-    const tableX = mx;
-    let ty = my + 34;
-
-    // Header row
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.midGray);
-    pdf.text("MÓDULO", tableX, ty);
-    tiers.forEach((tier, i) => {
-      const tc: RGB = tier.is_recommended ? C.magenta : C.white;
-      pdf.setTextColor(...tc);
-      pdf.text(tier.name.toUpperCase().substring(0, 12), tableX + labelW + i * colW + colW / 2, ty, { align: "center" });
-    });
-    ty += 4;
-    pdf.setDrawColor(...C.cyan);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.line(tableX, ty, tableX + labelW + tiers.length * colW, ty);
-    pdf.restoreGraphicsState();
-    ty += 5;
-
-    // Module rows
-    pdf.setFontSize(7);
-    for (const mod of modules) {
-      if (ty > H - 30) { newPage(); ty = 24; }
-      // Alternating row bg
-      pdf.setFillColor(255, 255, 255);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.02 }));
-      pdf.rect(tableX, ty - 3, labelW + tiers.length * colW, 6, "F");
-      pdf.restoreGraphicsState();
-
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(...C.lightGray);
-      pdf.text(mod.label, tableX + 2, ty);
-
-      tiers.forEach((tier, i) => {
-        const sm = tier.scope_modules.find(m => m.id === mod.id);
-        const status = sm?.status || "not_included";
-        const cx = tableX + labelW + i * colW + colW / 2;
-        if (status === "included") {
-          pdf.setTextColor(...C.green);
-          pdf.setFont("helvetica", "bold");
-          pdf.text("+", cx, ty, { align: "center" });
-        } else if (status === "optional") {
-          pdf.setTextColor(...C.yellow);
-          pdf.setFont("helvetica", "bold");
-          pdf.text("~", cx, ty, { align: "center" });
-        } else {
-          pdf.setTextColor(...C.darkGray);
-          pdf.setFont("helvetica", "normal");
-          pdf.text("-", cx, ty, { align: "center" });
-        }
-      });
-      ty += 6;
+      rky += 3;
     }
 
-    // Price row
-    ty += 2;
-    pdf.setDrawColor(...C.cyan);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.line(tableX, ty, tableX + labelW + tiers.length * colW, ty);
-    pdf.restoreGraphicsState();
-    ty += 5;
+    // Card 3: Próximos Passos + CTA
+    const ctaX = riskX + bottomCardW + bottomGap;
+    drawCard(ctaX, bottomY, bottomCardW, bottomCardH, C.secondary);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(7);
-    pdf.setTextColor(...C.white);
-    pdf.text("INVESTIMENTO", tableX + 2, ty);
-    tiers.forEach((tier, i) => {
-      const tc: RGB = tier.is_recommended ? C.magenta : C.cyan;
-      pdf.setTextColor(...tc);
-      pdf.text(tier.price > 0 ? `R$ ${tier.price.toLocaleString("pt-BR")}` : "—", tableX + labelW + i * colW + colW / 2, ty, { align: "center" });
-    });
-    ty += 6;
-    pdf.setFont("helvetica", "normal");
-    pdf.setTextColor(...C.midGray);
-    pdf.text("PRAZO", tableX + 2, ty);
-    tiers.forEach((tier, i) => {
-      pdf.setTextColor(...C.lightGray);
-      pdf.text(tier.estimated_days > 0 ? `${tier.estimated_days} dias` : "—", tableX + labelW + i * colW + colW / 2, ty, { align: "center" });
-    });
+    pdf.setTextColor(...C.secondary);
+    pdf.text("📋 PRÓXIMOS PASSOS", ctaX + 8, bottomY + 10);
 
-    // Legend
-    const legY = H - 22;
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.green);
-    pdf.text("+ Incluído", mx, legY);
-    pdf.setTextColor(...C.yellow);
-    pdf.text("~ Opcional", mx + 30, legY);
-    pdf.setTextColor(...C.darkGray);
-    pdf.text("- Não incluído", mx + 60, legY);
+    const nextSteps = pj?.proximos_passos || [
+      "Reunião de Kick-off",
+      "Assinatura de Contrato",
+      "Início do Projeto",
+    ];
+
+    let nsy = bottomY + 20;
+    for (const step of (Array.isArray(nextSteps) ? nextSteps : []).slice(0, 4)) {
+      const stepText = typeof step === "string" ? step : String(step);
+      // Checkmark
+      pdf.setFillColor(...C.secondary);
+      setOpacity(0.15);
+      pdf.roundedRect(ctaX + 8, nsy - 3, 5, 5, 1, 1, "F");
+      restoreOpacity();
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.secondary);
+      pdf.text("✓", ctaX + 10.5, nsy + 0.5, { align: "center" });
+      // Text
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(...C.white);
+      pdf.text(stepText.substring(0, 30), ctaX + 16, nsy);
+      nsy += 8;
+    }
+
+    // CTA Button
+    const btnY = bottomY + bottomCardH - 16;
+    pdf.setFillColor(...C.primary);
+    pdf.roundedRect(ctaX + 8, btnY, bottomCardW - 16, 10, 3, 3, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.white);
+    pdf.text("APROVAR PROPOSTA  ▶", ctaX + bottomCardW / 2, btnY + 7, { align: "center" });
   }
 
   // ══════════════════════════════════════════════
-  // SLIDE 6 — CONDIÇÕES COMERCIAIS
+  // SLIDE 6 — CONDIÇÕES COMERCIAIS (if notes exist)
   // ══════════════════════════════════════════════
   {
     const notes = proposta.commercial_notes;
     const validity = proposta.proposal_validity || "30 dias";
     const isPhased = proposta.is_phased;
 
-    newPage();
-    const mx = 20, my = 18;
-    drawSectionBadge("Termos e Condições", mx, my);
-    drawTitle("Condições Comerciais", mx, my + 16, 22);
+    if (notes || validity) {
+      newPage();
+      const headerY = 12;
+      drawSectionHeader("Termos e Condições", "Condições Comerciais", headerY);
 
-    let cy = my + 34;
+      let cy = headerY + 24;
 
-    // Validity and phased badges
-    const badgeItems = [
-      { label: "Validade", value: validity },
-      { label: "Modalidade", value: isPhased ? "Projeto faseado" : "Entrega única" },
-    ];
-    if (proposta.closing_strategy) {
-      badgeItems.push({ label: "Estratégia", value: proposta.closing_strategy.substring(0, 30) });
-    }
+      // Validity & modality badges
+      const badgeItems = [
+        { label: "VALIDADE", value: validity, color: C.secondary },
+        { label: "MODALIDADE", value: isPhased ? "Projeto faseado" : "Entrega única", color: C.primary },
+      ];
+      if (proposta.closing_strategy) {
+        badgeItems.push({ label: "ESTRATÉGIA", value: proposta.closing_strategy.substring(0, 30), color: C.accent });
+      }
 
-    badgeItems.forEach((item, i) => {
-      const bx = mx + i * 85;
-      drawCard(bx, cy, 78, 22, i === 0 ? C.cyan : C.magenta);
+      const bw = (W - MX * 2 - (badgeItems.length - 1) * 8) / badgeItems.length;
+      badgeItems.forEach((item, i) => {
+        const bx = MX + i * (bw + 8);
+        drawCard(bx, cy, bw, 22, item.color);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(6);
+        pdf.setTextColor(...C.midGray);
+        pdf.text(item.label, bx + 8, cy + 8);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.setTextColor(...C.white);
+        pdf.text(item.value.substring(0, 20), bx + 8, cy + 16);
+      });
+
+      cy += 32;
+
+      // Commercial notes sections
+      if (notes) {
+        const notesSections = [
+          { title: "Observação Geral", text: (notes as any).general_note, color: C.secondary },
+          { title: "Justificativa da Recomendação", text: (notes as any).recommendation_justification, color: C.primary },
+          { title: "Estratégia de Fechamento", text: (notes as any).closing_strategy, color: C.accent },
+          { title: "Próximos Passos", text: (notes as any).next_steps, color: C.accent2 },
+        ].filter(s => s.text);
+
+        for (const section of notesSections) {
+          if (cy > H - 30) { newPage(); cy = 24; }
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(9);
+          pdf.setTextColor(...section.color);
+          pdf.text(section.title.toUpperCase(), MX, cy);
+          cy += 6;
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(8.5);
+          pdf.setTextColor(...C.lightGray);
+          const lines = pdf.splitTextToSize(section.text, W - MX * 2);
+          for (const l of lines) {
+            if (cy > H - 18) { newPage(); cy = 24; }
+            pdf.text(l, MX, cy);
+            cy += 4.5;
+          }
+          cy += 4;
+        }
+      }
+
+      // Disclaimer
+      if (cy > H - 20) { newPage(); cy = 24; }
+      pdf.setDrawColor(...C.midGray);
+      setOpacity(0.2);
+      pdf.line(MX, cy, W - MX, cy);
+      restoreOpacity();
+      cy += 5;
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7);
-      pdf.setTextColor(...C.midGray);
-      pdf.text(item.label.toUpperCase(), bx + 5, cy + 8);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
-      pdf.setTextColor(...C.white);
-      pdf.text(item.value.substring(0, 20), bx + 5, cy + 16);
-    });
-
-    cy += 32;
-
-    // Commercial notes sections
-    if (notes) {
-      const notesSections = [
-        { title: "Observação Geral", text: notes.general_note, color: C.cyan },
-        { title: "Justificativa da Recomendação", text: notes.recommendation_justification, color: C.magenta },
-        { title: "Estratégia de Fechamento", text: notes.closing_strategy, color: C.purple },
-        { title: "Próximos Passos", text: notes.next_steps, color: C.green },
-      ].filter(s => s.text);
-
-      for (const section of notesSections) {
-        if (cy > H - 30) { newPage(); cy = 24; }
-        drawSubtitle(section.title, mx, cy, section.color);
-        cy += 6;
-        cy = drawParagraph(section.text, mx, cy, W - mx * 2);
-        cy += 4;
-      }
+      pdf.setTextColor(...C.darkGray);
+      const disclaimer = pdf.splitTextToSize(
+        "Os valores apresentados são válidos pelo período indicado. Alterações de escopo podem impactar prazos e investimentos. Esta proposta é confidencial e destinada exclusivamente ao destinatário.",
+        W - MX * 2
+      );
+      for (const l of disclaimer) { pdf.text(l, MX, cy); cy += 4; }
     }
-
-    // Disclaimer
-    if (cy > H - 25) { newPage(); cy = 24; }
-    pdf.setDrawColor(...C.midGray);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.2 }));
-    pdf.line(mx, cy, W - mx, cy);
-    pdf.restoreGraphicsState();
-    cy += 6;
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.darkGray);
-    const disclaimerLines = pdf.splitTextToSize(
-      "Os valores apresentados são válidos pelo período indicado. Alterações de escopo podem impactar prazos e investimentos. Esta proposta é confidencial e destinada exclusivamente ao destinatário.",
-      W - mx * 2
-    );
-    for (const l of disclaimerLines) { pdf.text(l, mx, cy); cy += 4; }
   }
 
   // ══════════════════════════════════════════════
-  // SLIDE 7 — CRONOGRAMA
-  // ══════════════════════════════════════════════
-  if (pj?.cronograma || pj?.estimativa_esforco) {
-    newPage();
-    const mx = 20, my = 18;
-
-    // Header bar
-    pdf.setFillColor(...C.bg);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.8 }));
-    pdf.rect(0, 0, W, 32, "F");
-    pdf.restoreGraphicsState();
-    pdf.setDrawColor(...C.magenta);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.2 }));
-    pdf.line(0, 32, W, 32);
-    pdf.restoreGraphicsState();
-
-    drawSectionBadge("Planejamento", mx, my);
-    drawTitle("Cronograma e Detalhes", mx, my + 14, 20);
-    pdf.addImage(logoBase64, "PNG", W - mx - 12, my, 10, 10);
-
-    // Duration badge
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.cyan);
-    pdf.text("Duração: " + (pj.cronograma?.substring(0, 25) || "A definir"), W - mx - 12, my + 16, { align: "right" });
-
-    // Timeline section
-    const tlY = my + 40;
-    drawCard(mx, tlY, W - mx * 2, 70, C.cyan);
-
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.cyan);
-    pdf.text("LINHA DO TEMPO DE EXECUÇÃO", mx + 8, tlY + 8);
-
-    // Timeline steps - split cronograma text
-    const halfW = (W - mx * 2 - 20) / 2;
-
-    // Step 1
-    const s1x = mx + 8, s1y = tlY + 16;
-    pdf.setFillColor(...C.bgCard);
-    pdf.roundedRect(s1x, s1y, halfW, 45, 3, 3, "F");
-    pdf.setFillColor(...C.magenta);
-    pdf.rect(s1x, s1y, 1.2, 45, "F");
-    // Badge
-    pdf.setFillColor(...C.magenta);
-    pdf.roundedRect(s1x + 5, s1y - 4, 25, 7, 3, 3, "F");
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.white);
-    pdf.text("FASE 01", s1x + 17.5, s1y, { align: "center" });
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.setTextColor(...C.white);
-    pdf.text("Planejamento e Setup", s1x + 6, s1y + 12);
-    // Content
-    const phase1Items = ["Kickoff e alinhamento de escopo", "Configuração de ambiente", "Design da interface (UI/UX)", "Estruturação do banco de dados"];
-    let p1y = s1y + 18;
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    for (const item of phase1Items) {
-      pdf.setFillColor(...C.magenta);
-      pdf.circle(s1x + 7, p1y - 0.5, 0.6, "F");
-      pdf.setTextColor(...C.lightGray);
-      pdf.text(item, s1x + 10, p1y);
-      p1y += 5;
-    }
-
-    // Step 2
-    const s2x = mx + halfW + 14;
-    pdf.setFillColor(...C.bgCard);
-    pdf.roundedRect(s2x, s1y, halfW, 45, 3, 3, "F");
-    pdf.setFillColor(...C.cyan);
-    pdf.rect(s2x, s1y, 1.2, 45, "F");
-    pdf.setFillColor(...C.cyan);
-    pdf.roundedRect(s2x + 5, s1y - 4, 25, 7, 3, 3, "F");
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.bg);
-    pdf.text("FASE 02", s2x + 17.5, s1y, { align: "center" });
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.setTextColor(...C.white);
-    pdf.text("Desenvolvimento e Entrega", s2x + 6, s1y + 12);
-    const phase2Items = ["Desenvolvimento das funcionalidades", "Implementação da área administrativa", "Integrações e automações", "Testes (QA), ajustes e Go-live"];
-    let p2y = s1y + 18;
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    for (const item of phase2Items) {
-      pdf.setFillColor(...C.cyan);
-      pdf.circle(s2x + 7, p2y - 0.5, 0.6, "F");
-      pdf.setTextColor(...C.lightGray);
-      pdf.text(item, s2x + 10, p2y);
-      p2y += 5;
-    }
-
-    // Timeline connecting line
-    pdf.setDrawColor(...C.midGray);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.setLineWidth(0.5);
-    pdf.line(s1x + halfW, s1y + 22, s2x, s1y + 22);
-    pdf.restoreGraphicsState();
-
-    // Bottom metrics
-    const metY = tlY + 78;
-    const metW = (W - mx * 2 - 10) / 2;
-
-    // Effort metric
-    drawCard(mx, metY, metW, 22, C.magenta);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(14);
-    pdf.setTextColor(...C.white);
-    pdf.text(pj.estimativa_esforco?.substring(0, 20) || "A definir", mx + 20, metY + 14);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.midGray);
-    pdf.text("ESFORÇO DE DESENVOLVIMENTO", mx + 20, metY + 19);
-
-    // Maintenance metric
-    drawCard(mx + metW + 10, metY, metW, 22, C.cyan);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(14);
-    pdf.setTextColor(...C.white);
-    pdf.text(pj.manutencao?.substring(0, 20) || "Sob consulta", mx + metW + 30, metY + 14);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
-    pdf.setTextColor(...C.midGray);
-    pdf.text("MANUTENÇÃO MENSAL", mx + metW + 30, metY + 19);
-  }
-
-  // ══════════════════════════════════════════════
-  // SLIDE 7 — ANÁLISE ESTRATÉGICA
-  // ══════════════════════════════════════════════
-  if (pj?.analise_estrategica) {
-    newPage();
-    const mx = 20, my = 18;
-
-    drawSectionBadge("Benefícios & Impacto", mx, my);
-    drawTitle("Análise Estratégica", mx, my + 16, 22);
-
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.setTextColor(...C.midGray);
-    pdf.text("Potencialize o crescimento com tecnologia sob medida.", mx, my + 24);
-
-    // 3 benefit cards
-    const benefits = [
-      { title: "Eficiência Operacional", text: "Centralize o controle, elimine conflitos e otimize o tempo com automação inteligente.", color: C.magenta, badge: "Otimização de Processos" },
-      { title: "Experiência do Cliente", text: "Ofereça autonomia e clareza. Jornada de uso moderna, digital e sem atritos.", color: C.cyan, badge: "Fidelização & Satisfação" },
-      { title: "Maior Visibilidade", text: "Vitrine digital 24/7 com integração social. Maior alcance e presença no mercado.", color: C.purple, badge: "Presença Digital" },
-    ];
-
-    const bCardW = (W - mx * 2 - 20) / 3;
-    const bCardH = 90;
-
-    benefits.forEach((b, i) => {
-      const bx = mx + i * (bCardW + 10);
-      const by = my + 35 + (i === 1 ? -5 : 0); // Middle card elevated
-
-      // Card
-      pdf.setFillColor(i === 1 ? 0 : 255, i === 1 ? 255 : 255, i === 1 ? 255 : 255);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: i === 1 ? 0.05 : 0.03 }));
-      pdf.roundedRect(bx, by, bCardW, bCardH, 4, 4, "F");
-      pdf.restoreGraphicsState();
-
-      // Top border
-      pdf.setFillColor(...b.color);
-      pdf.rect(bx, by, bCardW, 1.5, "F");
-
-      pdf.setDrawColor(...(i === 1 ? C.cyan : [255, 255, 255] as RGB));
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: i === 1 ? 0.3 : 0.1 }));
-      pdf.roundedRect(bx, by, bCardW, bCardH, 4, 4, "S");
-      pdf.restoreGraphicsState();
-
-      // Background number
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(30);
-      pdf.setTextColor(...b.color);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.06 }));
-      pdf.text(`0${i + 1}`, bx + bCardW - 10, by + 18, { align: "right" });
-      pdf.restoreGraphicsState();
-
-      // Icon circle
-      pdf.setFillColor(...b.color);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-      pdf.circle(bx + bCardW / 2, by + 20, 10, "F");
-      pdf.restoreGraphicsState();
-      pdf.setDrawColor(...b.color);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-      pdf.circle(bx + bCardW / 2, by + 20, 10, "S");
-      pdf.restoreGraphicsState();
-
-      // Title
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
-      pdf.setTextColor(...C.white);
-      pdf.text(b.title, bx + bCardW / 2, by + 38, { align: "center" });
-
-      // Text
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.lightGray);
-      const lines = pdf.splitTextToSize(b.text, bCardW - 12);
-      let ly = by + 44;
-      for (const l of lines) {
-        pdf.text(l, bx + 6, ly);
-        ly += 4;
-      }
-
-      // Badge
-      pdf.setFillColor(...b.color);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-      pdf.roundedRect(bx + 5, by + bCardH - 12, bCardW - 10, 7, 2, 2, "F");
-      pdf.restoreGraphicsState();
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(7);
-      pdf.setTextColor(...b.color);
-      pdf.text(b.badge.toUpperCase(), bx + bCardW / 2, by + bCardH - 7, { align: "center" });
-    });
-
-    // Stats bar
-    const barY = my + bCardH + 45;
-    pdf.setFillColor(255, 255, 255);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.05 }));
-    pdf.roundedRect(mx, barY, W - mx * 2, 18, 3, 3, "F");
-    pdf.restoreGraphicsState();
-    pdf.setDrawColor(255, 255, 255);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-    pdf.roundedRect(mx, barY, W - mx * 2, 18, 3, 3, "S");
-    pdf.restoreGraphicsState();
-
-    const stats = ["Padronização", "Comunicação", "Conversão"];
-    const statDescs = ["Processos organizados", "Consistência nos canais", "Visitantes em clientes"];
-    stats.forEach((s, i) => {
-      const sx = mx + 15 + i * 85;
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(9);
-      pdf.setTextColor(...C.white);
-      pdf.text(s, sx, barY + 8);
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7);
-      pdf.setTextColor(...C.midGray);
-      pdf.text(statDescs[i], sx, barY + 13);
-      // Divider
-      if (i < 2) {
-        pdf.setDrawColor(255, 255, 255);
-        pdf.saveGraphicsState();
-        (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-        pdf.line(sx + 70, barY + 3, sx + 70, barY + 15);
-        pdf.restoreGraphicsState();
-      }
-    });
-  }
-
-  // ══════════════════════════════════════════════
-  // SLIDE 8 — PRÓXIMOS PASSOS & CTA
+  // SLIDE 7 — ENCERRAMENTO / CTA FINAL
   // ══════════════════════════════════════════════
   {
     newPage();
-    const mx = 20, my = 18;
+    fillBg(); // Double fill for clean bg
 
-    // Left magenta accent bar
-    pdf.setFillColor(...C.magenta);
-    pdf.rect(0, 0, 2, H, "F");
-
-    // Subtle decorative dots instead of grid (avoids quadriculado artifact)
-    pdf.setFillColor(...C.magenta);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.06 }));
-    for (let gx = 30; gx < W - 20; gx += 40) {
-      for (let gy = 30; gy < H - 20; gy += 40) {
-        pdf.circle(gx, gy, 0.4, "F");
-      }
-    }
-    pdf.restoreGraphicsState();
-
-    // Left column
-    const leftW = (W - mx * 2) * 0.55;
-
-    drawTitle("Próximos Passos", mx + 5, my + 10, 24);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.setTextColor(...C.lightGray);
-    const introLines = pdf.splitTextToSize(
-      "Estamos prontos para começar. Confira o roteiro para darmos início ao projeto.",
-      leftW - 10
-    );
-    let iy = my + 18;
-    for (const l of introLines) { pdf.text(l, mx + 5, iy); iy += 4.5; }
-
-    // Separator
-    pdf.setDrawColor(...C.magenta);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.2 }));
-    pdf.line(mx + 5, iy + 2, mx + leftW - 5, iy + 2);
-    pdf.restoreGraphicsState();
-
-    // Roadmap
-    const steps = pj?.proximos_passos || [
-      "Aprovação da Proposta",
-      "Reunião de Kickoff",
-      "Início do Desenvolvimento",
-    ];
-    const stepColors: RGB[] = [C.magenta, C.purple, C.cyan];
-    const stepDescs = [
-      "Formalização do acordo comercial e escolha do plano.",
-      "Alinhamento de expectativas e coleta de materiais.",
-      "Início imediato do sprint para entrega da primeira versão.",
-    ];
-
-    let ry = iy + 14;
-    // Roadmap vertical line
-    pdf.setDrawColor(...C.magenta);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.setLineWidth(0.5);
-    pdf.line(mx + 18, ry - 2, mx + 18, ry + steps.length * 28);
-    pdf.restoreGraphicsState();
-
-    steps.forEach((step: string, i: number) => {
-      const color = stepColors[i % stepColors.length];
-
-      // Icon circle
-      pdf.setFillColor(...color);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.15 }));
-      pdf.roundedRect(mx + 8, ry - 4, 20, 20, 4, 4, "F");
-      pdf.restoreGraphicsState();
-      pdf.setDrawColor(...color);
-      pdf.saveGraphicsState();
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.4 }));
-      pdf.roundedRect(mx + 8, ry - 4, 20, 20, 4, 4, "S");
-      pdf.restoreGraphicsState();
-
-      // Step number
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(9);
-      pdf.setTextColor(...color);
-      pdf.text(`0${i + 1}`, mx + 18, ry + 7, { align: "center" });
-
-      // Title
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
-      pdf.setTextColor(...C.white);
-      const stepTitle = typeof step === "string" ? step.substring(0, 40) : `Etapa ${i + 1}`;
-      pdf.text(stepTitle, mx + 33, ry + 3);
-
-      // Description
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.midGray);
-      pdf.text(stepDescs[i] || "", mx + 33, ry + 10);
-
-      ry += 28;
-    });
-
-    // Right column: CTA card
-    const ctaX = mx + leftW + 10;
-    const ctaW = W - ctaX - mx;
-    const ctaY = my + 10;
-    const ctaH = H - my * 2 - 15;
-
-    // CTA card background
-    pdf.setFillColor(255, 255, 255);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.03 }));
-    pdf.roundedRect(ctaX, ctaY, ctaW, ctaH, 6, 6, "F");
-    pdf.restoreGraphicsState();
-    pdf.setDrawColor(...C.cyan);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.2 }));
-    pdf.roundedRect(ctaX, ctaY, ctaW, ctaH, 6, 6, "S");
-    pdf.restoreGraphicsState();
-
-    // Glow in card
-    addGlow(ctaX + ctaW - 10, ctaY + 10, 25, C.cyan, 0.06);
-
-    // Rocket icon circle
-    const iconCY = ctaY + 35;
-    pdf.setFillColor(...C.cyan);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-    pdf.circle(ctaX + ctaW / 2, iconCY, 12, "F");
-    pdf.restoreGraphicsState();
-    pdf.setDrawColor(...C.cyan);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.circle(ctaX + ctaW / 2, iconCY, 12, "S");
-    pdf.restoreGraphicsState();
-
-    // CTA Title
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(14);
-    pdf.setTextColor(...C.white);
-    pdf.text("Vamos Começar?", ctaX + ctaW / 2, iconCY + 22, { align: "center" });
-
-    // CTA text
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.lightGray);
-    const ctaLines = pdf.splitTextToSize(
-      "Aprove o projeto hoje e garanta a prioridade no nosso cronograma de desenvolvimento.",
-      ctaW - 20
-    );
-    let ctaTextY = iconCY + 30;
-    for (const l of ctaLines) {
-      pdf.text(l, ctaX + ctaW / 2, ctaTextY, { align: "center" });
-      ctaTextY += 4.5;
-    }
-
-    // Button
-    const btnY = ctaTextY + 8;
-    pdf.setDrawColor(...C.cyan);
-    pdf.setLineWidth(0.6);
-    pdf.roundedRect(ctaX + 15, btnY, ctaW - 30, 10, 3, 3, "S");
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(9);
-    pdf.setTextColor(...C.cyan);
-    pdf.text("APROVAR PROJETO", ctaX + ctaW / 2, btnY + 7, { align: "center" });
-
-    // Contact info
-    const contactY = btnY + 25;
-    pdf.setDrawColor(255, 255, 255);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-    pdf.line(ctaX + 15, contactY, ctaX + ctaW - 15, contactY);
-    pdf.restoreGraphicsState();
+    // Full-page centered CTA
+    addGlow(W / 2, H / 2, 80, C.primary, 0.08);
+    addGlow(W * 0.3, H * 0.7, 60, C.secondary, 0.06);
 
     // Logo
-    pdf.addImage(logoBase64, "PNG", ctaX + (ctaW - 10) / 2, contactY + 5, 10, 10);
+    const logoS = 25;
+    pdf.addImage(logoBase64, "PNG", W / 2 - logoS / 2, 40, logoS, logoS);
 
+    // Title
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(28);
+    pdf.setTextColor(...C.white);
+    pdf.text("VAMOS COMEÇAR?", W / 2, 85, { align: "center" });
+
+    // Subtitle
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...C.lightGray);
+    pdf.text("Aprove o projeto hoje e garanta prioridade no nosso cronograma.", W / 2, 95, { align: "center" });
+
+    // CTA Button
+    const btnW = 70, btnH2 = 14;
+    pdf.setFillColor(...C.primary);
+    pdf.roundedRect(W / 2 - btnW / 2, 110, btnW, btnH2, 4, 4, "F");
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(11);
     pdf.setTextColor(...C.white);
-    pdf.text("HOLYNEX LABS", ctaX + ctaW / 2, contactY + 22, { align: "center" });
+    pdf.text("APROVAR PROPOSTA  ▶", W / 2, 119, { align: "center" });
+
+    // Contact info
+    const contactY2 = 140;
+    pdf.setDrawColor(...C.midGray);
+    setOpacity(0.15);
+    pdf.line(W / 2 - 50, contactY2, W / 2 + 50, contactY2);
+    restoreOpacity();
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(...C.white);
+    pdf.text("HOLYNEX LABS", W / 2, contactY2 + 12, { align: "center" });
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.midGray);
+    pdf.text("comercial@aexstudio.com", W / 2, contactY2 + 20, { align: "center" });
 
     // Website badge
-    pdf.setFillColor(...C.magenta);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.1 }));
-    const webW = 40;
-    pdf.roundedRect(ctaX + (ctaW - webW) / 2, contactY + 26, webW, 7, 3, 3, "F");
-    pdf.restoreGraphicsState();
-    pdf.setDrawColor(...C.magenta);
-    pdf.saveGraphicsState();
-    (pdf as any).setGState(new (pdf as any).GState({ opacity: 0.3 }));
-    pdf.roundedRect(ctaX + (ctaW - webW) / 2, contactY + 26, webW, 7, 3, 3, "S");
-    pdf.restoreGraphicsState();
+    pdf.setFillColor(...C.primary);
+    setOpacity(0.15);
+    const webW2 = 42;
+    pdf.roundedRect(W / 2 - webW2 / 2, contactY2 + 25, webW2, 8, 3, 3, "F");
+    restoreOpacity();
+    pdf.setDrawColor(...C.primary);
+    setOpacity(0.3);
+    pdf.roundedRect(W / 2 - webW2 / 2, contactY2 + 25, webW2, 8, 3, 3, "S");
+    restoreOpacity();
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8);
-    pdf.setTextColor(...C.magenta);
-    pdf.text("holynexlabs.com.br", ctaX + ctaW / 2, contactY + 31, { align: "center" });
+    pdf.setTextColor(...C.primary);
+    pdf.text("holynexlabs.com.br", W / 2, contactY2 + 30.5, { align: "center" });
 
-    // Confidential footer
-    pdf.setFontSize(7);
+    // Footer
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(6);
     pdf.setTextColor(...C.darkGray);
-    pdf.text("Este documento é confidencial e destinado exclusivamente ao destinatário.", mx + 5, H - 8);
-  }
-
-  // ══════════════════════════════════════════════
-  // EXTRA PAGES — Full text sections that didn't fit
-  // ══════════════════════════════════════════════
-  // Only include Riscos — "Proposta Comercial Completa" is excluded from public PDF
-  if (pj?.riscos?.length) {
-    newPage();
-    const mx = 20;
-    let y = 22;
-
-    drawSectionBadge("Detalhamento", mx, y);
-    y += 12;
-    drawTitle("Riscos e Premissas", mx, y, 20);
-    y += 10;
-
-    y = drawBulletList(pj.riscos, mx, y, W - mx * 2, C.cyan);
+    pdf.text("Este documento é confidencial e destinado exclusivamente ao destinatário.", W / 2, H - 8, { align: "center" });
+    if (docCode) {
+      pdf.text(`Código: ${docCode}`, W / 2, H - 4, { align: "center" });
+    }
   }
 
   // Log successful render
