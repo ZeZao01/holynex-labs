@@ -25,6 +25,7 @@ export interface ProposalEventMeta {
   template_id?: string;
   warnings?: string[];
   duration_ms?: number;
+  niche_detected?: string;
 }
 
 export async function logProposalEvent(
