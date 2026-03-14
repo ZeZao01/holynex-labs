@@ -75,13 +75,21 @@ export interface Proposta {
   proposal_validity: string;
   is_phased: boolean;
   closing_strategy: string;
+  // DocumentSpec fields (Genspark pipeline)
+  document_spec: any | null;
+  pricing_sheet: any | null;
 }
 
-export async function gerarPropostaIA(input: PropostaInput): Promise<PropostaJSON> {
-  // Log AI request event
+export interface GerarPropostaResult {
+  proposta: PropostaJSON;
+  document_spec: any | null;
+  pricing_sheet: any | null;
+}
+
+export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropostaResult> {
   const requestId = crypto.randomUUID();
   await logProposalEvent("proposal_ai_requested", requestId, {
-    prompt_version: "v3.0-structured",
+    prompt_version: "v5.0-genspark-pipeline",
   });
 
   const startTime = Date.now();
@@ -91,22 +99,25 @@ export async function gerarPropostaIA(input: PropostaInput): Promise<PropostaJSO
     if (error) throw new Error(error.message || "Erro ao gerar proposta");
     if (data?.error) throw new Error(data.error);
 
-    // Normalize the AI output
     const normResult = normalizePropostaJSON(data.proposta);
     const meta = data._meta || {};
 
-    // Log AI completion
     await logProposalEvent("proposal_ai_completed", requestId, {
       provider_used: meta.provider_used,
       model_used: meta.model_used,
-      prompt_version: meta.prompt_version || "v3.0-structured",
+      prompt_version: meta.prompt_version || "v5.0-genspark-pipeline",
       schema_valid: normResult.schema_valid,
       output_size: normResult.output_size,
       duration_ms: Date.now() - startTime,
       warnings: normResult.warnings,
+      pipeline_steps: meta.pipeline_steps,
     });
 
-    return normResult.data;
+    return {
+      proposta: normResult.data,
+      document_spec: data.document_spec || null,
+      pricing_sheet: data.pricing_sheet || null,
+    };
   } catch (err) {
     await logProposalEvent("proposal_ai_failed", requestId, {
       render_error: err instanceof Error ? err.message : "Unknown error",
@@ -203,6 +214,8 @@ function parseRow(row: any): Proposta {
     proposal_validity: row.proposal_validity || "30 dias",
     is_phased: row.is_phased || false,
     closing_strategy: row.closing_strategy || "",
+    document_spec: null,
+    pricing_sheet: null,
   };
 }
 

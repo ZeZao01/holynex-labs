@@ -26,6 +26,7 @@ export interface ProposalEventMeta {
   warnings?: string[];
   duration_ms?: number;
   niche_detected?: string;
+  pipeline_steps?: string[];
 }
 
 export async function logProposalEvent(
