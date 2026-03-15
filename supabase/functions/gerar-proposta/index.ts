@@ -23,7 +23,18 @@ interface AIProvider {
 function getProviders(quality: "fast" | "quality" = "fast"): AIProvider[] {
   const providers: AIProvider[] = [];
 
-  // Genspark — prioridade máxima quando disponível
+  // Lovable AI — prioridade máxima (sempre disponível)
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (lovableKey) {
+    providers.push({
+      name: "Lovable AI",
+      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
+      apiKey: lovableKey,
+      model: quality === "quality" ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash",
+    });
+  }
+
+  // Genspark
   const gensparkKey = Deno.env.get("GENSPARK_API_KEY");
   if (gensparkKey) {
     providers.push({
@@ -50,21 +61,11 @@ function getProviders(quality: "fast" | "quality" = "fast"): AIProvider[] {
       name: "OpenRouter",
       url: "https://openrouter.ai/api/v1/chat/completions",
       apiKey: openrouterKey,
-      model: quality === "quality" ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash",
+      model: "google/gemini-2.5-flash",
       headers: {
         "HTTP-Referer": "https://holynexlabs.com.br",
         "X-Title": "HolyNex Labs Proposals",
       },
-    });
-  }
-
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (lovableKey) {
-    providers.push({
-      name: "Lovable AI",
-      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
-      apiKey: lovableKey,
-      model: quality === "quality" ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite",
     });
   }
 
@@ -106,7 +107,7 @@ async function callAI(messages: any[], quality: "fast" | "quality" = "fast", tem
       return content;
     } catch (err) {
       console.error(`[pipeline] ${provider.name} failed:`, err);
-      if (err instanceof Error && (err.message.includes("429") || err.message.includes("402"))) throw err;
+      // Continue to next provider instead of throwing on rate limits
     }
   }
   throw new Error("Todos os provedores falharam.");
