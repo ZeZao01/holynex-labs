@@ -187,7 +187,7 @@ export default function AdminPropostaDetalhe() {
         <Button variant="outline" size="sm" onClick={() => setShowRegenDialog(true)} disabled={regenerating} className="gap-1">
           {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerar
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setShowTemplateSelector(true)} disabled={exportingPdf} className="gap-1">
+        <Button variant="outline" size="sm" onClick={() => handleExportPDF()} disabled={exportingPdf} className="gap-1">
           {exportingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Exportar PDF
         </Button>
         <Button variant="outline" size="sm" onClick={startEditTiers} className="gap-1">
