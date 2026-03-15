@@ -6,6 +6,7 @@
 import { jsPDF } from "jspdf";
 import type { Proposta } from "@/lib/propostas";
 import { logProposalEvent } from "@/lib/proposal-events";
+import { loadPdfLogos, type PdfLogos } from "@/lib/pdf-logos";
 import {
   drawBarChart,
   drawDonutChart,
