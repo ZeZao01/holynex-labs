@@ -23,8 +23,8 @@ const PW = 297; // page width mm
 const PH = 210; // page height mm
 const MX = 14;  // margin x
 const MY = 12;  // margin y
-const CW = PW - MX * 2; // content width
-const CH = PH - MY * 2; // content height
+const CW = PW - MX * 2; // content width (269)
+const CH = PH - MY * 2; // content height (186)
 
 // ── Color palette ──
 const C = {
@@ -96,26 +96,42 @@ function sectionTitle(pdf: jsPDF, title: string, y: number, icon?: string): numb
   pdf.text(`${icon ? icon + "  " : ""}${title}`, MX + 8, y + 9);
   return y + 18;
 }
-function textBlock(pdf: jsPDF, text: string, x: number, y: number, maxW: number, fontSize = 9): number {
+function textBlock(pdf: jsPDF, text: string, x: number, y: number, maxW: number, fontSize = 9, maxY?: number): number {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(fontSize);
   pdf.setTextColor(...C.lightGray);
   const lines = pdf.splitTextToSize(text || "Não informado", maxW);
-  pdf.text(lines, x, y);
-  return y + lines.length * (fontSize * 0.45) + 4;
+  const lineH = fontSize * 0.45;
+  const limit = maxY || PH - 20;
+  // Only render lines that fit within bounds
+  const visibleLines: string[] = [];
+  let testY = y;
+  for (const line of lines) {
+    if (testY > limit) break;
+    visibleLines.push(line);
+    testY += lineH;
+  }
+  pdf.text(visibleLines, x, y);
+  return y + visibleLines.length * lineH + 4;
 }
-function bulletList(pdf: jsPDF, items: string[], x: number, y: number, maxW: number): number {
+function bulletList(pdf: jsPDF, items: string[], x: number, y: number, maxW: number, maxY?: number): number {
   let cy = y;
+  const limit = maxY || PH - 20;
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8.5);
   for (const item of items) {
-    if (cy > PH - 20) break;
+    if (cy > limit) break;
     pdf.setFillColor(...C.primary);
     pdf.circle(x + 1.5, cy - 1, 1, "F");
     pdf.setTextColor(...C.lightGray);
     const lines = pdf.splitTextToSize(item, maxW - 6);
-    pdf.text(lines, x + 5, cy);
-    cy += lines.length * 4 + 2;
+    // Only draw lines that fit
+    for (const line of lines) {
+      if (cy > limit) break;
+      pdf.text(line, x + 5, cy);
+      cy += 4;
+    }
+    cy += 2;
   }
   return cy;
 }
@@ -175,83 +191,102 @@ function pageCover(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos) {
 
   // Main title
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(40);
+  pdf.setFontSize(36);
   pdf.setTextColor(...C.white);
-  pdf.text("Proposta Comercial", MX + 12, MY + 52);
+  pdf.text("Proposta Comercial", MX + 12, MY + 50);
 
   // Badge
   pdf.setFillColor(...C.primary);
-  pdf.roundedRect(MX + 12, MY + 58, 55, 7, 3, 3, "F");
+  pdf.roundedRect(MX + 12, MY + 56, 55, 7, 3, 3, "F");
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(8);
   pdf.setTextColor(...C.white);
-  pdf.text("INVESTIMENTO PREMIUM", MX + 16, MY + 63);
+  pdf.text("INVESTIMENTO PREMIUM", MX + 16, MY + 61);
 
-  // Meta cards — row across bottom-left
+  // ── Left side: Meta cards (2x2 grid instead of 4 in a row) ──
   const metas = [
     { label: "CLIENTE", value: p.nome_cliente },
     { label: "EMPRESA", value: p.empresa_cliente || "—" },
     { label: "TIPO", value: p.tipo_projeto },
     { label: "DATA", value: fmtDate(p.criado_em) },
   ];
+  const metaCardW = 72;
+  const metaCardH = 24;
+  const metaGap = 6;
+  const metaStartY = MY + 72;
+  const metaStartX = MX + 12;
+  
   metas.forEach((m, i) => {
-    const mx = MX + 12 + i * 52;
-    card(pdf, mx, MY + 80, 48, 28, h);
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const mx = metaStartX + col * (metaCardW + metaGap);
+    const my = metaStartY + row * (metaCardH + metaGap);
+    card(pdf, mx, my, metaCardW, metaCardH, h);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(6);
     pdf.setTextColor(...C.midGray);
-    pdf.text(m.label, mx + 4, MY + 87);
+    pdf.text(m.label, mx + 4, my + 7);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
     pdf.setTextColor(...C.white);
-    const val = pdf.splitTextToSize(m.value, 40);
-    pdf.text(val[0] || "", mx + 4, MY + 95);
-    if (val[1]) { pdf.setFontSize(7); pdf.text(val[1], mx + 4, MY + 100); }
+    const val = pdf.splitTextToSize(m.value, metaCardW - 8);
+    pdf.text(val[0] || "", mx + 4, my + 15);
+    if (val[1]) { pdf.setFontSize(7); pdf.text(val[1], mx + 4, my + 20); }
   });
 
-  // Investment cards on the right side
+  // Recommended tier below meta cards
+  const tierBadgeY = metaStartY + 2 * (metaCardH + metaGap) + 4;
+  if (p.recommended_tier) {
+    pdf.setFillColor(...C.primary);
+    h.setOpacity(0.15);
+    pdf.roundedRect(metaStartX, tierBadgeY, 150, 10, 3, 3, "F");
+    h.restoreOpacity();
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.primary);
+    pdf.text(`★ Plano Recomendado: ${p.recommended_tier.toUpperCase()}`, metaStartX + 6, tierBadgeY + 7);
+  }
+
+  // ── Right side: Investment cards (stacked vertically) ──
   const investments = [
     { label: "Mínimo", value: fmt(p.valor_minimo), color: C.accent },
     { label: "Ideal", value: fmt(p.valor_ideal), color: C.secondary },
     { label: "Premium", value: fmt(p.valor_premium), color: C.primary },
   ];
-  const rightX = MX + CW - 75;
+  const rightCardW = 65;
+  const rightCardH = 28;
+  const rightCardGap = 6;
+  const rightX = PW - MX - rightCardW - 12;
+  const rightStartY = MY + 34;
+
   investments.forEach((inv, i) => {
-    const iy = MY + 20 + i * 38;
-    card(pdf, rightX, iy, 62, 32, h);
+    const iy = rightStartY + i * (rightCardH + rightCardGap);
+    card(pdf, rightX, iy, rightCardW, rightCardH, h);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7);
     pdf.setTextColor(...C.midGray);
-    pdf.text(inv.label, rightX + 5, iy + 10);
+    pdf.text(inv.label, rightX + 5, iy + 9);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(16);
+    pdf.setFontSize(14);
     pdf.setTextColor(...inv.color);
-    pdf.text(inv.value, rightX + 5, iy + 23);
+    pdf.text(inv.value, rightX + 5, iy + 21);
   });
 
-  // Recommended tier
-  if (p.recommended_tier) {
-    pdf.setFillColor(...C.primary);
-    h.setOpacity(0.15);
-    pdf.roundedRect(MX + 12, MY + 116, 200, 10, 3, 3, "F");
-    h.restoreOpacity();
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.primary);
-    pdf.text(`★ Plano Recomendado: ${p.recommended_tier.toUpperCase()}`, MX + 18, MY + 123);
+  // Bar chart below investment cards
+  const barChartY = rightStartY + 3 * (rightCardH + rightCardGap) + 4;
+  const barChartH = Math.min(40, PH - MY - barChartY - 14); // don't exceed page
+  if (barChartH > 20) {
+    drawBarChart(
+      pdf, rightX - 30, barChartY, rightCardW + 30, barChartH,
+      investments.map(inv => ({
+        label: inv.label,
+        value: Number(String(inv.value).replace(/[^\d]/g, "")) || 0,
+        color: inv.color,
+      })),
+      h,
+      { white: C.white, midGray: C.midGray, bgCard: C.bgCard, lightGray: C.lightGray }
+    );
   }
-
-  // Bar chart at bottom-right
-  drawBarChart(
-    pdf, rightX - 50, MY + 130, 110, 45,
-    investments.map(inv => ({
-      label: inv.label,
-      value: Number(String(inv.value).replace(/[^\d]/g, "")) || 0,
-      color: inv.color,
-    })),
-    h,
-    { white: C.white, midGray: C.midGray, bgCard: C.bgCard, lightGray: C.lightGray }
-  );
 }
 
 function pageExecutiveSummary(pdf: jsPDF, p: Proposta, h: Helpers) {
@@ -265,32 +300,40 @@ function pageExecutiveSummary(pdf: jsPDF, p: Proposta, h: Helpers) {
   const leftW = CW * 0.55;
   const rightW = CW * 0.40;
   const rightX = MX + leftW + CW * 0.05;
+  const cardBottom = MY + CH - 10;
+  const cardH = cardBottom - y;
 
   // Left: text sections
-  card(pdf, MX, y, leftW, CH - (y - MY) - 10, h);
+  card(pdf, MX, y, leftW, cardH, h);
   let ly = y + 8;
+  const textMaxY = cardBottom - 6; // don't overflow card
+
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(...C.accent);
   pdf.text("Visão Geral", MX + 6, ly);
   ly += 6;
-  ly = textBlock(pdf, pj.resumo_executivo || p.descricao_projeto || "", MX + 6, ly, leftW - 12, 9);
+  ly = textBlock(pdf, pj.resumo_executivo || p.descricao_projeto || "", MX + 6, ly, leftW - 12, 9, textMaxY);
 
-  ly += 4;
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.accent2);
-  pdf.text("Diagnóstico", MX + 6, ly);
-  ly += 6;
-  ly = textBlock(pdf, pj.diagnostico || "", MX + 6, ly, leftW - 12, 9);
+  if (ly < textMaxY - 20) {
+    ly += 2;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...C.accent2);
+    pdf.text("Diagnóstico", MX + 6, ly);
+    ly += 6;
+    ly = textBlock(pdf, pj.diagnostico || "", MX + 6, ly, leftW - 12, 9, textMaxY);
+  }
 
-  ly += 4;
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.secondary);
-  pdf.text("Solução Proposta", MX + 6, ly);
-  ly += 6;
-  textBlock(pdf, pj.solucao_proposta || "", MX + 6, ly, leftW - 12, 9);
+  if (ly < textMaxY - 20) {
+    ly += 2;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...C.secondary);
+    pdf.text("Solução Proposta", MX + 6, ly);
+    ly += 6;
+    textBlock(pdf, pj.solucao_proposta || "", MX + 6, ly, leftW - 12, 9, textMaxY);
+  }
 
   // Right: KPIs
   const ni = pj.niche_intelligence as Record<string, any> | undefined;
@@ -303,12 +346,16 @@ function pageExecutiveSummary(pdf: jsPDF, p: Proposta, h: Helpers) {
     pdf.text("KPIs Projetados", rightX, ry + 5);
     ry += 12;
     const kpiColors: RGB[] = [C.primary, C.secondary, C.accent, C.accent2];
-    kpis.slice(0, 6).forEach((kpi: any, i: number) => {
+    const kpiCardH = 30;
+    const kpiGap = 4;
+    const maxKpis = Math.min(kpis.length, Math.floor((cardBottom - ry) / (kpiCardH + kpiGap)) * 2);
+    kpis.slice(0, maxKpis).forEach((kpi: any, i: number) => {
       const col = i % 2;
       const row = Math.floor(i / 2);
       const kx = rightX + col * (rightW / 2 + 2);
-      const ky = ry + row * 38;
-      drawKpiCard(pdf, kx, ky, rightW / 2 - 2, 34, "◆", kpi.metric || "", kpi.label || "", h,
+      const ky = ry + row * (kpiCardH + kpiGap);
+      if (ky + kpiCardH > cardBottom) return;
+      drawKpiCard(pdf, kx, ky, rightW / 2 - 2, kpiCardH, "◆", kpi.metric || "", kpi.label || "", h,
         { primary: kpiColors[i % kpiColors.length], bgCard: C.bgCard, white: C.white, midGray: C.midGray },
         kpiColors[i % kpiColors.length]);
     });
@@ -326,57 +373,62 @@ function pageScopeFeatures(pdf: jsPDF, p: Proposta, h: Helpers) {
   y = sectionTitle(pdf, "Escopo & Funcionalidades", y);
 
   // Three columns
-  const colW = (CW - 12) / 3;
+  const colGap = 6;
+  const colW = (CW - colGap * 2) / 3;
+  const cardH = MY + CH - y - 10;
+  const cardBottom = y + cardH;
 
   // Col 1: Escopo
-  card(pdf, MX, y, colW, CH - (y - MY) - 10, h);
+  card(pdf, MX, y, colW, cardH, h);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(...C.primary);
   pdf.text("Escopo do Projeto", MX + 5, y + 8);
-  bulletList(pdf, escopo, MX + 5, y + 16, colW - 10);
+  bulletList(pdf, escopo, MX + 5, y + 16, colW - 10, cardBottom - 6);
 
   // Col 2: Funcionalidades
-  const col2X = MX + colW + 6;
-  card(pdf, col2X, y, colW, CH - (y - MY) - 10, h);
+  const col2X = MX + colW + colGap;
+  card(pdf, col2X, y, colW, cardH, h);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(...C.secondary);
   pdf.text("Funcionalidades", col2X + 5, y + 8);
-  bulletList(pdf, funcionalidades, col2X + 5, y + 16, colW - 10);
+  bulletList(pdf, funcionalidades, col2X + 5, y + 16, colW - 10, cardBottom - 6);
 
   // Col 3: Recomendadas + Donut chart
-  const col3X = MX + (colW + 6) * 2;
-  card(pdf, col3X, y, colW, CH - (y - MY) - 10, h);
+  const col3X = MX + (colW + colGap) * 2;
+  card(pdf, col3X, y, colW, cardH, h);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(...C.accent);
   pdf.text("★ Premium", col3X + 5, y + 8);
 
+  let recEndY = y + 16;
   if (recomendadas.length > 0) {
-    let ry = y + 16;
+    const maxRecY = y + cardH * 0.55; // reserve bottom half for donut
     recomendadas.forEach((item) => {
-      if (ry > y + 80) return;
+      if (recEndY > maxRecY) return;
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
       pdf.setTextColor(...C.accent);
-      pdf.text("★", col3X + 5, ry);
+      pdf.text("★", col3X + 5, recEndY);
       pdf.setTextColor(...C.lightGray);
-      pdf.text(item, col3X + 11, ry);
-      ry += 6;
+      const lines = pdf.splitTextToSize(item, colW - 16);
+      pdf.text(lines[0] || "", col3X + 11, recEndY);
+      recEndY += 6;
     });
   }
 
-  // Donut chart in col3 bottom
-  const donutY = y + 100;
-  if (donutY < PH - 50) {
+  // Donut chart in col3 bottom — positioned after recomendadas with safe spacing
+  const donutCenterY = Math.max(recEndY + 22, y + cardH * 0.65);
+  if (donutCenterY + 30 < cardBottom) {
     const segments = [
       { label: "Core", pct: 45, color: C.primary },
       { label: "Gestão", pct: 30, color: C.secondary },
       { label: "Design", pct: 15, color: C.accent },
       { label: "QA", pct: 10, color: C.accent2 },
     ];
-    drawDonutChart(pdf, col3X + colW / 2, donutY + 15, 14, segments, h, { white: C.white, midGray: C.midGray, bg: C.bg });
+    drawDonutChart(pdf, col3X + colW / 2, donutCenterY, 14, segments, h, { white: C.white, midGray: C.midGray, bg: C.bg });
   }
 }
 
@@ -389,34 +441,38 @@ function pageStrategicAnalysis(pdf: jsPDF, p: Proposta, h: Helpers) {
   let y = MY;
   y = sectionTitle(pdf, "Análise Estratégica", y);
 
+  const cardBottom = MY + CH - 10;
+
   // Left: text
   const leftW = CW * 0.45;
-  card(pdf, MX, y, leftW, CH - (y - MY) - 10, h);
+  card(pdf, MX, y, leftW, cardBottom - y, h);
   let ly = y + 8;
-  ly = textBlock(pdf, pj.analise_estrategica || "", MX + 6, ly, leftW - 12, 9);
+  ly = textBlock(pdf, pj.analise_estrategica || "", MX + 6, ly, leftW - 12, 9, cardBottom - 50);
 
   // Investment justification
-  if (ni?.investment_justification) {
-    ly += 6;
+  if (ni?.investment_justification && ly < cardBottom - 30) {
+    ly += 4;
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
     pdf.setTextColor(...C.accent);
     pdf.text("Justificativa de Investimento", MX + 6, ly);
     ly += 6;
+    // Dynamic height based on remaining space
+    const justBoxH = Math.min(cardBottom - ly - 6, 50);
     pdf.setFillColor(...C.primary);
     h.setOpacity(0.08);
-    pdf.roundedRect(MX + 4, ly - 3, leftW - 8, 40, 2, 2, "F");
+    pdf.roundedRect(MX + 4, ly - 3, leftW - 8, justBoxH, 2, 2, "F");
     h.restoreOpacity();
-    textBlock(pdf, ni.investment_justification, MX + 8, ly, leftW - 16, 8.5);
+    textBlock(pdf, ni.investment_justification, MX + 8, ly, leftW - 16, 8.5, ly + justBoxH - 4);
   }
 
-  // Expert ref
+  // Expert ref at bottom of card
   if (ni?.expert_reference) {
     pdf.setFont("helvetica", "italic");
     pdf.setFontSize(6.5);
     pdf.setTextColor(...C.midGray);
     const rl = pdf.splitTextToSize(`Fontes: ${ni.expert_reference}`, leftW - 12);
-    pdf.text(rl, MX + 6, PH - 28);
+    pdf.text(rl.slice(0, 2), MX + 6, cardBottom - 6);
   }
 
   // Right: benefit cards
@@ -428,12 +484,14 @@ function pageStrategicAnalysis(pdf: jsPDF, p: Proposta, h: Helpers) {
     pdf.setTextColor(...C.white);
     pdf.text("Benefícios Estratégicos", rightX, y + 5);
     const colors: RGB[] = [C.primary, C.secondary, C.accent, C.accent2];
+    const benefitCardH = 28;
+    const benefitGap = 4;
     benefits.forEach((b: any, i: number) => {
-      const by = y + 12 + i * 32;
-      if (by > PH - 30) return;
-      card(pdf, rightX, by, rightW, 28, h);
+      const by = y + 12 + i * (benefitCardH + benefitGap);
+      if (by + benefitCardH > cardBottom) return;
+      card(pdf, rightX, by, rightW, benefitCardH, h);
       pdf.setFillColor(...colors[i % colors.length]);
-      pdf.roundedRect(rightX, by, 3, 28, 1.5, 1.5, "F");
+      pdf.roundedRect(rightX, by, 3, benefitCardH, 1.5, 1.5, "F");
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(9);
       pdf.setTextColor(...colors[i % colors.length]);
@@ -477,36 +535,38 @@ function pageTimeline(pdf: jsPDF, p: Proposta, h: Helpers) {
       primary: C.primary, secondary: C.secondary, accent: C.accent, accent2: C.accent2,
       white: C.white, midGray: C.midGray, lightGray: C.lightGray, bg: C.bg,
     });
-    y += 70;
+    y += 65;
   }
 
   // Bottom row: effort + maintenance
+  const bottomH = PH - y - 16; // available space
+  if (bottomH < 20) return; // not enough space
   const halfW = (CW - 8) / 2;
 
   // Left: effort
-  card(pdf, MX, y, halfW, PH - y - 18, h);
+  card(pdf, MX, y, halfW, bottomH, h);
   let ly = y + 8;
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(...C.accent2);
   pdf.text("Estimativa de Esforço", MX + 6, ly);
   ly += 6;
-  textBlock(pdf, pj.estimativa_esforco || "", MX + 6, ly, halfW - 12, 9);
+  textBlock(pdf, pj.estimativa_esforco || "", MX + 6, ly, halfW - 12, 9, y + bottomH - 6);
 
   // Right: maintenance
   const rx = MX + halfW + 8;
-  card(pdf, rx, y, halfW, PH - y - 18, h);
+  card(pdf, rx, y, halfW, bottomH, h);
   ly = y + 8;
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(...C.secondary);
   pdf.text("Manutenção & Suporte", rx + 6, ly);
   ly += 6;
-  ly = textBlock(pdf, pj.manutencao || "", rx + 6, ly, halfW - 12, 9);
+  ly = textBlock(pdf, pj.manutencao || "", rx + 6, ly, halfW - 12, 9, y + bottomH - 20);
 
   const maintFeatures = ni?.maintenance_features as string[] | undefined;
   if (maintFeatures && maintFeatures.length > 0) {
-    bulletList(pdf, maintFeatures, rx + 6, ly, halfW - 12);
+    bulletList(pdf, maintFeatures, rx + 6, ly, halfW - 12, y + bottomH - 6);
   }
 }
 
@@ -522,9 +582,11 @@ function pageRisks(pdf: jsPDF, p: Proposta, h: Helpers) {
   y = sectionTitle(pdf, "Riscos & Próximos Passos", y);
 
   const halfW = (CW - 8) / 2;
+  const cardBottom = MY + CH - 10;
+  const cardH = cardBottom - y;
 
   // Left: risks
-  card(pdf, MX, y, halfW, CH - (y - MY) - 10, h);
+  card(pdf, MX, y, halfW, cardH, h);
   let ly = y + 8;
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
@@ -534,7 +596,7 @@ function pageRisks(pdf: jsPDF, p: Proposta, h: Helpers) {
 
   if (riskMatrix && riskMatrix.length > 0) {
     riskMatrix.forEach((risk: any, i: number) => {
-      if (ly > PH - 30) return;
+      if (ly > cardBottom - 12) return;
       const sevColor: RGB = risk.severity === "alto" ? C.red : risk.severity === "medio" ? C.accent : C.secondary;
       pdf.setFillColor(...sevColor);
       pdf.circle(MX + 10, ly, 2.5, "F");
@@ -553,12 +615,12 @@ function pageRisks(pdf: jsPDF, p: Proposta, h: Helpers) {
       ly += 8;
     });
   } else if (riscos.length > 0) {
-    bulletList(pdf, riscos, MX + 6, ly, halfW - 12);
+    bulletList(pdf, riscos, MX + 6, ly, halfW - 12, cardBottom - 6);
   }
 
   // Right: next steps
   const rx = MX + halfW + 8;
-  card(pdf, rx, y, halfW, CH - (y - MY) - 10, h);
+  card(pdf, rx, y, halfW, cardH, h);
   let ry = y + 8;
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
@@ -566,9 +628,11 @@ function pageRisks(pdf: jsPDF, p: Proposta, h: Helpers) {
   pdf.text("Próximos Passos", rx + 6, ry);
   ry += 10;
 
+  const stepCardH = 14;
+  const stepGap = 4;
   proximos.forEach((step, i) => {
-    if (ry > PH - 25) return;
-    card(pdf, rx + 4, ry, halfW - 8, 14, h);
+    if (ry + stepCardH > cardBottom - 4) return;
+    card(pdf, rx + 4, ry, halfW - 8, stepCardH, h);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(12);
     pdf.setTextColor(...C.primary);
@@ -578,7 +642,7 @@ function pageRisks(pdf: jsPDF, p: Proposta, h: Helpers) {
     pdf.setTextColor(...C.lightGray);
     const sl = pdf.splitTextToSize(step, halfW - 40);
     pdf.text(sl[0] || "", rx + 24, ry + 9);
-    ry += 18;
+    ry += stepCardH + stepGap;
   });
 }
 
@@ -629,45 +693,47 @@ function pageClosing(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos, docCo
   // Large centered card
   const cardW = 200;
   const cardH = 100;
+  const cardY = centerY - cardH / 2 + 8; // shift down a bit to avoid logo overlap
   pdf.setFillColor(...C.primary);
   h.setOpacity(0.07);
-  pdf.roundedRect(centerX - cardW / 2, centerY - cardH / 2, cardW, cardH, 6, 6, "F");
+  pdf.roundedRect(centerX - cardW / 2, cardY, cardW, cardH, 6, 6, "F");
   h.restoreOpacity();
   pdf.setDrawColor(...C.primary);
   h.setOpacity(0.4);
   pdf.setLineWidth(0.5);
-  pdf.roundedRect(centerX - cardW / 2, centerY - cardH / 2, cardW, cardH, 6, 6, "S");
+  pdf.roundedRect(centerX - cardW / 2, cardY, cardW, cardH, 6, 6, "S");
   h.restoreOpacity();
 
+  const textCY = cardY + cardH / 2;
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(22);
   pdf.setTextColor(...C.white);
-  pdf.text("Pronto para transformar", centerX, centerY - 20, { align: "center" });
-  pdf.text("sua ideia em realidade?", centerX, centerY - 8, { align: "center" });
+  pdf.text("Pronto para transformar", centerX, textCY - 20, { align: "center" });
+  pdf.text("sua ideia em realidade?", centerX, textCY - 8, { align: "center" });
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
   pdf.setTextColor(...C.lightGray);
-  pdf.text("Entre em contato para iniciar o desenvolvimento.", centerX, centerY + 8, { align: "center" });
+  pdf.text("Entre em contato para iniciar o desenvolvimento.", centerX, textCY + 8, { align: "center" });
 
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(9);
   pdf.setTextColor(...C.accent);
-  pdf.text(`Validade: ${p.proposal_validity || "30 dias"}`, centerX, centerY + 20, { align: "center" });
+  pdf.text(`Validade: ${p.proposal_validity || "30 dias"}`, centerX, textCY + 20, { align: "center" });
 
   if (p.closing_strategy) {
     pdf.setFont("helvetica", "italic");
     pdf.setFontSize(8);
     pdf.setTextColor(...C.midGray);
     const cs = pdf.splitTextToSize(p.closing_strategy, 170);
-    pdf.text(cs.slice(0, 2), centerX, centerY + 30, { align: "center" });
+    pdf.text(cs.slice(0, 2), centerX, textCY + 30, { align: "center" });
   }
 
   if (docCode) {
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7);
     pdf.setTextColor(...C.midGray);
-    pdf.text(`Código do documento: ${docCode}`, centerX, centerY + 42, { align: "center" });
+    pdf.text(`Código do documento: ${docCode}`, centerX, textCY + 42, { align: "center" });
   }
 
   // Brand
@@ -694,7 +760,7 @@ export async function generatePropostaPdf(
 
   await logProposalEvent("proposal_pdf_render_started", proposta.id, {
     render_status: "started",
-    template_id: "jspdf-landscape-v2",
+    template_id: "jspdf-landscape-v3",
   });
 
   try {
@@ -751,17 +817,17 @@ export async function generatePropostaPdf(
     pageRisks(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 8: Closing
+    // Page 8 (or 7): Closing
     pdf.addPage();
     pageNum++;
     pageClosing(pdf, proposta, helpers, logos, documentCode);
-    drawFooter(pdf, pageNum, pageNum, documentCode);
+    drawFooter(pdf, pageNum, totalPages, documentCode);
 
     const blob = pdf.output("blob");
 
     await logProposalEvent("proposal_pdf_generated", proposta.id, {
       render_status: "success",
-      template_id: "jspdf-landscape-v2",
+      template_id: "jspdf-landscape-v3",
       duration_ms: Date.now() - renderStart,
       pages: pageNum,
     });
@@ -770,7 +836,7 @@ export async function generatePropostaPdf(
   } catch (err) {
     await logProposalEvent("proposal_pdf_render_failed", proposta.id, {
       render_status: "failed",
-      template_id: "jspdf-landscape-v2",
+      template_id: "jspdf-landscape-v3",
       duration_ms: Date.now() - renderStart,
       render_error: err instanceof Error ? err.message : "Erro desconhecido",
     });
