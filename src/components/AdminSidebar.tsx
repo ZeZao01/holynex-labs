@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Settings,
   LogOut,
-  Palette,
+  
   FilePlus,
   ClipboardList,
   Sparkles,
