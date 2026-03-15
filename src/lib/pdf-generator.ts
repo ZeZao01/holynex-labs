@@ -701,13 +701,16 @@ export async function generatePropostaPdf(
     const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const helpers = makeOpacityHelpers(pdf);
 
+    // Load logos (agency + client from link_referencia)
+    const logos = await loadPdfLogos(proposta.link_referencia || undefined);
+
     const hasTiers = proposta.proposal_tiers && proposta.proposal_tiers.length > 0;
     const totalPages = hasTiers ? 8 : 7;
     let pageNum = 0;
 
     // Page 1: Cover
     pageNum++;
-    pageCover(pdf, proposta, helpers);
+    pageCover(pdf, proposta, helpers, logos);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
     // Page 2: Executive Summary
@@ -751,7 +754,7 @@ export async function generatePropostaPdf(
     // Page 8: Closing
     pdf.addPage();
     pageNum++;
-    pageClosing(pdf, proposta, helpers, documentCode);
+    pageClosing(pdf, proposta, helpers, logos, documentCode);
     drawFooter(pdf, pageNum, pageNum, documentCode);
 
     const blob = pdf.output("blob");
