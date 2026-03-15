@@ -78,6 +78,9 @@ export interface Proposta {
   // DocumentSpec fields (Genspark pipeline)
   document_spec: any | null;
   pricing_sheet: any | null;
+  // Public sharing
+  is_public: boolean;
+  public_token: string | null;
 }
 
 export interface GerarPropostaResult {
