@@ -34,7 +34,7 @@ export default function AdminPropostaDetalhe() {
   const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
   const [showRegenDialog, setShowRegenDialog] = useState(false);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  
   const [orientacoes, setOrientacoes] = useState("");
   const [editingTiers, setEditingTiers] = useState(false);
   const [editTiers, setEditTiers] = useState<ProposalTier[]>([]);
