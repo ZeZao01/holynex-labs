@@ -135,7 +135,7 @@ function card(pdf: jsPDF, x: number, y: number, w: number, h: number, helpers: H
 // PAGE BUILDERS — each topic = 1 landscape page
 // ══════════════════════════════════════════════════════════════
 
-function pageCover(pdf: jsPDF, p: Proposta, h: Helpers) {
+function pageCover(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos) {
   drawPageBg(pdf);
 
   // Hero box
@@ -149,15 +149,29 @@ function pageCover(pdf: jsPDF, p: Proposta, h: Helpers) {
   pdf.roundedRect(MX, MY, CW, CH, 6, 6, "S");
   h.restoreOpacity();
 
-  // Brand
+  // Brand with logo
+  let brandTextX = MX + 12;
+  if (logos.agencyLogo) {
+    try {
+      pdf.addImage(logos.agencyLogo, "PNG", MX + 12, MY + 10, 14, 14);
+      brandTextX = MX + 30;
+    } catch { /* fallback to text only */ }
+  }
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(11);
   pdf.setTextColor(...C.primary);
-  pdf.text("HOLYNEX LABS", MX + 12, MY + 18);
+  pdf.text("HOLYNEX LABS", brandTextX, MY + 18);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
   pdf.setTextColor(...C.midGray);
-  pdf.text("Tecnologia & Inovação Digital", MX + 12, MY + 24);
+  pdf.text("Tecnologia & Inovação Digital", brandTextX, MY + 24);
+
+  // Client logo on top-right
+  if (logos.clientLogo) {
+    try {
+      pdf.addImage(logos.clientLogo, "PNG", PW - MX - 26, MY + 8, 18, 18);
+    } catch { /* skip */ }
+  }
 
   // Main title
   pdf.setFont("helvetica", "bold");
