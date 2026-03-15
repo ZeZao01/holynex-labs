@@ -190,6 +190,10 @@ export default function Contato() {
                 <Input value={form.objetivo} onChange={(e) => set("objetivo", e.target.value)} placeholder="Ex: Automatizar vendas, gerenciar clientes..." className="bg-muted/50 border-border/50" />
               </div>
               <div>
+                <label className="text-sm font-medium mb-1.5 block">Maior dor / problema atual</label>
+                <Textarea value={form.dor_principal} onChange={(e) => set("dor_principal", e.target.value)} placeholder="Qual problema mais urgente precisa resolver? O que mais atrapalha sua operação hoje?" rows={3} className="bg-muted/50 border-border/50" />
+              </div>
+              <div>
                 <label className="text-sm font-medium mb-2 block">Estágio da operação</label>
                 <SelectChips options={ESTAGIOS_OPERACAO} value={form.estagio_operacao} onChange={(v) => set("estagio_operacao", v)} />
               </div>
