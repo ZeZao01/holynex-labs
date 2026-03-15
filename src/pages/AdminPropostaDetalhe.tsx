@@ -92,15 +92,20 @@ export default function AdminPropostaDetalhe() {
     if (!proposta || !id) return;
     setExportingPdf(true);
     try {
-      const pdfBlob = await generatePropostaPdf(proposta);
-      const result = await uploadPdf(id, proposta.nome_cliente, pdfBlob, proposta);
+      const propostaAtual = await getProposta(id);
+      if (!propostaAtual) throw new Error("Proposta não encontrada para exportação.");
+
+      const pdfBlob = await generatePropostaPdf(propostaAtual);
+      const result = await uploadPdf(id, propostaAtual.nome_cliente, pdfBlob, propostaAtual);
       setPdfRefreshKey(k => k + 1);
+
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Proposta_HolyNex_${proposta.nome_cliente.replace(/\s+/g, "_")}.pdf`;
+      a.download = `Proposta_HolyNex_${propostaAtual.nome_cliente.replace(/\s+/g, "_")}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+
       toast.success(`PDF v${result.versao} gerado! Código: ${result.document_code}`);
     } catch (err: any) {
       console.error("PDF export error:", err);
