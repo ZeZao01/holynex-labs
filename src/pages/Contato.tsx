@@ -108,7 +108,7 @@ export default function Contato() {
       toast.success(t("contact.success"));
       setForm({
         nome: "", email: "", empresa: "", descricao: "",
-        tipo_projeto: "", nicho: "", objetivo: "",
+        tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
         faixa_investimento: "", prazo_desejado: "", urgencia: "sem_urgencia",
         numero_usuarios: "", precisa_login: false, precisa_admin: false,
         precisa_area_cliente: false, precisa_integracoes: false,
