@@ -94,6 +94,7 @@ function AppRoutes() {
         <Route path="/modelos/:slug" element={<ModeloDetalhe />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/contato" element={<Contato />} />
+        <Route path="/proposta/:token" element={<PropostaPublica />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
