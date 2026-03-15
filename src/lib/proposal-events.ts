@@ -27,6 +27,7 @@ export interface ProposalEventMeta {
   duration_ms?: number;
   niche_detected?: string;
   pipeline_steps?: string[];
+  pages?: number;
 }
 
 export async function logProposalEvent(
