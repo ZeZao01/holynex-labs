@@ -194,6 +194,48 @@ export default function AdminPropostaDetalhe() {
         <Button variant="outline" size="sm" onClick={startEditTiers} className="gap-1">
           <Edit3 className="h-3.5 w-3.5" /> Editar Faixas
         </Button>
+        <Button
+          variant={(proposta as any).is_public ? "default" : "outline"}
+          size="sm"
+          className="gap-1"
+          disabled={sharingLoading}
+          onClick={async () => {
+            setSharingLoading(true);
+            try {
+              const isCurrentlyPublic = (proposta as any).is_public;
+              const token = await togglePropostaPublic(proposta.id, !isCurrentlyPublic);
+              if (token) {
+                const url = `${window.location.origin}/proposta/${token}`;
+                await navigator.clipboard.writeText(url);
+                toast.success("Link copiado! A proposta está pública.");
+              } else {
+                toast.success("Proposta removida do acesso público.");
+              }
+              loadProposta();
+            } catch (err: any) {
+              toast.error(err.message || "Erro ao compartilhar");
+            } finally { setSharingLoading(false); }
+          }}
+        >
+          {sharingLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+          {(proposta as any).is_public ? "Pública" : "Compartilhar"}
+        </Button>
+        {(proposta as any).is_public && (proposta as any).public_token && (
+          <Button variant="ghost" size="sm" className="gap-1" onClick={() => {
+            const url = `${window.location.origin}/proposta/${(proposta as any).public_token}`;
+            navigator.clipboard.writeText(url);
+            toast.success("Link copiado!");
+          }}>
+            <Copy className="h-3.5 w-3.5" /> Copiar Link
+          </Button>
+        )}
+        {(proposta as any).is_public && (proposta as any).public_token && (
+          <Button variant="ghost" size="sm" className="gap-1" asChild>
+            <a href={`/proposta/${(proposta as any).public_token}`} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3.5 w-3.5" /> Visualizar
+            </a>
+          </Button>
+        )}
       </div>
 
       {/* Financial Summary */}
