@@ -3,7 +3,7 @@
  * Renders bar charts, donut charts, comparison tables, and progress indicators.
  */
 import { jsPDF } from "jspdf";
-import type { RGB } from "@/lib/pdf-generator";
+export type RGB = [number, number, number];
 
 type OpacityHelpers = {
   setOpacity: (o: number) => void;

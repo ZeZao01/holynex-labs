@@ -14,7 +14,7 @@ import {
   drawTimeline,
 } from "@/lib/pdf-charts";
 
-export type RGB = [number, number, number];
+import type { RGB } from "@/lib/pdf-charts";
 
 // ── Color palette ──
 const C = {
