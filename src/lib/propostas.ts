@@ -223,6 +223,7 @@ function parseRow(row: any): Proposta {
     pricing_sheet: null,
     is_public: row.is_public || false,
     public_token: row.public_token || null,
+    link_referencia: row.link_referencia || "",
   };
 }
 
