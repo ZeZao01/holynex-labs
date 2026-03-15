@@ -43,6 +43,7 @@ export default function AdminPropostaDetalhe() {
   const [editValidity, setEditValidity] = useState("30 dias");
   const [editPhased, setEditPhased] = useState(false);
   const [savingTiers, setSavingTiers] = useState(false);
+  const [sharingLoading, setSharingLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
