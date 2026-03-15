@@ -24,6 +24,7 @@ interface FormData {
   tipo_projeto: string;
   nicho: string;
   objetivo: string;
+  dor_principal: string;
   faixa_investimento: string;
   prazo_desejado: string;
   urgencia: string;
