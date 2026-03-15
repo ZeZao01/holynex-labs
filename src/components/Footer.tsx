@@ -57,7 +57,11 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-border/50 mt-8 sm:mt-10 pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} HolyNex Labs. {t("footer.rights")}
+          © {new Date().getFullYear()}{" "}
+          <Link to="/admin/login" className="text-muted-foreground hover:text-muted-foreground no-underline cursor-default">
+            HolyNex Labs
+          </Link>
+          . {t("footer.rights")}
         </div>
       </div>
     </footer>
