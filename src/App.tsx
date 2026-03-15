@@ -26,7 +26,7 @@ import AdminLeadDetalhe from "./pages/AdminLeadDetalhe";
 import AdminPropostas from "./pages/AdminPropostas";
 import AdminNovaProposta from "./pages/AdminNovaProposta";
 import AdminPropostaDetalhe from "./pages/AdminPropostaDetalhe";
-import AdminTemplates from "./pages/AdminTemplates";
+
 import AdminProjetos from "./pages/AdminProjetos";
 import AdminProjetoDetalhe from "./pages/AdminProjetoDetalhe";
 import AdminSistemas from "./pages/AdminSistemas";
