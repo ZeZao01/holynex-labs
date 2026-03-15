@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropostaTiers, gerarPropostaIA, type Proposta, type PropostaInput } from "@/lib/propostas";
+import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropostaTiers, gerarPropostaIA, togglePropostaPublic, type Proposta, type PropostaInput } from "@/lib/propostas";
 import { createDefaultTiers, createDefaultAddons, PROPOSAL_STATUS_MAP, type ProposalTier, type ProposalAddon, type CommercialNotes } from "@/lib/proposal-tiers";
 import { uploadPdf } from "@/lib/pdf-storage";
 import { generatePropostaPdf } from "@/lib/pdf-generator";
@@ -12,7 +12,7 @@ import TierCard from "@/components/admin/TierCard";
 import ScopeComparison from "@/components/admin/ScopeComparison";
 import AddonSelector from "@/components/admin/AddonSelector";
 import TierEditor from "@/components/admin/TierEditor";
-import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X } from "lucide-react";
+import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X, Link2, ExternalLink, Copy } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,7 @@ export default function AdminPropostaDetalhe() {
   const [editValidity, setEditValidity] = useState("30 dias");
   const [editPhased, setEditPhased] = useState(false);
   const [savingTiers, setSavingTiers] = useState(false);
+  const [sharingLoading, setSharingLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
@@ -193,6 +194,48 @@ export default function AdminPropostaDetalhe() {
         <Button variant="outline" size="sm" onClick={startEditTiers} className="gap-1">
           <Edit3 className="h-3.5 w-3.5" /> Editar Faixas
         </Button>
+        <Button
+          variant={(proposta as any).is_public ? "default" : "outline"}
+          size="sm"
+          className="gap-1"
+          disabled={sharingLoading}
+          onClick={async () => {
+            setSharingLoading(true);
+            try {
+              const isCurrentlyPublic = (proposta as any).is_public;
+              const token = await togglePropostaPublic(proposta.id, !isCurrentlyPublic);
+              if (token) {
+                const url = `${window.location.origin}/proposta/${token}`;
+                await navigator.clipboard.writeText(url);
+                toast.success("Link copiado! A proposta está pública.");
+              } else {
+                toast.success("Proposta removida do acesso público.");
+              }
+              loadProposta();
+            } catch (err: any) {
+              toast.error(err.message || "Erro ao compartilhar");
+            } finally { setSharingLoading(false); }
+          }}
+        >
+          {sharingLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+          {(proposta as any).is_public ? "Pública" : "Compartilhar"}
+        </Button>
+        {(proposta as any).is_public && (proposta as any).public_token && (
+          <Button variant="ghost" size="sm" className="gap-1" onClick={() => {
+            const url = `${window.location.origin}/proposta/${(proposta as any).public_token}`;
+            navigator.clipboard.writeText(url);
+            toast.success("Link copiado!");
+          }}>
+            <Copy className="h-3.5 w-3.5" /> Copiar Link
+          </Button>
+        )}
+        {(proposta as any).is_public && (proposta as any).public_token && (
+          <Button variant="ghost" size="sm" className="gap-1" asChild>
+            <a href={`/proposta/${(proposta as any).public_token}`} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3.5 w-3.5" /> Visualizar
+            </a>
+          </Button>
+        )}
       </div>
 
       {/* Financial Summary */}

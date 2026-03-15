@@ -235,6 +235,7 @@ export async function salvarOrcamento(data: {
   precisa_app_mobile?: boolean;
   aceita_mvp?: boolean;
   estagio_operacao?: string;
+  dor_principal?: string;
   origem_lead?: string;
 }) {
   const prioridade = classificarPrioridade(data.descricao);
@@ -264,6 +265,7 @@ export async function salvarOrcamento(data: {
     precisa_app_mobile: data.precisa_app_mobile || false,
     aceita_mvp: data.aceita_mvp !== false,
     estagio_operacao: data.estagio_operacao || "",
+    dor_principal: data.dor_principal || "",
     origem_lead: data.origem_lead || "site",
     status_comercial: "novo",
     score_qualificacao: qual.score,

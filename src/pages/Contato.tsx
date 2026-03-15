@@ -24,6 +24,7 @@ interface FormData {
   tipo_projeto: string;
   nicho: string;
   objetivo: string;
+  dor_principal: string;
   faixa_investimento: string;
   prazo_desejado: string;
   urgencia: string;
@@ -83,7 +84,7 @@ export default function Contato() {
   const { t } = useLanguage();
   const [form, setForm] = useState<FormData>({
     nome: "", email: "", empresa: "", descricao: "",
-    tipo_projeto: "", nicho: "", objetivo: "",
+    tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
     faixa_investimento: "", prazo_desejado: "", urgencia: "sem_urgencia",
     numero_usuarios: "", precisa_login: false, precisa_admin: false,
     precisa_area_cliente: false, precisa_integracoes: false,
@@ -107,7 +108,7 @@ export default function Contato() {
       toast.success(t("contact.success"));
       setForm({
         nome: "", email: "", empresa: "", descricao: "",
-        tipo_projeto: "", nicho: "", objetivo: "",
+        tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
         faixa_investimento: "", prazo_desejado: "", urgencia: "sem_urgencia",
         numero_usuarios: "", precisa_login: false, precisa_admin: false,
         precisa_area_cliente: false, precisa_integracoes: false,
@@ -189,6 +190,10 @@ export default function Contato() {
                 <Input value={form.objetivo} onChange={(e) => set("objetivo", e.target.value)} placeholder="Ex: Automatizar vendas, gerenciar clientes..." className="bg-muted/50 border-border/50" />
               </div>
               <div>
+                <label className="text-sm font-medium mb-1.5 block">Maior dor / problema atual</label>
+                <Textarea value={form.dor_principal} onChange={(e) => set("dor_principal", e.target.value)} placeholder="Qual problema mais urgente precisa resolver? O que mais atrapalha sua operação hoje?" rows={3} className="bg-muted/50 border-border/50" />
+              </div>
+              <div>
                 <label className="text-sm font-medium mb-2 block">Estágio da operação</label>
                 <SelectChips options={ESTAGIOS_OPERACAO} value={form.estagio_operacao} onChange={(v) => set("estagio_operacao", v)} />
               </div>
@@ -241,6 +246,7 @@ export default function Contato() {
                 {form.tipo_projeto && <Row label="Tipo" value={form.tipo_projeto} />}
                 {form.nicho && <Row label="Nicho" value={form.nicho} />}
                 {form.objetivo && <Row label="Objetivo" value={form.objetivo} />}
+                {form.dor_principal && <Row label="Dor principal" value={form.dor_principal} />}
                 {form.faixa_investimento && <Row label="Investimento" value={form.faixa_investimento} />}
                 {form.prazo_desejado && <Row label="Prazo" value={form.prazo_desejado} />}
                 {form.numero_usuarios && <Row label="Usuários" value={form.numero_usuarios} />}

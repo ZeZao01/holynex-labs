@@ -1690,6 +1690,7 @@ export type Database = {
           id: string
           integracoes: string[] | null
           is_phased: boolean | null
+          is_public: boolean | null
           link_referencia: string | null
           nivel_urgencia: string | null
           nome_cliente: string
@@ -1705,6 +1706,7 @@ export type Database = {
           proposal_validity: string | null
           proposta_json: Json | null
           proposta_texto: string | null
+          public_token: string | null
           recommended_tier: string | null
           segmento: string | null
           status: string
@@ -1727,6 +1729,7 @@ export type Database = {
           id?: string
           integracoes?: string[] | null
           is_phased?: boolean | null
+          is_public?: boolean | null
           link_referencia?: string | null
           nivel_urgencia?: string | null
           nome_cliente: string
@@ -1742,6 +1745,7 @@ export type Database = {
           proposal_validity?: string | null
           proposta_json?: Json | null
           proposta_texto?: string | null
+          public_token?: string | null
           recommended_tier?: string | null
           segmento?: string | null
           status?: string
@@ -1764,6 +1768,7 @@ export type Database = {
           id?: string
           integracoes?: string[] | null
           is_phased?: boolean | null
+          is_public?: boolean | null
           link_referencia?: string | null
           nivel_urgencia?: string | null
           nome_cliente?: string
@@ -1779,6 +1784,7 @@ export type Database = {
           proposal_validity?: string | null
           proposta_json?: Json | null
           proposta_texto?: string | null
+          public_token?: string | null
           recommended_tier?: string | null
           segmento?: string | null
           status?: string

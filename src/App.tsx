@@ -19,6 +19,7 @@ import Solucoes from "./pages/Solucoes";
 import Portfolio from "./pages/Portfolio";
 import Sobre from "./pages/Sobre";
 import Contato from "./pages/Contato";
+import PropostaPublica from "./pages/PropostaPublica";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminOrcamentos from "./pages/AdminOrcamentos";
@@ -93,6 +94,7 @@ function AppRoutes() {
         <Route path="/modelos/:slug" element={<ModeloDetalhe />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/contato" element={<Contato />} />
+        <Route path="/proposta/:token" element={<PropostaPublica />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -78,6 +78,9 @@ export interface Proposta {
   // DocumentSpec fields (Genspark pipeline)
   document_spec: any | null;
   pricing_sheet: any | null;
+  // Public sharing
+  is_public: boolean;
+  public_token: string | null;
 }
 
 export interface GerarPropostaResult {
@@ -216,6 +219,8 @@ function parseRow(row: any): Proposta {
     closing_strategy: row.closing_strategy || "",
     document_spec: null,
     pricing_sheet: null,
+    is_public: row.is_public || false,
+    public_token: row.public_token || null,
   };
 }
 
@@ -295,4 +300,36 @@ export async function atualizarPropostaTiers(
     } as any)
     .eq("id", id);
   if (error) throw error;
+}
+
+// ── Public sharing ──
+
+export async function togglePropostaPublic(id: string, isPublic: boolean): Promise<string | null> {
+  if (isPublic) {
+    const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    const { error } = await supabase
+      .from("propostas" as any)
+      .update({ is_public: true, public_token: token, atualizado_em: new Date().toISOString() } as any)
+      .eq("id", id);
+    if (error) throw error;
+    return token;
+  } else {
+    const { error } = await supabase
+      .from("propostas" as any)
+      .update({ is_public: false, public_token: null, atualizado_em: new Date().toISOString() } as any)
+      .eq("id", id);
+    if (error) throw error;
+    return null;
+  }
+}
+
+export async function getPropostaByToken(token: string): Promise<Proposta | null> {
+  const { data, error } = await supabase
+    .from("propostas" as any)
+    .select("*")
+    .eq("public_token", token)
+    .eq("is_public", true)
+    .single();
+  if (error) return null;
+  return parseRow(data);
 }
