@@ -32,12 +32,22 @@ const C = {
 
 // ── Opacity helpers ──
 function makeOpacityHelpers(pdf: jsPDF) {
+  // jsPDF GState for opacity - use the static GState class from jsPDF
+  const GState = (jsPDF as any).API?.GState || (pdf as any).GState || function(opts: any) { Object.assign(this, opts); };
   return {
     setOpacity: (o: number) => {
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: o, "stroke-opacity": o }));
+      try {
+        (pdf as any).setGState(new GState({ opacity: o, "stroke-opacity": o }));
+      } catch {
+        // Fallback: skip opacity if GState not supported
+      }
     },
     restoreOpacity: () => {
-      (pdf as any).setGState(new (pdf as any).GState({ opacity: 1, "stroke-opacity": 1 }));
+      try {
+        (pdf as any).setGState(new GState({ opacity: 1, "stroke-opacity": 1 }));
+      } catch {
+        // Fallback: skip opacity if GState not supported
+      }
     },
   };
 }
