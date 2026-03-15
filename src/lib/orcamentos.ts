@@ -235,6 +235,7 @@ export async function salvarOrcamento(data: {
   precisa_app_mobile?: boolean;
   aceita_mvp?: boolean;
   estagio_operacao?: string;
+  dor_principal?: string;
   origem_lead?: string;
 }) {
   const prioridade = classificarPrioridade(data.descricao);
