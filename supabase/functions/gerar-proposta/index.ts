@@ -23,6 +23,17 @@ interface AIProvider {
 function getProviders(quality: "fast" | "quality" = "fast"): AIProvider[] {
   const providers: AIProvider[] = [];
 
+  // Genspark — prioridade máxima quando disponível
+  const gensparkKey = Deno.env.get("GENSPARK_API_KEY");
+  if (gensparkKey) {
+    providers.push({
+      name: "Genspark",
+      url: "https://api.genspark.ai/v1/chat/completions",
+      apiKey: gensparkKey,
+      model: quality === "quality" ? "genspark-max" : "genspark-lite",
+    });
+  }
+
   const groqKey = Deno.env.get("GROQ_API_KEY");
   if (groqKey) {
     providers.push({
