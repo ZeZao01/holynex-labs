@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropostaTiers, gerarPropostaIA, type Proposta, type PropostaInput } from "@/lib/propostas";
+import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropostaTiers, gerarPropostaIA, togglePropostaPublic, type Proposta, type PropostaInput } from "@/lib/propostas";
 import { createDefaultTiers, createDefaultAddons, PROPOSAL_STATUS_MAP, type ProposalTier, type ProposalAddon, type CommercialNotes } from "@/lib/proposal-tiers";
 import { uploadPdf } from "@/lib/pdf-storage";
 import { generatePropostaPdf } from "@/lib/pdf-generator";
