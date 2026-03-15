@@ -74,7 +74,7 @@ export async function generatePropostaPdf(proposta: Proposta, _templateId?: stri
     schema_valid: normResult.schema_valid,
     output_size: normResult.output_size,
     warnings: normResult.warnings,
-    template_id: templateId || "cyber-magenta",
+    template_id: "cyber-magenta",
   });
 
   const tiers = proposta.proposal_tiers || [];
