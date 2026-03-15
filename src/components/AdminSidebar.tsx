@@ -40,7 +40,7 @@ const operacionalItems = [
   { title: "Leads & Orçamentos", url: "/admin/orcamentos", icon: Users },
   { title: "Propostas", url: "/admin/propostas", icon: ClipboardList },
   { title: "Nova Proposta", url: "/admin/propostas/nova", icon: FilePlus },
-  { title: "Modelos de PDF", url: "/admin/templates", icon: Palette },
+  
 ];
 
 const projetosItems = [

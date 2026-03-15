@@ -24,25 +24,22 @@ function loadImageAsBase64(url: string): Promise<string> {
   });
 }
 
-function buildColors(t: PdfTemplate) {
-  return {
-    bg: t.colors.bg as RGB,
-    bgCard: t.colors.bgCard as RGB,
-    primary: t.colors.primary as RGB,
-    secondary: t.colors.secondary as RGB,
-    accent: t.colors.accent as RGB,
-    accent2: t.colors.accent2 as RGB,
-    white: t.colors.white as RGB,
-    lightGray: t.colors.lightGray as RGB,
-    midGray: t.colors.midGray as RGB,
-    darkGray: t.colors.darkGray as RGB,
-    highlight: t.colors.highlight as RGB,
-  };
-}
+const DEFAULT_COLORS = {
+  bg: [10, 0, 21] as RGB,
+  bgCard: [17, 5, 32] as RGB,
+  primary: [255, 0, 255] as RGB,
+  secondary: [0, 255, 255] as RGB,
+  accent: [157, 0, 255] as RGB,
+  accent2: [0, 255, 153] as RGB,
+  white: [255, 255, 255] as RGB,
+  lightGray: [226, 232, 240] as RGB,
+  midGray: [148, 163, 175] as RGB,
+  darkGray: [100, 116, 139] as RGB,
+  highlight: [255, 200, 50] as RGB,
+};
 
-export async function generatePropostaPdf(proposta: Proposta, templateId?: string, documentCode?: string): Promise<Blob> {
-  const template = getTemplateById(templateId || "cyber-magenta");
-  const C = buildColors(template);
+export async function generatePropostaPdf(proposta: Proposta, _templateId?: string, documentCode?: string): Promise<Blob> {
+  const C = DEFAULT_COLORS;
   const niche = getNicheProfile({
     segmento: proposta.segmento,
     tipo_projeto: proposta.tipo_projeto,

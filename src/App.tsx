@@ -59,7 +59,7 @@ function AppRoutes() {
           <Route path="/admin/propostas" element={<AdminPropostas />} />
           <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
           <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
-          <Route path="/admin/templates" element={<AdminTemplates />} />
+          
           <Route path="/admin/projetos" element={<AdminProjetos />} />
           <Route path="/admin/projetos/:id" element={<AdminProjetoDetalhe />} />
           <Route path="/admin/sistemas" element={<AdminSistemas />} />
