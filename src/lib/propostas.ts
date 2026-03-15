@@ -219,6 +219,8 @@ function parseRow(row: any): Proposta {
     closing_strategy: row.closing_strategy || "",
     document_spec: null,
     pricing_sheet: null,
+    is_public: row.is_public || false,
+    public_token: row.public_token || null,
   };
 }
 
