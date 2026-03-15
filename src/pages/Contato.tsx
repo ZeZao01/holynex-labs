@@ -246,6 +246,7 @@ export default function Contato() {
                 {form.tipo_projeto && <Row label="Tipo" value={form.tipo_projeto} />}
                 {form.nicho && <Row label="Nicho" value={form.nicho} />}
                 {form.objetivo && <Row label="Objetivo" value={form.objetivo} />}
+                {form.dor_principal && <Row label="Dor principal" value={form.dor_principal} />}
                 {form.faixa_investimento && <Row label="Investimento" value={form.faixa_investimento} />}
                 {form.prazo_desejado && <Row label="Prazo" value={form.prazo_desejado} />}
                 {form.numero_usuarios && <Row label="Usuários" value={form.numero_usuarios} />}
