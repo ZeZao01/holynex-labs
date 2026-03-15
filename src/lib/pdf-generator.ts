@@ -1519,7 +1519,7 @@ export async function generatePropostaPdf(proposta: Proposta, _templateId?: stri
     duration_ms: renderDuration,
     schema_valid: normResult.schema_valid,
     output_size: normResult.output_size,
-    template_id: templateId || "cyber-magenta",
+    template_id: "cyber-magenta",
     pdf_version: pdf.getNumberOfPages(),
     niche_detected: niche.segment,
   });
