@@ -103,6 +103,7 @@ export default function Contato() {
     try {
       await salvarOrcamento({
         ...form,
+        dor_principal: form.dor_principal,
         origem_lead: "site",
       });
       toast.success(t("contact.success"));
