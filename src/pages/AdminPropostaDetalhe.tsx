@@ -87,13 +87,12 @@ export default function AdminPropostaDetalhe() {
     } finally { setRegenerating(false); }
   };
 
-  const handleExportPDF = async (template?: PdfTemplate) => {
+  const handleExportPDF = async () => {
     if (!proposta || !id) return;
-    setShowTemplateSelector(false);
     setExportingPdf(true);
     try {
-      const pdfBlob = await generatePropostaPdf(proposta, template?.id);
-      const result = await uploadPdf(id, proposta.nome_cliente, pdfBlob, proposta, template?.id);
+      const pdfBlob = await generatePropostaPdf(proposta);
+      const result = await uploadPdf(id, proposta.nome_cliente, pdfBlob, proposta);
       setPdfRefreshKey(k => k + 1);
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
