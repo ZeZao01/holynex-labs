@@ -680,7 +680,7 @@ export async function generatePropostaPdf(
     const helpers = makeOpacityHelpers(pdf);
 
     const hasTiers = proposta.proposal_tiers && proposta.proposal_tiers.length > 0;
-    const totalPages = hasTiers ? 7 : 6;
+    const totalPages = hasTiers ? 8 : 7;
     let pageNum = 0;
 
     // Page 1: Cover
