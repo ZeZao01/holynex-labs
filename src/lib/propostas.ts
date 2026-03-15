@@ -81,6 +81,8 @@ export interface Proposta {
   // Public sharing
   is_public: boolean;
   public_token: string | null;
+  // Client reference
+  link_referencia: string;
 }
 
 export interface GerarPropostaResult {
@@ -221,6 +223,7 @@ function parseRow(row: any): Proposta {
     pricing_sheet: null,
     is_public: row.is_public || false,
     public_token: row.public_token || null,
+    link_referencia: row.link_referencia || "",
   };
 }
 

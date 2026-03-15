@@ -6,6 +6,7 @@
 import { jsPDF } from "jspdf";
 import type { Proposta } from "@/lib/propostas";
 import { logProposalEvent } from "@/lib/proposal-events";
+import { loadPdfLogos, type PdfLogos } from "@/lib/pdf-logos";
 import {
   drawBarChart,
   drawDonutChart,
@@ -134,7 +135,7 @@ function card(pdf: jsPDF, x: number, y: number, w: number, h: number, helpers: H
 // PAGE BUILDERS — each topic = 1 landscape page
 // ══════════════════════════════════════════════════════════════
 
-function pageCover(pdf: jsPDF, p: Proposta, h: Helpers) {
+function pageCover(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos) {
   drawPageBg(pdf);
 
   // Hero box
@@ -148,15 +149,29 @@ function pageCover(pdf: jsPDF, p: Proposta, h: Helpers) {
   pdf.roundedRect(MX, MY, CW, CH, 6, 6, "S");
   h.restoreOpacity();
 
-  // Brand
+  // Brand with logo
+  let brandTextX = MX + 12;
+  if (logos.agencyLogo) {
+    try {
+      pdf.addImage(logos.agencyLogo, "PNG", MX + 12, MY + 10, 14, 14);
+      brandTextX = MX + 30;
+    } catch { /* fallback to text only */ }
+  }
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(11);
   pdf.setTextColor(...C.primary);
-  pdf.text("HOLYNEX LABS", MX + 12, MY + 18);
+  pdf.text("HOLYNEX LABS", brandTextX, MY + 18);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
   pdf.setTextColor(...C.midGray);
-  pdf.text("Tecnologia & Inovação Digital", MX + 12, MY + 24);
+  pdf.text("Tecnologia & Inovação Digital", brandTextX, MY + 24);
+
+  // Client logo on top-right
+  if (logos.clientLogo) {
+    try {
+      pdf.addImage(logos.clientLogo, "PNG", PW - MX - 26, MY + 8, 18, 18);
+    } catch { /* skip */ }
+  }
 
   // Main title
   pdf.setFont("helvetica", "bold");
@@ -598,11 +613,18 @@ function pageTiers(pdf: jsPDF, p: Proposta, h: Helpers): boolean {
   return true;
 }
 
-function pageClosing(pdf: jsPDF, p: Proposta, h: Helpers, docCode?: string) {
+function pageClosing(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos, docCode?: string) {
   drawPageBg(pdf);
 
   const centerX = PW / 2;
   const centerY = PH / 2;
+
+  // Agency logo centered at top
+  if (logos.agencyLogo) {
+    try {
+      pdf.addImage(logos.agencyLogo, "PNG", centerX - 10, MY + 10, 20, 20);
+    } catch { /* skip */ }
+  }
 
   // Large centered card
   const cardW = 200;
@@ -679,13 +701,16 @@ export async function generatePropostaPdf(
     const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const helpers = makeOpacityHelpers(pdf);
 
+    // Load logos (agency + client from link_referencia)
+    const logos = await loadPdfLogos(proposta.link_referencia || undefined);
+
     const hasTiers = proposta.proposal_tiers && proposta.proposal_tiers.length > 0;
     const totalPages = hasTiers ? 8 : 7;
     let pageNum = 0;
 
     // Page 1: Cover
     pageNum++;
-    pageCover(pdf, proposta, helpers);
+    pageCover(pdf, proposta, helpers, logos);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
     // Page 2: Executive Summary
@@ -729,7 +754,7 @@ export async function generatePropostaPdf(
     // Page 8: Closing
     pdf.addPage();
     pageNum++;
-    pageClosing(pdf, proposta, helpers, documentCode);
+    pageClosing(pdf, proposta, helpers, logos, documentCode);
     drawFooter(pdf, pageNum, pageNum, documentCode);
 
     const blob = pdf.output("blob");
