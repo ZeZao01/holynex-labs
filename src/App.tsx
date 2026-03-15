@@ -19,6 +19,7 @@ import Solucoes from "./pages/Solucoes";
 import Portfolio from "./pages/Portfolio";
 import Sobre from "./pages/Sobre";
 import Contato from "./pages/Contato";
+import PropostaPublica from "./pages/PropostaPublica";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminOrcamentos from "./pages/AdminOrcamentos";
