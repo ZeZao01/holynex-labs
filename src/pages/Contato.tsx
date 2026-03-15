@@ -84,7 +84,7 @@ export default function Contato() {
   const { t } = useLanguage();
   const [form, setForm] = useState<FormData>({
     nome: "", email: "", empresa: "", descricao: "",
-    tipo_projeto: "", nicho: "", objetivo: "",
+    tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
     faixa_investimento: "", prazo_desejado: "", urgencia: "sem_urgencia",
     numero_usuarios: "", precisa_login: false, precisa_admin: false,
     precisa_area_cliente: false, precisa_integracoes: false,
