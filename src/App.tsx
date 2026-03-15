@@ -26,7 +26,7 @@ import AdminLeadDetalhe from "./pages/AdminLeadDetalhe";
 import AdminPropostas from "./pages/AdminPropostas";
 import AdminNovaProposta from "./pages/AdminNovaProposta";
 import AdminPropostaDetalhe from "./pages/AdminPropostaDetalhe";
-import AdminTemplates from "./pages/AdminTemplates";
+
 import AdminProjetos from "./pages/AdminProjetos";
 import AdminProjetoDetalhe from "./pages/AdminProjetoDetalhe";
 import AdminSistemas from "./pages/AdminSistemas";
@@ -59,7 +59,7 @@ function AppRoutes() {
           <Route path="/admin/propostas" element={<AdminPropostas />} />
           <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
           <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
-          <Route path="/admin/templates" element={<AdminTemplates />} />
+          
           <Route path="/admin/projetos" element={<AdminProjetos />} />
           <Route path="/admin/projetos/:id" element={<AdminProjetoDetalhe />} />
           <Route path="/admin/sistemas" element={<AdminSistemas />} />

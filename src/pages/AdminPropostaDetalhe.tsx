@@ -21,8 +21,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import PdfHistorico from "@/components/PdfHistorico";
-import TemplateSelector from "@/components/TemplateSelector";
-import { type PdfTemplate } from "@/lib/pdf-templates";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import RevealBox from "@/components/RevealBox";
 
@@ -36,7 +34,7 @@ export default function AdminPropostaDetalhe() {
   const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
   const [showRegenDialog, setShowRegenDialog] = useState(false);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  
   const [orientacoes, setOrientacoes] = useState("");
   const [editingTiers, setEditingTiers] = useState(false);
   const [editTiers, setEditTiers] = useState<ProposalTier[]>([]);
@@ -89,13 +87,12 @@ export default function AdminPropostaDetalhe() {
     } finally { setRegenerating(false); }
   };
 
-  const handleExportPDF = async (template?: PdfTemplate) => {
+  const handleExportPDF = async () => {
     if (!proposta || !id) return;
-    setShowTemplateSelector(false);
     setExportingPdf(true);
     try {
-      const pdfBlob = await generatePropostaPdf(proposta, template?.id);
-      const result = await uploadPdf(id, proposta.nome_cliente, pdfBlob, proposta, template?.id);
+      const pdfBlob = await generatePropostaPdf(proposta);
+      const result = await uploadPdf(id, proposta.nome_cliente, pdfBlob, proposta);
       setPdfRefreshKey(k => k + 1);
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
@@ -190,7 +187,7 @@ export default function AdminPropostaDetalhe() {
         <Button variant="outline" size="sm" onClick={() => setShowRegenDialog(true)} disabled={regenerating} className="gap-1">
           {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerar
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setShowTemplateSelector(true)} disabled={exportingPdf} className="gap-1">
+        <Button variant="outline" size="sm" onClick={() => handleExportPDF()} disabled={exportingPdf} className="gap-1">
           {exportingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Exportar PDF
         </Button>
         <Button variant="outline" size="sm" onClick={startEditTiers} className="gap-1">
@@ -322,7 +319,7 @@ export default function AdminPropostaDetalhe() {
         </DialogContent>
       </Dialog>
 
-      <TemplateSelector open={showTemplateSelector} onOpenChange={setShowTemplateSelector} onSelect={handleExportPDF} />
+      
     </div>
   );
 }
