@@ -613,11 +613,18 @@ function pageTiers(pdf: jsPDF, p: Proposta, h: Helpers): boolean {
   return true;
 }
 
-function pageClosing(pdf: jsPDF, p: Proposta, h: Helpers, docCode?: string) {
+function pageClosing(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos, docCode?: string) {
   drawPageBg(pdf);
 
   const centerX = PW / 2;
   const centerY = PH / 2;
+
+  // Agency logo centered at top
+  if (logos.agencyLogo) {
+    try {
+      pdf.addImage(logos.agencyLogo, "PNG", centerX - 10, MY + 10, 20, 20);
+    } catch { /* skip */ }
+  }
 
   // Large centered card
   const cardW = 200;
