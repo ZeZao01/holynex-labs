@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { Proposta } from "@/lib/propostas";
-import { type PdfTemplate, type RGB, getTemplateById } from "@/lib/pdf-templates";
+export type RGB = [number, number, number];
 import { normalizePropostaJSON, extractDocumentoPublico } from "@/lib/proposal-normalizer";
 import { logProposalEvent } from "@/lib/proposal-events";
 import { getNicheProfile } from "@/lib/pdf-niche-intelligence";
