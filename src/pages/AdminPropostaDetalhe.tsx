@@ -12,7 +12,7 @@ import TierCard from "@/components/admin/TierCard";
 import ScopeComparison from "@/components/admin/ScopeComparison";
 import AddonSelector from "@/components/admin/AddonSelector";
 import TierEditor from "@/components/admin/TierEditor";
-import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X } from "lucide-react";
+import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X, Link2, ExternalLink, Copy } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
