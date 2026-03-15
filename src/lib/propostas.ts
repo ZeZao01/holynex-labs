@@ -81,6 +81,8 @@ export interface Proposta {
   // Public sharing
   is_public: boolean;
   public_token: string | null;
+  // Client reference
+  link_referencia: string;
 }
 
 export interface GerarPropostaResult {
