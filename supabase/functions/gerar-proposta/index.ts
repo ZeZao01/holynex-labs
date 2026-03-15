@@ -107,7 +107,7 @@ async function callAI(messages: any[], quality: "fast" | "quality" = "fast", tem
       return content;
     } catch (err) {
       console.error(`[pipeline] ${provider.name} failed:`, err);
-      if (err instanceof Error && (err.message.includes("429") || err.message.includes("402"))) throw err;
+      // Continue to next provider instead of throwing on rate limits
     }
   }
   throw new Error("Todos os provedores falharam.");
