@@ -4,6 +4,7 @@
  * A4 Landscape: 297mm × 210mm
  */
 import { jsPDF } from "jspdf";
+import agencyLogoUrl from "@/assets/logo-transparent.png";
 import type { Proposta } from "@/lib/propostas";
 import { logProposalEvent } from "@/lib/proposal-events";
 import { loadPdfLogos, type PdfLogos } from "@/lib/pdf-logos";
@@ -57,6 +58,69 @@ type H = ReturnType<typeof makeOpacityHelpers>;
 // ── Utility ──
 function fmt(v: number): string { return `R$ ${Number(v || 0).toLocaleString("pt-BR")}`; }
 function fmtDate(iso: string): string { return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }); }
+
+async function loadAssetAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.warn("[PDF] Falha ao carregar asset para base64", { url, status: response.status });
+      return null;
+    }
+
+    const blob = await response.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error("[PDF] Erro ao converter asset em base64", { url, error });
+    return null;
+  }
+}
+
+async function resolvePdfLogos(clientSiteUrl?: string): Promise<PdfLogos> {
+  const logos = await loadPdfLogos(clientSiteUrl);
+
+  if (logos.agencyLogo) return logos;
+
+  const officialAgencyLogo = await loadAssetAsDataUrl(agencyLogoUrl);
+  if (!officialAgencyLogo) {
+    console.error("[PDF] Logo oficial da agência não pôde ser carregada", { agencyLogoUrl });
+    return logos;
+  }
+
+  return {
+    ...logos,
+    agencyLogo: officialAgencyLogo,
+  };
+}
+
+function addPdfImage(
+  pdf: jsPDF,
+  imageData: string | null,
+  format: "PNG" | "JPEG",
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  context: string,
+): boolean {
+  if (!imageData) {
+    console.warn(`[PDF] Imagem ausente em ${context}`);
+    return false;
+  }
+
+  try {
+    const detectedFormat = imageData.startsWith("data:image/jpeg") || imageData.startsWith("data:image/jpg") ? "JPEG" : format;
+    pdf.addImage(imageData, detectedFormat, x, y, width, height);
+    return true;
+  } catch (error) {
+    console.error(`[PDF] Falha ao inserir imagem em ${context}`, error);
+    return false;
+  }
+}
 
 // ── Background with decorative circles ──
 function drawBg(pdf: jsPDF, h: H) {
@@ -222,18 +286,20 @@ function pageCover(pdf: jsPDF, p: Proposta, h: H, logos: PdfLogos) {
   pdf.setTextColor(...C.midGray);
   let brandX = MX;
 
-  if (logos.agencyLogo) {
-    try {
-      pdf.addImage(logos.agencyLogo, "PNG", MX, MY, 10, 10);
-      brandX = MX + 14;
-    } catch {}
+  const hasAgencyLogo = addPdfImage(pdf, logos.agencyLogo, "PNG", MX, MY, 10, 10, "capa/topo");
+  if (hasAgencyLogo) {
+    brandX = MX + 14;
+  } else {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.primary);
+    pdf.text("HOLYNEX", MX, MY + 7);
+    brandX = MX + 18;
   }
   pdf.text("PROPOSTA COMERCIAL & TECNOLOGIA", brandX, MY + 7);
 
   // Client logo top-right
-  if (logos.clientLogo) {
-    try { pdf.addImage(logos.clientLogo, "PNG", PW - MX - 14, MY, 10, 10); } catch {}
-  }
+  addPdfImage(pdf, logos.clientLogo, "PNG", PW - MX - 14, MY, 10, 10, "capa/cliente");
 
   // Main title
   pdf.setFont("helvetica", "bold");
@@ -698,9 +764,7 @@ function pageRisks(pdf: jsPDF, p: Proposta, h: H) {
   });
 
   // Right: next steps as numbered cards
-  let ry = y - (risks.length * 26); // Reset to match left start
-  ry = pageHeader(pdf, "", "", "", C.primary) - 34 + 12; // recalc
-  ry = MY + 46; // fixed position
+  let ry = y;
 
   proximos.forEach((step: string, i: number) => {
     if (ry > cardBottom - 10) return;
@@ -825,8 +889,11 @@ function pageClosing(pdf: jsPDF, p: Proposta, h: H, logos: PdfLogos, docCode?: s
   const cy = PH / 2;
 
   // Agency logo
-  if (logos.agencyLogo) {
-    try { pdf.addImage(logos.agencyLogo, "PNG", cx - 12, MY + 20, 24, 24); } catch {}
+  if (!addPdfImage(pdf, logos.agencyLogo, "PNG", cx - 12, MY + 20, 24, 24, "encerramento/logo")) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(...C.primary);
+    pdf.text("HOLYNEX LABS", cx, MY + 34, { align: "center" });
   }
 
   // Main CTA
@@ -899,11 +966,15 @@ export async function generatePropostaPdf(
   try {
     const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const helpers = makeOpacityHelpers(pdf);
-    const logos = await loadPdfLogos(proposta.link_referencia || undefined);
+    const logos = await resolvePdfLogos(proposta.link_referencia || undefined);
 
     const hasTiers = proposta.proposal_tiers && proposta.proposal_tiers.length > 0;
-    const totalPages = hasTiers ? 8 : 7;
+    const totalPages = hasTiers ? 9 : 8;
     let pageNum = 0;
+
+    if (!logos.agencyLogo) {
+      console.error("[PDF] Geração iniciada sem a logo oficial da agência", { propostaId: proposta.id });
+    }
 
     // Page 1: Cover
     pageNum++;
@@ -948,7 +1019,7 @@ export async function generatePropostaPdf(
     pageTimeline(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 8: Risks & Next Steps + Closing
+    // Page 8: Risks & Next Steps
     pdf.addPage();
     pageNum++;
     pageRisks(pdf, proposta, helpers);
@@ -958,7 +1029,6 @@ export async function generatePropostaPdf(
     pdf.addPage();
     pageNum++;
     pageClosing(pdf, proposta, helpers, logos, documentCode);
-    // No footer on closing — clean exit
 
     const blob = pdf.output("blob");
 
@@ -971,6 +1041,11 @@ export async function generatePropostaPdf(
 
     return blob;
   } catch (err) {
+    console.error("[PDF] Falha na geração do PDF", {
+      propostaId: proposta.id,
+      error: err,
+    });
+
     await logProposalEvent("proposal_pdf_render_failed", proposta.id, {
       render_status: "failed",
       template_id: "jspdf-genspark-v4",
