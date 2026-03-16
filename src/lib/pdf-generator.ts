@@ -286,18 +286,20 @@ function pageCover(pdf: jsPDF, p: Proposta, h: H, logos: PdfLogos) {
   pdf.setTextColor(...C.midGray);
   let brandX = MX;
 
-  if (logos.agencyLogo) {
-    try {
-      pdf.addImage(logos.agencyLogo, "PNG", MX, MY, 10, 10);
-      brandX = MX + 14;
-    } catch {}
+  const hasAgencyLogo = addPdfImage(pdf, logos.agencyLogo, "PNG", MX, MY, 10, 10, "capa/topo");
+  if (hasAgencyLogo) {
+    brandX = MX + 14;
+  } else {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.primary);
+    pdf.text("HOLYNEX", MX, MY + 7);
+    brandX = MX + 18;
   }
   pdf.text("PROPOSTA COMERCIAL & TECNOLOGIA", brandX, MY + 7);
 
   // Client logo top-right
-  if (logos.clientLogo) {
-    try { pdf.addImage(logos.clientLogo, "PNG", PW - MX - 14, MY, 10, 10); } catch {}
-  }
+  addPdfImage(pdf, logos.clientLogo, "PNG", PW - MX - 14, MY, 10, 10, "capa/cliente");
 
   // Main title
   pdf.setFont("helvetica", "bold");
