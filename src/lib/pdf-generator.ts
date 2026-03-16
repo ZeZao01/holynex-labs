@@ -764,9 +764,7 @@ function pageRisks(pdf: jsPDF, p: Proposta, h: H) {
   });
 
   // Right: next steps as numbered cards
-  let ry = y - (risks.length * 26); // Reset to match left start
-  ry = pageHeader(pdf, "", "", "", C.primary) - 34 + 12; // recalc
-  ry = MY + 46; // fixed position
+  let ry = y;
 
   proximos.forEach((step: string, i: number) => {
     if (ry > cardBottom - 10) return;
