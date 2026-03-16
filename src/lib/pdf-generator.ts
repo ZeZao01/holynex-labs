@@ -966,11 +966,15 @@ export async function generatePropostaPdf(
   try {
     const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const helpers = makeOpacityHelpers(pdf);
-    const logos = await loadPdfLogos(proposta.link_referencia || undefined);
+    const logos = await resolvePdfLogos(proposta.link_referencia || undefined);
 
     const hasTiers = proposta.proposal_tiers && proposta.proposal_tiers.length > 0;
-    const totalPages = hasTiers ? 8 : 7;
+    const totalPages = hasTiers ? 9 : 8;
     let pageNum = 0;
+
+    if (!logos.agencyLogo) {
+      console.error("[PDF] Geração iniciada sem a logo oficial da agência", { propostaId: proposta.id });
+    }
 
     // Page 1: Cover
     pageNum++;
@@ -1015,7 +1019,7 @@ export async function generatePropostaPdf(
     pageTimeline(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 8: Risks & Next Steps + Closing
+    // Page 8: Risks & Next Steps
     pdf.addPage();
     pageNum++;
     pageRisks(pdf, proposta, helpers);
@@ -1025,7 +1029,6 @@ export async function generatePropostaPdf(
     pdf.addPage();
     pageNum++;
     pageClosing(pdf, proposta, helpers, logos, documentCode);
-    // No footer on closing — clean exit
 
     const blob = pdf.output("blob");
 
@@ -1034,10 +1037,17 @@ export async function generatePropostaPdf(
       template_id: "jspdf-genspark-v4",
       duration_ms: Date.now() - renderStart,
       pages: pageNum,
+      agency_logo_loaded: Boolean(logos.agencyLogo),
+      client_logo_loaded: Boolean(logos.clientLogo),
     });
 
     return blob;
   } catch (err) {
+    console.error("[PDF] Falha na geração do PDF", {
+      propostaId: proposta.id,
+      error: err,
+    });
+
     await logProposalEvent("proposal_pdf_render_failed", proposta.id, {
       render_status: "failed",
       template_id: "jspdf-genspark-v4",
