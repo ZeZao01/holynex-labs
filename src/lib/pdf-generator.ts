@@ -1,7 +1,7 @@
 /**
- * Multi-page LANDSCAPE PDF generator using jsPDF directly.
- * Each topic gets its own dedicated page with charts and premium dark design.
- * A4 Landscape: 297mm x 210mm
+ * Multi-page LANDSCAPE PDF — Genspark Slides-inspired dark design.
+ * Each page has: decorative circles, category badge, bold title, card grids.
+ * A4 Landscape: 297mm × 210mm
  */
 import { jsPDF } from "jspdf";
 import type { Proposta } from "@/lib/propostas";
@@ -11,91 +11,158 @@ import {
   drawBarChart,
   drawDonutChart,
   drawComparisonTable,
-  drawProgressBar,
   drawKpiCard,
-  drawTimeline,
 } from "@/lib/pdf-charts";
-
 import type { RGB } from "@/lib/pdf-charts";
 
-// ── A4 Landscape dimensions ──
-const PW = 297; // page width mm
-const PH = 210; // page height mm
-const MX = 14;  // margin x
-const MY = 12;  // margin y
-const CW = PW - MX * 2; // content width (269)
-const CH = PH - MY * 2; // content height (186)
+// ── Dimensions ──
+const PW = 297;
+const PH = 210;
+const MX = 16;
+const MY = 14;
+const CW = PW - MX * 2;
+const CH = PH - MY * 2;
 
-// ── Color palette ──
+// ── Palette (Genspark dark theme) ──
 const C = {
-  bg: [9, 9, 15] as RGB,
-  bgCard: [18, 18, 32] as RGB,
-  primary: [139, 92, 246] as RGB,
-  secondary: [34, 197, 94] as RGB,
-  accent: [251, 191, 36] as RGB,
-  accent2: [56, 189, 248] as RGB,
-  white: [255, 255, 255] as RGB,
-  lightGray: [200, 200, 210] as RGB,
-  midGray: [140, 140, 160] as RGB,
-  darkBorder: [40, 40, 60] as RGB,
-  red: [239, 68, 68] as RGB,
+  bg:        [13, 17, 28] as RGB,   // deep navy
+  bgCard:    [19, 25, 42] as RGB,   // card dark
+  bgCard2:   [24, 31, 52] as RGB,   // slightly lighter card
+  primary:   [0, 180, 255] as RGB,  // cyan
+  purple:    [139, 92, 246] as RGB, // purple accent
+  green:     [34, 197, 94] as RGB,  // green
+  pink:      [236, 72, 153] as RGB, // pink
+  orange:    [251, 146, 60] as RGB, // orange
+  yellow:    [250, 204, 21] as RGB, // yellow
+  white:     [255, 255, 255] as RGB,
+  lightGray: [180, 190, 210] as RGB,
+  midGray:   [100, 116, 145] as RGB,
+  darkBorder:[35, 45, 65] as RGB,
+  red:       [239, 68, 68] as RGB,
 };
 
-// ── Safe opacity helpers ──
+const ACCENT_COLORS: RGB[] = [C.primary, C.purple, C.green, C.pink, C.orange, C.yellow];
+
+// ── Opacity Helpers ──
 function makeOpacityHelpers(pdf: jsPDF) {
   let GStateCtor: any = null;
-  try {
-    GStateCtor = (jsPDF as any).API?.GState || (pdf as any).GState;
-  } catch { /* ignore */ }
-
+  try { GStateCtor = (jsPDF as any).API?.GState || (pdf as any).GState; } catch {}
   return {
-    setOpacity: (o: number) => {
-      if (!GStateCtor) return;
-      try {
-        (pdf as any).setGState(new GStateCtor({ opacity: o, "stroke-opacity": o }));
-      } catch { /* skip */ }
-    },
-    restoreOpacity: () => {
-      if (!GStateCtor) return;
-      try {
-        (pdf as any).setGState(new GStateCtor({ opacity: 1, "stroke-opacity": 1 }));
-      } catch { /* skip */ }
-    },
+    setOpacity: (o: number) => { if (!GStateCtor) return; try { (pdf as any).setGState(new GStateCtor({ opacity: o, "stroke-opacity": o })); } catch {} },
+    restoreOpacity: () => { if (!GStateCtor) return; try { (pdf as any).setGState(new GStateCtor({ opacity: 1, "stroke-opacity": 1 })); } catch {} },
   };
 }
+type H = ReturnType<typeof makeOpacityHelpers>;
 
-type Helpers = ReturnType<typeof makeOpacityHelpers>;
+// ── Utility ──
+function fmt(v: number): string { return `R$ ${Number(v || 0).toLocaleString("pt-BR")}`; }
+function fmtDate(iso: string): string { return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }); }
 
-// ── Helpers ──
-function fmt(v: number): string {
-  return `R$ ${Number(v || 0).toLocaleString("pt-BR")}`;
-}
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-function drawPageBg(pdf: jsPDF) {
+// ── Background with decorative circles ──
+function drawBg(pdf: jsPDF, h: H) {
   pdf.setFillColor(...C.bg);
   pdf.rect(0, 0, PW, PH, "F");
-}
-function drawFooter(pdf: jsPDF, pageNum: number, total: number, docCode?: string) {
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(7);
-  pdf.setTextColor(...C.midGray);
-  pdf.text(docCode ? `Doc: ${docCode}` : "HolyNex Labs", MX, PH - 6);
-  pdf.text(`${pageNum}/${total}`, PW - MX, PH - 6, { align: "right" });
-  pdf.setDrawColor(...C.primary);
-  pdf.setLineWidth(0.3);
-  pdf.line(MX, PH - 9, PW - MX, PH - 9);
-}
-function sectionTitle(pdf: jsPDF, title: string, y: number, icon?: string): number {
+  // Decorative circle top-right
+  h.setOpacity(0.04);
   pdf.setFillColor(...C.primary);
-  pdf.roundedRect(MX, y, 3, 12, 1.5, 1.5, "F");
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(16);
-  pdf.setTextColor(...C.white);
-  pdf.text(`${icon ? icon + "  " : ""}${title}`, MX + 8, y + 9);
-  return y + 18;
+  pdf.circle(PW - 30, -20, 80, "F");
+  // Decorative circle bottom-left
+  pdf.setFillColor(...C.purple);
+  pdf.circle(20, PH + 30, 60, "F");
+  h.restoreOpacity();
 }
+
+// ── Footer bar ──
+function drawFooter(pdf: jsPDF, pageNum: number, total: number, docCode?: string) {
+  const fy = PH - 10;
+  pdf.setDrawColor(...C.darkBorder);
+  pdf.setLineWidth(0.3);
+  pdf.line(MX, fy, PW - MX, fy);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(...C.midGray);
+  pdf.text(docCode ? `Doc: ${docCode}` : "HOLYNEX LABS", MX, fy + 5);
+  pdf.text(`${pageNum} / ${total}`, PW - MX, fy + 5, { align: "right" });
+}
+
+// ── Category Badge + Section Title (like Genspark) ──
+function pageHeader(pdf: jsPDF, badge: string, subtitle: string, title: string, badgeColor: RGB = C.primary) {
+  const by = MY;
+  // Badge pill
+  const badgeW = pdf.getTextWidth(badge.toUpperCase()) + 10;
+  pdf.setFillColor(...badgeColor);
+  pdf.roundedRect(MX, by, Math.max(badgeW, 30), 8, 2, 2, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(...C.bg);
+  pdf.text(badge.toUpperCase(), MX + 4, by + 5.5);
+
+  // Subtitle next to badge
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(...C.midGray);
+  pdf.text(subtitle.toUpperCase(), MX + Math.max(badgeW, 30) + 6, by + 5.5);
+
+  // Big title
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(24);
+  pdf.setTextColor(...C.white);
+  pdf.text(title, MX, by + 22);
+
+  // Accent line below title
+  pdf.setFillColor(...badgeColor);
+  pdf.rect(MX, by + 26, 40, 1.2, "F");
+
+  return by + 34;
+}
+
+// ── Card with colored top border ──
+function cardWithBorder(pdf: jsPDF, x: number, y: number, w: number, h_val: number, borderColor: RGB, hh: H, dashed = false) {
+  // Card background
+  pdf.setFillColor(...C.bgCard);
+  hh.setOpacity(0.85);
+  pdf.roundedRect(x, y, w, h_val, 4, 4, "F");
+  hh.restoreOpacity();
+
+  // Side/top colored border
+  pdf.setDrawColor(...C.darkBorder);
+  hh.setOpacity(0.4);
+  pdf.setLineWidth(0.3);
+  pdf.roundedRect(x, y, w, h_val, 4, 4, "S");
+  hh.restoreOpacity();
+
+  // Top accent stripe
+  pdf.setFillColor(...borderColor);
+  if (dashed) {
+    hh.setOpacity(0.6);
+    pdf.setDrawColor(...borderColor);
+    pdf.setLineWidth(1.2);
+    // Dashed top line
+    const dashLen = 3;
+    const gapLen = 2;
+    let dx = x + 4;
+    while (dx < x + w - 4) {
+      const end = Math.min(dx + dashLen, x + w - 4);
+      pdf.line(dx, y + 0.6, end, y + 0.6);
+      dx = end + gapLen;
+    }
+    hh.restoreOpacity();
+  } else {
+    pdf.rect(x + 4, y, w - 8, 1.5, "F");
+  }
+}
+
+// ── Watermark number (big faded number inside card) ──
+function watermarkNumber(pdf: jsPDF, num: string, x: number, y: number, w: number, h: H) {
+  h.setOpacity(0.06);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(48);
+  pdf.setTextColor(...C.white);
+  pdf.text(num, x + w - 8, y + 28, { align: "right" });
+  h.restoreOpacity();
+}
+
+// ── Text helpers ──
 function textBlock(pdf: jsPDF, text: string, x: number, y: number, maxW: number, fontSize = 9, maxY?: number): number {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(fontSize);
@@ -103,29 +170,27 @@ function textBlock(pdf: jsPDF, text: string, x: number, y: number, maxW: number,
   const lines = pdf.splitTextToSize(text || "Não informado", maxW);
   const lineH = fontSize * 0.45;
   const limit = maxY || PH - 20;
-  // Only render lines that fit within bounds
-  const visibleLines: string[] = [];
-  let testY = y;
+  let cy = y;
   for (const line of lines) {
-    if (testY > limit) break;
-    visibleLines.push(line);
-    testY += lineH;
+    if (cy > limit) break;
+    pdf.text(line, x, cy);
+    cy += lineH;
   }
-  pdf.text(visibleLines, x, y);
-  return y + visibleLines.length * lineH + 4;
+  return cy + 3;
 }
-function bulletList(pdf: jsPDF, items: string[], x: number, y: number, maxW: number, maxY?: number): number {
+
+function bulletList(pdf: jsPDF, items: string[], x: number, y: number, maxW: number, maxY?: number, color?: RGB): number {
   let cy = y;
   const limit = maxY || PH - 20;
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(8.5);
+  const dotColor = color || C.primary;
   for (const item of items) {
     if (cy > limit) break;
-    pdf.setFillColor(...C.primary);
-    pdf.circle(x + 1.5, cy - 1, 1, "F");
+    pdf.setFillColor(...dotColor);
+    pdf.circle(x + 1.5, cy - 1, 1.2, "F");
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
     pdf.setTextColor(...C.lightGray);
-    const lines = pdf.splitTextToSize(item, maxW - 6);
-    // Only draw lines that fit
+    const lines = pdf.splitTextToSize(item, maxW - 8);
     for (const line of lines) {
       if (cy > limit) break;
       pdf.text(line, x + 5, cy);
@@ -135,151 +200,305 @@ function bulletList(pdf: jsPDF, items: string[], x: number, y: number, maxW: num
   }
   return cy;
 }
-function card(pdf: jsPDF, x: number, y: number, w: number, h: number, helpers: Helpers) {
-  pdf.setFillColor(...C.bgCard);
-  helpers.setOpacity(0.8);
-  pdf.roundedRect(x, y, w, h, 3, 3, "F");
-  helpers.restoreOpacity();
-  pdf.setDrawColor(...C.darkBorder);
-  helpers.setOpacity(0.5);
-  pdf.setLineWidth(0.3);
-  pdf.roundedRect(x, y, w, h, 3, 3, "S");
-  helpers.restoreOpacity();
-}
 
 // ══════════════════════════════════════════════════════════════
-// PAGE BUILDERS — each topic = 1 landscape page
+//  PAGE BUILDERS
 // ══════════════════════════════════════════════════════════════
 
-function pageCover(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos) {
-  drawPageBg(pdf);
+function pageCover(pdf: jsPDF, p: Proposta, h: H, logos: PdfLogos) {
+  drawBg(pdf, h);
 
-  // Hero box
+  // Larger decorative circles for cover
+  h.setOpacity(0.06);
   pdf.setFillColor(...C.primary);
-  h.setOpacity(0.07);
-  pdf.roundedRect(MX, MY, CW, CH, 6, 6, "F");
-  h.restoreOpacity();
-  pdf.setDrawColor(...C.primary);
-  h.setOpacity(0.3);
-  pdf.setLineWidth(0.5);
-  pdf.roundedRect(MX, MY, CW, CH, 6, 6, "S");
+  pdf.circle(PW - 50, 40, 110, "F");
+  pdf.setFillColor(...C.purple);
+  pdf.circle(PW - 120, PH - 20, 70, "F");
   h.restoreOpacity();
 
-  // Brand with logo
-  let brandTextX = MX + 12;
-  if (logos.agencyLogo) {
-    try {
-      pdf.addImage(logos.agencyLogo, "PNG", MX + 12, MY + 10, 14, 14);
-      brandTextX = MX + 30;
-    } catch { /* fallback to text only */ }
-  }
+  // Top bar: category + logos
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(11);
-  pdf.setTextColor(...C.primary);
-  pdf.text("HOLYNEX LABS", brandTextX, MY + 18);
-  pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
   pdf.setTextColor(...C.midGray);
-  pdf.text("Tecnologia & Inovação Digital", brandTextX, MY + 24);
+  let brandX = MX;
 
-  // Client logo on top-right
-  if (logos.clientLogo) {
+  if (logos.agencyLogo) {
     try {
-      pdf.addImage(logos.clientLogo, "PNG", PW - MX - 26, MY + 8, 18, 18);
-    } catch { /* skip */ }
+      pdf.addImage(logos.agencyLogo, "PNG", MX, MY, 10, 10);
+      brandX = MX + 14;
+    } catch {}
+  }
+  pdf.text("PROPOSTA COMERCIAL & TECNOLOGIA", brandX, MY + 7);
+
+  // Client logo top-right
+  if (logos.clientLogo) {
+    try { pdf.addImage(logos.clientLogo, "PNG", PW - MX - 14, MY, 10, 10); } catch {}
   }
 
   // Main title
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(36);
+  pdf.setFontSize(42);
   pdf.setTextColor(...C.white);
-  pdf.text("Proposta Comercial", MX + 12, MY + 50);
+  const titleLines = pdf.splitTextToSize("Proposta Comercial", CW * 0.65);
+  let ty = MY + 40;
+  for (const tl of titleLines) {
+    pdf.text(tl, MX, ty);
+    ty += 18;
+  }
 
-  // Badge
+  // Subtitle - project type
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(14);
+  pdf.setTextColor(...C.primary);
+  pdf.text(p.tipo_projeto || "Desenvolvimento Sob Medida", MX, ty + 4);
+  ty += 14;
+
+  // Description snippet
+  const desc = (p.proposta_json as any)?.resumo_executivo || p.descricao_projeto || "";
+  if (desc) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...C.lightGray);
+    const dl = pdf.splitTextToSize(desc, CW * 0.55);
+    pdf.text(dl.slice(0, 3), MX, ty + 4);
+    ty += dl.slice(0, 3).length * 5 + 6;
+  }
+
+  // Accent line
   pdf.setFillColor(...C.primary);
-  pdf.roundedRect(MX + 12, MY + 56, 55, 7, 3, 3, "F");
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8);
-  pdf.setTextColor(...C.white);
-  pdf.text("INVESTIMENTO PREMIUM", MX + 16, MY + 61);
+  pdf.rect(MX, ty, 40, 1.5, "F");
 
-  // ── Left side: Meta cards (2x2 grid instead of 4 in a row) ──
+  // Bottom info cards (4 cards like Genspark cover slide)
+  const cardCount = 4;
+  const cardGap = 8;
+  const cardW = (CW - cardGap * (cardCount - 1)) / cardCount;
+  const cardH = 38;
+  const cardY = PH - MY - cardH - 14;
+
   const metas = [
-    { label: "CLIENTE", value: p.nome_cliente },
-    { label: "EMPRESA", value: p.empresa_cliente || "—" },
-    { label: "TIPO", value: p.tipo_projeto },
-    { label: "DATA", value: fmtDate(p.criado_em) },
+    { icon: "◎", label: "CLIENTE", value: p.nome_cliente, color: C.primary },
+    { icon: "◆", label: "EMPRESA", value: p.empresa_cliente || "—", color: C.purple },
+    { icon: "◇", label: "INVESTIMENTO", value: fmt(p.valor_ideal), color: C.green },
+    { icon: "●", label: "DATA", value: fmtDate(p.criado_em), color: C.orange },
   ];
-  const metaCardW = 72;
-  const metaCardH = 24;
-  const metaGap = 6;
-  const metaStartY = MY + 72;
-  const metaStartX = MX + 12;
-  
+
   metas.forEach((m, i) => {
+    const cx = MX + i * (cardW + cardGap);
+    cardWithBorder(pdf, cx, cardY, cardW, cardH, m.color, h);
+
+    // Icon
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...m.color);
+    pdf.text(m.icon, cx + 6, cardY + 10);
+
+    // Label
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(6);
+    pdf.setTextColor(...m.color);
+    pdf.text(m.label, cx + 14, cardY + 10);
+
+    // Value
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(...C.lightGray);
+    const vl = pdf.splitTextToSize(m.value, cardW - 12);
+    pdf.text(vl.slice(0, 2), cx + 6, cardY + 20);
+  });
+
+  // Version tag bottom-right
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6);
+  pdf.setTextColor(...C.midGray);
+  pdf.text("HOLYNEX LABS • PROPOSTA V1.0", PW - MX, PH - 8, { align: "right" });
+}
+
+function pageExecutiveSummary(pdf: jsPDF, p: Proposta, h: H) {
+  drawBg(pdf, h);
+  const pj = (p.proposta_json ?? {}) as Record<string, any>;
+
+  let y = pageHeader(pdf, "VISÃO GERAL", "Análise do Projeto", "Resumo Executivo", C.primary);
+
+  const leftW = CW * 0.48;
+  const rightX = MX + CW * 0.52;
+  const rightW = CW * 0.48;
+  const cardBottom = PH - MY - 14;
+
+  // Left: main text card
+  const leftH = cardBottom - y;
+  cardWithBorder(pdf, MX, y, leftW, leftH, C.primary, h);
+
+  // Icon in card
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.setTextColor(...C.primary);
+  pdf.text("◎", MX + 8, y + 14);
+
+  // "O que é?"
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(14);
+  pdf.setTextColor(...C.white);
+  pdf.text("O que é?", MX + 8, y + 26);
+
+  let ly = y + 34;
+  ly = textBlock(pdf, pj.resumo_executivo || p.descricao_projeto || "", MX + 8, ly, leftW - 16, 9, cardBottom - 40);
+
+  // Scope tags at bottom of left card
+  const escopo = Array.isArray(pj.escopo) ? pj.escopo.slice(0, 5) : [];
+  if (escopo.length > 0 && ly < cardBottom - 24) {
+    ly += 4;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.midGray);
+    pdf.text("ESCOPO DO PROJETO", MX + 8, ly);
+    ly += 6;
+    let tagX = MX + 8;
+    escopo.forEach((tag: string) => {
+      const tw = pdf.getTextWidth(tag) + 8;
+      if (tagX + tw > MX + leftW - 8) { tagX = MX + 8; ly += 8; }
+      if (ly > cardBottom - 10) return;
+      // Tag pill
+      pdf.setDrawColor(...C.primary);
+      h.setOpacity(0.3);
+      pdf.setLineWidth(0.4);
+      pdf.roundedRect(tagX, ly - 4, tw, 7, 2, 2, "S");
+      h.restoreOpacity();
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(6.5);
+      pdf.setTextColor(...C.primary);
+      pdf.text(tag, tagX + 4, ly + 0.5);
+      tagX += tw + 4;
+    });
+  }
+
+  // Right top: 2x2 grid cards (Diagnóstico, Solução, etc.)
+  const smallCardW = (rightW - 6) / 2;
+  const smallCardH = (leftH - 8) / 2 - 2;
+
+  const sections = [
+    { title: "Diagnóstico", text: pj.diagnostico || "Não informado", color: C.purple },
+    { title: "Solução Proposta", text: pj.solucao_proposta || "Não informado", color: C.green },
+    { title: "Análise Estratégica", text: pj.analise_estrategica || "Não informado", color: C.pink },
+    { title: "Complexidade", text: `${pj.complexidade || "média"}\n\n${pj.estimativa_esforco || ""}`, color: C.orange },
+  ];
+
+  sections.forEach((sec, i) => {
     const col = i % 2;
     const row = Math.floor(i / 2);
-    const mx = metaStartX + col * (metaCardW + metaGap);
-    const my = metaStartY + row * (metaCardH + metaGap);
-    card(pdf, mx, my, metaCardW, metaCardH, h);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(6);
-    pdf.setTextColor(...C.midGray);
-    pdf.text(m.label, mx + 4, my + 7);
+    const sx = rightX + col * (smallCardW + 6);
+    const sy = y + row * (smallCardH + 6);
+    cardWithBorder(pdf, sx, sy, smallCardW, smallCardH, sec.color, h);
+
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
     pdf.setTextColor(...C.white);
-    const val = pdf.splitTextToSize(m.value, metaCardW - 8);
-    pdf.text(val[0] || "", mx + 4, my + 15);
-    if (val[1]) { pdf.setFontSize(7); pdf.text(val[1], mx + 4, my + 20); }
+    pdf.text(sec.title, sx + 6, sy + 12);
+
+    textBlock(pdf, sec.text, sx + 6, sy + 18, smallCardW - 12, 8, sy + smallCardH - 6);
   });
+}
 
-  // Recommended tier below meta cards
-  const tierBadgeY = metaStartY + 2 * (metaCardH + metaGap) + 4;
-  if (p.recommended_tier) {
-    pdf.setFillColor(...C.primary);
-    h.setOpacity(0.15);
-    pdf.roundedRect(metaStartX, tierBadgeY, 150, 10, 3, 3, "F");
-    h.restoreOpacity();
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...C.primary);
-    pdf.text(`★ Plano Recomendado: ${p.recommended_tier.toUpperCase()}`, metaStartX + 6, tierBadgeY + 7);
-  }
+function pageScopeFeatures(pdf: jsPDF, p: Proposta, h: H) {
+  drawBg(pdf, h);
+  const pj = (p.proposta_json ?? {}) as Record<string, any>;
+  const escopo = Array.isArray(pj.escopo) ? pj.escopo : [];
+  const funcionalidades = Array.isArray(pj.funcionalidades) ? pj.funcionalidades : [];
+  const recomendadas = Array.isArray(pj.funcionalidades_recomendadas) ? pj.funcionalidades_recomendadas : [];
 
-  // ── Right side: Investment cards (stacked vertically) ──
-  const investments = [
-    { label: "Mínimo", value: fmt(p.valor_minimo), color: C.accent },
-    { label: "Ideal", value: fmt(p.valor_ideal), color: C.secondary },
-    { label: "Premium", value: fmt(p.valor_premium), color: C.primary },
+  let y = pageHeader(pdf, "ARQUITETURA", "Núcleo do Sistema", "Componentes Principais", C.purple);
+
+  // Three numbered cards
+  const colGap = 8;
+  const colW = (CW - colGap * 2) / 3;
+  const cardH = PH - MY - y - 14;
+
+  const cols = [
+    { num: "01", title: "Escopo", items: escopo, color: C.primary, icon: "◎" },
+    { num: "02", title: "Funcionalidades", items: funcionalidades, color: C.purple, icon: "◆" },
+    { num: "03", title: "Evoluções Premium", items: recomendadas, color: C.green, icon: "★" },
   ];
-  const rightCardW = 65;
-  const rightCardH = 28;
-  const rightCardGap = 6;
-  const rightX = PW - MX - rightCardW - 12;
-  const rightStartY = MY + 34;
+
+  cols.forEach((col, i) => {
+    const cx = MX + i * (colW + colGap);
+    cardWithBorder(pdf, cx, y, colW, cardH, col.color, h, i === 1);
+
+    // Watermark number
+    watermarkNumber(pdf, col.num, cx, y, colW, h);
+
+    // Icon
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(14);
+    pdf.setTextColor(...col.color);
+    pdf.text(col.icon, cx + 8, y + 16);
+
+    // Title
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(...C.white);
+    pdf.text(col.title, cx + 8, y + 30);
+
+    // Description
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.lightGray);
+    const descText = col.items.length > 0
+      ? `${col.items.length} itens identificados para o projeto.`
+      : "A definir com o cliente.";
+    pdf.text(descText, cx + 8, y + 38);
+
+    // Bullet items
+    bulletList(pdf, col.items, cx + 8, y + 48, colW - 16, y + cardH - 8, col.color);
+  });
+}
+
+function pageInvestment(pdf: jsPDF, p: Proposta, h: H) {
+  drawBg(pdf, h);
+  const pj = (p.proposta_json ?? {}) as Record<string, any>;
+
+  let y = pageHeader(pdf, "INVESTIMENTO", "Valores & Retorno", "Plano de Investimento", C.green);
+
+  const halfW = (CW - 10) / 2;
+  const cardBottom = PH - MY - 14;
+
+  // Left: 3 investment cards stacked
+  const investments = [
+    { label: "Investimento Mínimo", value: fmt(p.valor_minimo), desc: "Escopo essencial / MVP", color: C.orange, num: "01" },
+    { label: "Investimento Ideal", value: fmt(p.valor_ideal), desc: "Escopo completo recomendado", color: C.green, num: "02" },
+    { label: "Investimento Premium", value: fmt(p.valor_premium), desc: "Escopo expandido + extras", color: C.purple, num: "03" },
+  ];
+
+  const invCardH = 32;
+  const invGap = 6;
 
   investments.forEach((inv, i) => {
-    const iy = rightStartY + i * (rightCardH + rightCardGap);
-    card(pdf, rightX, iy, rightCardW, rightCardH, h);
+    const iy = y + i * (invCardH + invGap);
+    cardWithBorder(pdf, MX, iy, halfW, invCardH, inv.color, h);
+    watermarkNumber(pdf, inv.num, MX, iy, halfW, h);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.white);
+    pdf.text(inv.label, MX + 8, iy + 10);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(18);
+    pdf.setTextColor(...inv.color);
+    pdf.text(inv.value, MX + 8, iy + 23);
+
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7);
     pdf.setTextColor(...C.midGray);
-    pdf.text(inv.label, rightX + 5, iy + 9);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(14);
-    pdf.setTextColor(...inv.color);
-    pdf.text(inv.value, rightX + 5, iy + 21);
+    pdf.text(inv.desc, MX + 70, iy + 23);
   });
 
-  // Bar chart below investment cards
-  const barChartY = rightStartY + 3 * (rightCardH + rightCardGap) + 4;
-  const barChartH = Math.min(40, PH - MY - barChartY - 14); // don't exceed page
-  if (barChartH > 20) {
+  // Bar chart below investments
+  const barY = y + 3 * (invCardH + invGap) + 4;
+  const barH = cardBottom - barY;
+  if (barH > 25) {
     drawBarChart(
-      pdf, rightX - 30, barChartY, rightCardW + 30, barChartH,
+      pdf, MX, barY, halfW, barH,
       investments.map(inv => ({
-        label: inv.label,
+        label: inv.label.replace("Investimento ", ""),
         value: Number(String(inv.value).replace(/[^\d]/g, "")) || 0,
         color: inv.color,
       })),
@@ -287,371 +506,223 @@ function pageCover(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos) {
       { white: C.white, midGray: C.midGray, bgCard: C.bgCard, lightGray: C.lightGray }
     );
   }
-}
 
-function pageExecutiveSummary(pdf: jsPDF, p: Proposta, h: Helpers) {
-  drawPageBg(pdf);
-  const pj = (p.proposta_json ?? {}) as Record<string, any>;
-
-  let y = MY;
-  y = sectionTitle(pdf, "Resumo Executivo", y);
-
-  // Two-column layout
-  const leftW = CW * 0.55;
-  const rightW = CW * 0.40;
-  const rightX = MX + leftW + CW * 0.05;
-  const cardBottom = MY + CH - 10;
-  const cardH = cardBottom - y;
-
-  // Left: text sections
-  card(pdf, MX, y, leftW, cardH, h);
-  let ly = y + 8;
-  const textMaxY = cardBottom - 6; // don't overflow card
-
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.accent);
-  pdf.text("Visão Geral", MX + 6, ly);
-  ly += 6;
-  ly = textBlock(pdf, pj.resumo_executivo || p.descricao_projeto || "", MX + 6, ly, leftW - 12, 9, textMaxY);
-
-  if (ly < textMaxY - 20) {
-    ly += 2;
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.setTextColor(...C.accent2);
-    pdf.text("Diagnóstico", MX + 6, ly);
-    ly += 6;
-    ly = textBlock(pdf, pj.diagnostico || "", MX + 6, ly, leftW - 12, 9, textMaxY);
-  }
-
-  if (ly < textMaxY - 20) {
-    ly += 2;
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.setTextColor(...C.secondary);
-    pdf.text("Solução Proposta", MX + 6, ly);
-    ly += 6;
-    textBlock(pdf, pj.solucao_proposta || "", MX + 6, ly, leftW - 12, 9, textMaxY);
-  }
-
-  // Right: KPIs
+  // Right: KPIs + strategic info
+  const rightX = MX + halfW + 10;
   const ni = pj.niche_intelligence as Record<string, any> | undefined;
   const kpis = ni?.kpis as any[] | undefined;
+
   if (kpis && kpis.length > 0) {
-    let ry = y;
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(11);
-    pdf.setTextColor(...C.white);
-    pdf.text("KPIs Projetados", rightX, ry + 5);
-    ry += 12;
-    const kpiColors: RGB[] = [C.primary, C.secondary, C.accent, C.accent2];
-    const kpiCardH = 30;
-    const kpiGap = 4;
-    const maxKpis = Math.min(kpis.length, Math.floor((cardBottom - ry) / (kpiCardH + kpiGap)) * 2);
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.midGray);
+    pdf.text("KPIS PROJETADOS", rightX, y + 5);
+
+    const kpiCardW = (halfW - 6) / 2;
+    const kpiCardH = 28;
+    const kpiGap = 6;
+    const maxKpis = Math.min(kpis.length, 6);
     kpis.slice(0, maxKpis).forEach((kpi: any, i: number) => {
       const col = i % 2;
       const row = Math.floor(i / 2);
-      const kx = rightX + col * (rightW / 2 + 2);
-      const ky = ry + row * (kpiCardH + kpiGap);
+      const kx = rightX + col * (kpiCardW + 6);
+      const ky = y + 12 + row * (kpiCardH + kpiGap);
       if (ky + kpiCardH > cardBottom) return;
-      drawKpiCard(pdf, kx, ky, rightW / 2 - 2, kpiCardH, "◆", kpi.metric || "", kpi.label || "", h,
-        { primary: kpiColors[i % kpiColors.length], bgCard: C.bgCard, white: C.white, midGray: C.midGray },
-        kpiColors[i % kpiColors.length]);
-    });
-  }
-}
-
-function pageScopeFeatures(pdf: jsPDF, p: Proposta, h: Helpers) {
-  drawPageBg(pdf);
-  const pj = (p.proposta_json ?? {}) as Record<string, any>;
-  const escopo = Array.isArray(pj.escopo) ? pj.escopo : [];
-  const funcionalidades = Array.isArray(pj.funcionalidades) ? pj.funcionalidades : [];
-  const recomendadas = Array.isArray(pj.funcionalidades_recomendadas) ? pj.funcionalidades_recomendadas : [];
-
-  let y = MY;
-  y = sectionTitle(pdf, "Escopo & Funcionalidades", y);
-
-  // Three columns
-  const colGap = 6;
-  const colW = (CW - colGap * 2) / 3;
-  const cardH = MY + CH - y - 10;
-  const cardBottom = y + cardH;
-
-  // Col 1: Escopo
-  card(pdf, MX, y, colW, cardH, h);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.primary);
-  pdf.text("Escopo do Projeto", MX + 5, y + 8);
-  bulletList(pdf, escopo, MX + 5, y + 16, colW - 10, cardBottom - 6);
-
-  // Col 2: Funcionalidades
-  const col2X = MX + colW + colGap;
-  card(pdf, col2X, y, colW, cardH, h);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.secondary);
-  pdf.text("Funcionalidades", col2X + 5, y + 8);
-  bulletList(pdf, funcionalidades, col2X + 5, y + 16, colW - 10, cardBottom - 6);
-
-  // Col 3: Recomendadas + Donut chart
-  const col3X = MX + (colW + colGap) * 2;
-  card(pdf, col3X, y, colW, cardH, h);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.accent);
-  pdf.text("★ Premium", col3X + 5, y + 8);
-
-  let recEndY = y + 16;
-  if (recomendadas.length > 0) {
-    const maxRecY = y + cardH * 0.55; // reserve bottom half for donut
-    recomendadas.forEach((item) => {
-      if (recEndY > maxRecY) return;
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(...C.accent);
-      pdf.text("★", col3X + 5, recEndY);
-      pdf.setTextColor(...C.lightGray);
-      const lines = pdf.splitTextToSize(item, colW - 16);
-      pdf.text(lines[0] || "", col3X + 11, recEndY);
-      recEndY += 6;
+      drawKpiCard(pdf, kx, ky, kpiCardW, kpiCardH, "◆", kpi.metric || "", kpi.label || "", h,
+        { primary: ACCENT_COLORS[i % ACCENT_COLORS.length], bgCard: C.bgCard, white: C.white, midGray: C.midGray },
+        ACCENT_COLORS[i % ACCENT_COLORS.length]);
     });
   }
 
-  // Donut chart in col3 bottom — positioned after recomendadas with safe spacing
-  const donutCenterY = Math.max(recEndY + 22, y + cardH * 0.65);
-  if (donutCenterY + 30 < cardBottom) {
-    const segments = [
-      { label: "Core", pct: 45, color: C.primary },
-      { label: "Gestão", pct: 30, color: C.secondary },
-      { label: "Design", pct: 15, color: C.accent },
-      { label: "QA", pct: 10, color: C.accent2 },
-    ];
-    drawDonutChart(pdf, col3X + colW / 2, donutCenterY, 14, segments, h, { white: C.white, midGray: C.midGray, bg: C.bg });
-  }
-}
-
-function pageStrategicAnalysis(pdf: jsPDF, p: Proposta, h: Helpers) {
-  drawPageBg(pdf);
-  const pj = (p.proposta_json ?? {}) as Record<string, any>;
-  const ni = pj.niche_intelligence as Record<string, any> | undefined;
-  const benefits = ni?.strategic_benefits as any[] | undefined;
-
-  let y = MY;
-  y = sectionTitle(pdf, "Análise Estratégica", y);
-
-  const cardBottom = MY + CH - 10;
-
-  // Left: text
-  const leftW = CW * 0.45;
-  card(pdf, MX, y, leftW, cardBottom - y, h);
-  let ly = y + 8;
-  ly = textBlock(pdf, pj.analise_estrategica || "", MX + 6, ly, leftW - 12, 9, cardBottom - 50);
-
-  // Investment justification
-  if (ni?.investment_justification && ly < cardBottom - 30) {
-    ly += 4;
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(9);
-    pdf.setTextColor(...C.accent);
-    pdf.text("Justificativa de Investimento", MX + 6, ly);
-    ly += 6;
-    // Dynamic height based on remaining space
-    const justBoxH = Math.min(cardBottom - ly - 6, 50);
-    pdf.setFillColor(...C.primary);
-    h.setOpacity(0.08);
-    pdf.roundedRect(MX + 4, ly - 3, leftW - 8, justBoxH, 2, 2, "F");
-    h.restoreOpacity();
-    textBlock(pdf, ni.investment_justification, MX + 8, ly, leftW - 16, 8.5, ly + justBoxH - 4);
-  }
-
-  // Expert ref at bottom of card
-  if (ni?.expert_reference) {
-    pdf.setFont("helvetica", "italic");
-    pdf.setFontSize(6.5);
-    pdf.setTextColor(...C.midGray);
-    const rl = pdf.splitTextToSize(`Fontes: ${ni.expert_reference}`, leftW - 12);
-    pdf.text(rl.slice(0, 2), MX + 6, cardBottom - 6);
-  }
-
-  // Right: benefit cards
-  const rightX = MX + leftW + 10;
-  const rightW = CW - leftW - 10;
-  if (benefits && benefits.length > 0) {
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(11);
-    pdf.setTextColor(...C.white);
-    pdf.text("Benefícios Estratégicos", rightX, y + 5);
-    const colors: RGB[] = [C.primary, C.secondary, C.accent, C.accent2];
-    const benefitCardH = 28;
-    const benefitGap = 4;
-    benefits.forEach((b: any, i: number) => {
-      const by = y + 12 + i * (benefitCardH + benefitGap);
-      if (by + benefitCardH > cardBottom) return;
-      card(pdf, rightX, by, rightW, benefitCardH, h);
-      pdf.setFillColor(...colors[i % colors.length]);
-      pdf.roundedRect(rightX, by, 3, benefitCardH, 1.5, 1.5, "F");
+  // Justification box at bottom right
+  if (ni?.investment_justification) {
+    const justY = Math.max(y + 110, cardBottom - 50);
+    if (justY + 30 < cardBottom) {
+      cardWithBorder(pdf, rightX, justY, halfW, cardBottom - justY, C.yellow, h);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(9);
-      pdf.setTextColor(...colors[i % colors.length]);
-      pdf.text(b.title || "", rightX + 8, by + 9);
-      pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
-      pdf.setTextColor(...C.lightGray);
-      const dl = pdf.splitTextToSize(b.desc || "", rightW - 14);
-      pdf.text(dl.slice(0, 3), rightX + 8, by + 16);
-    });
+      pdf.setTextColor(...C.yellow);
+      pdf.text("JUSTIFICATIVA DE INVESTIMENTO", rightX + 6, justY + 10);
+      textBlock(pdf, ni.investment_justification, rightX + 6, justY + 16, halfW - 12, 7.5, cardBottom - 4);
+    }
   }
 }
 
-function pageTimeline(pdf: jsPDF, p: Proposta, h: Helpers) {
-  drawPageBg(pdf);
+function pageTimeline(pdf: jsPDF, p: Proposta, h: H) {
+  drawBg(pdf, h);
   const pj = (p.proposta_json ?? {}) as Record<string, any>;
   const ni = pj.niche_intelligence as Record<string, any> | undefined;
   const phases = ni?.timeline_phases as any[] | undefined;
 
-  let y = MY;
-  y = sectionTitle(pdf, "Cronograma de Execução", y);
+  let y = pageHeader(pdf, "WORKFLOW", "End-to-End", "Pipeline de Execução", C.pink);
 
   // Schedule badge
   if (pj.cronograma) {
-    card(pdf, MX, y, CW, 14, h);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.setTextColor(...C.accent);
-    pdf.text(`⏱ ${pj.cronograma}`, MX + 8, y + 9);
-    y += 20;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.lightGray);
+    pdf.text(`⏱ ${pj.cronograma}`, MX, y + 4);
+    y += 10;
   }
 
-  // Visual timeline — full width landscape
+  // Phase cards in grid (3 columns)
   if (phases && phases.length > 0) {
-    const steps = phases.map((ph: any) => ({
-      title: ph.title || "",
-      subtitle: ph.subtitle || "",
-      desc: ph.desc || "",
-    }));
-    drawTimeline(pdf, MX, y, CW, steps, h, {
-      primary: C.primary, secondary: C.secondary, accent: C.accent, accent2: C.accent2,
-      white: C.white, midGray: C.midGray, lightGray: C.lightGray, bg: C.bg,
+    const cols = 3;
+    const colGap = 8;
+    const rowGap = 6;
+    const colW = (CW - colGap * (cols - 1)) / cols;
+    const cardH = 38;
+    const phaseColors: RGB[] = [C.primary, C.purple, C.green, C.pink, C.orange, C.yellow];
+
+    phases.forEach((ph: any, i: number) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cx = MX + col * (colW + colGap);
+      const cy = y + row * (cardH + rowGap);
+      if (cy + cardH > PH - MY - 14) return;
+
+      const pc = phaseColors[i % phaseColors.length];
+      cardWithBorder(pdf, cx, cy, colW, cardH, pc, h);
+      watermarkNumber(pdf, String(i + 1).padStart(2, "0"), cx, cy, colW, h);
+
+      // Icon
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(...pc);
+      pdf.text("◆", cx + 6, cy + 12);
+
+      // Title
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.white);
+      pdf.text(ph.title || `Fase ${i + 1}`, cx + 6, cy + 22);
+
+      // Desc
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.setTextColor(...C.lightGray);
+      const dl = pdf.splitTextToSize(ph.desc || ph.subtitle || "", colW - 14);
+      pdf.text(dl.slice(0, 2), cx + 6, cy + 28);
     });
-    y += 65;
   }
 
-  // Bottom row: effort + maintenance
-  const bottomH = PH - y - 16; // available space
-  if (bottomH < 20) return; // not enough space
+  // Bottom cards: effort + maintenance
+  const bottomY = PH - MY - 36;
   const halfW = (CW - 8) / 2;
 
-  // Left: effort
-  card(pdf, MX, y, halfW, bottomH, h);
-  let ly = y + 8;
+  cardWithBorder(pdf, MX, bottomY, halfW, 22, C.primary, h);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.accent2);
-  pdf.text("Estimativa de Esforço", MX + 6, ly);
-  ly += 6;
-  textBlock(pdf, pj.estimativa_esforco || "", MX + 6, ly, halfW - 12, 9, y + bottomH - 6);
+  pdf.setFontSize(8);
+  pdf.setTextColor(...C.primary);
+  pdf.text("ESTIMATIVA DE ESFORÇO", MX + 6, bottomY + 8);
+  textBlock(pdf, pj.estimativa_esforco || "A definir", MX + 6, bottomY + 14, halfW - 12, 7.5, bottomY + 20);
 
-  // Right: maintenance
   const rx = MX + halfW + 8;
-  card(pdf, rx, y, halfW, bottomH, h);
-  ly = y + 8;
+  cardWithBorder(pdf, rx, bottomY, halfW, 22, C.green, h);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.secondary);
-  pdf.text("Manutenção & Suporte", rx + 6, ly);
-  ly += 6;
-  ly = textBlock(pdf, pj.manutencao || "", rx + 6, ly, halfW - 12, 9, y + bottomH - 20);
-
-  const maintFeatures = ni?.maintenance_features as string[] | undefined;
-  if (maintFeatures && maintFeatures.length > 0) {
-    bulletList(pdf, maintFeatures, rx + 6, ly, halfW - 12, y + bottomH - 6);
-  }
+  pdf.setFontSize(8);
+  pdf.setTextColor(...C.green);
+  pdf.text("MANUTENÇÃO & SUPORTE", rx + 6, bottomY + 8);
+  textBlock(pdf, pj.manutencao || "Sob consulta", rx + 6, bottomY + 14, halfW - 12, 7.5, bottomY + 20);
 }
 
-function pageRisks(pdf: jsPDF, p: Proposta, h: Helpers) {
-  drawPageBg(pdf);
+function pageRisks(pdf: jsPDF, p: Proposta, h: H) {
+  drawBg(pdf, h);
   const pj = (p.proposta_json ?? {}) as Record<string, any>;
   const ni = pj.niche_intelligence as Record<string, any> | undefined;
   const riscos = Array.isArray(pj.riscos) ? pj.riscos : [];
   const proximos = Array.isArray(pj.proximos_passos) ? pj.proximos_passos : [];
   const riskMatrix = ni?.risk_matrix as any[] | undefined;
 
-  let y = MY;
-  y = sectionTitle(pdf, "Riscos & Próximos Passos", y);
+  let y = pageHeader(pdf, "BEST PRACTICES", "Qualidade & Segurança", "Riscos & Próximos Passos", C.orange);
 
-  const halfW = (CW - 8) / 2;
-  const cardBottom = MY + CH - 10;
-  const cardH = cardBottom - y;
+  const halfW = (CW - 10) / 2;
+  const rightX = MX + halfW + 10;
+  const cardBottom = PH - MY - 14;
 
-  // Left: risks
-  card(pdf, MX, y, halfW, cardH, h);
-  let ly = y + 8;
+  // Left column header
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
+  pdf.setFontSize(9);
   pdf.setTextColor(...C.red);
-  pdf.text("Matriz de Riscos", MX + 6, ly);
-  ly += 8;
+  pdf.text("◆ Matriz de Riscos", MX, y + 4);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(...C.midGray);
+  pdf.text("ANÁLISE", MX + 50, y + 4);
 
-  if (riskMatrix && riskMatrix.length > 0) {
-    riskMatrix.forEach((risk: any, i: number) => {
-      if (ly > cardBottom - 12) return;
-      const sevColor: RGB = risk.severity === "alto" ? C.red : risk.severity === "medio" ? C.accent : C.secondary;
-      pdf.setFillColor(...sevColor);
-      pdf.circle(MX + 10, ly, 2.5, "F");
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(8.5);
-      pdf.setTextColor(...C.white);
-      pdf.text(risk.title || `Risco ${i + 1}`, MX + 16, ly + 1);
-      ly += 6;
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7.5);
-      pdf.setTextColor(...C.midGray);
-      pdf.text(`Impacto: ${risk.impact || "—"}`, MX + 16, ly);
-      ly += 5;
-      pdf.setTextColor(...C.secondary);
-      pdf.text(`Mitigação: ${risk.mitigation || "—"}`, MX + 16, ly);
-      ly += 8;
-    });
-  } else if (riscos.length > 0) {
-    bulletList(pdf, riscos, MX + 6, ly, halfW - 12, cardBottom - 6);
-  }
-
-  // Right: next steps
-  const rx = MX + halfW + 8;
-  card(pdf, rx, y, halfW, cardH, h);
-  let ry = y + 8;
+  // Right column header
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(...C.accent2);
-  pdf.text("Próximos Passos", rx + 6, ry);
-  ry += 10;
+  pdf.setFontSize(9);
+  pdf.setTextColor(...C.primary);
+  pdf.text("◆ Próximos Passos", rightX, y + 4);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(...C.midGray);
+  pdf.text("AÇÃO", rightX + 50, y + 4);
 
-  const stepCardH = 14;
-  const stepGap = 4;
-  proximos.forEach((step, i) => {
-    if (ry + stepCardH > cardBottom - 4) return;
-    card(pdf, rx + 4, ry, halfW - 8, stepCardH, h);
+  y += 12;
+
+  // Left: risk items as rows with icon
+  const risks = riskMatrix && riskMatrix.length > 0 ? riskMatrix : riscos.map((r: string) => ({ title: r, impact: "", mitigation: "", severity: "medio" }));
+  risks.forEach((risk: any, i: number) => {
+    if (y > cardBottom - 10) return;
+    const sevColor: RGB = risk.severity === "alto" ? C.red : risk.severity === "medio" ? C.orange : C.green;
+    const rowH = 22;
+    cardWithBorder(pdf, MX, y, halfW, rowH, sevColor, h);
+
+    // Icon
+    pdf.setFillColor(...sevColor);
+    pdf.roundedRect(MX + 6, y + 5, 8, 8, 2, 2, "F");
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(12);
-    pdf.setTextColor(...C.primary);
-    pdf.text(String(i + 1).padStart(2, "0"), rx + 10, ry + 9);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8.5);
-    pdf.setTextColor(...C.lightGray);
-    const sl = pdf.splitTextToSize(step, halfW - 40);
-    pdf.text(sl[0] || "", rx + 24, ry + 9);
-    ry += stepCardH + stepGap;
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.bg);
+    pdf.text("!", MX + 10, y + 11, { align: "center" });
+
+    // Title
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.white);
+    pdf.text(risk.title || `Risco ${i + 1}`, MX + 20, y + 10);
+
+    // Impact + mitigation
+    if (risk.impact || risk.mitigation) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(6.5);
+      pdf.setTextColor(...C.lightGray);
+      const detail = [risk.impact, risk.mitigation].filter(Boolean).join(" • ");
+      const dl = pdf.splitTextToSize(detail, halfW - 26);
+      pdf.text(dl[0] || "", MX + 20, y + 17);
+    }
+
+    y += rowH + 4;
+  });
+
+  // Right: next steps as numbered cards
+  let ry = y - (risks.length * 26); // Reset to match left start
+  ry = pageHeader(pdf, "", "", "", C.primary) - 34 + 12; // recalc
+  ry = MY + 46; // fixed position
+
+  proximos.forEach((step: string, i: number) => {
+    if (ry > cardBottom - 10) return;
+    const stepH = 18;
+    cardWithBorder(pdf, rightX, ry, halfW, stepH, ACCENT_COLORS[i % ACCENT_COLORS.length], h);
+    watermarkNumber(pdf, String(i + 1).padStart(2, "0"), rightX, ry - 4, halfW, h);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...C.white);
+    const sl = pdf.splitTextToSize(step, halfW - 16);
+    pdf.text(sl[0] || "", rightX + 8, ry + 11);
+
+    ry += stepH + 4;
   });
 }
 
-function pageTiers(pdf: jsPDF, p: Proposta, h: Helpers): boolean {
+function pageTiers(pdf: jsPDF, p: Proposta, h: H): boolean {
   if (!p.proposal_tiers || p.proposal_tiers.length === 0) return false;
 
-  drawPageBg(pdf);
-  let y = MY;
-  y = sectionTitle(pdf, "Planos de Investimento", y);
+  drawBg(pdf, h);
+  let y = pageHeader(pdf, "ENGENHARIA", "Planos & Módulos", "Comparação de Planos", C.green);
 
   const tiers = p.proposal_tiers;
   const headers = tiers.map((t) => t.name);
@@ -670,85 +741,147 @@ function pageTiers(pdf: jsPDF, p: Proposta, h: Helpers): boolean {
 
   if (rows.length > 0) {
     drawComparisonTable(pdf, MX, y, CW, headers, rows, h, {
-      primary: C.primary, secondary: C.secondary, white: C.white,
+      primary: C.primary, secondary: C.green, white: C.white,
       midGray: C.midGray, bgCard: C.bgCard, lightGray: C.lightGray, bg: C.bg,
     });
   }
   return true;
 }
 
-function pageClosing(pdf: jsPDF, p: Proposta, h: Helpers, logos: PdfLogos, docCode?: string) {
-  drawPageBg(pdf);
+function pageStrategicBenefits(pdf: jsPDF, p: Proposta, h: H) {
+  drawBg(pdf, h);
+  const pj = (p.proposta_json ?? {}) as Record<string, any>;
+  const ni = pj.niche_intelligence as Record<string, any> | undefined;
+  const benefits = ni?.strategic_benefits as any[] | undefined;
 
-  const centerX = PW / 2;
-  const centerY = PH / 2;
+  let y = pageHeader(pdf, "ROADMAP", "Benefícios & ROI", "Benefícios Estratégicos", C.purple);
 
-  // Agency logo centered at top
-  if (logos.agencyLogo) {
-    try {
-      pdf.addImage(logos.agencyLogo, "PNG", centerX - 10, MY + 10, 20, 20);
-    } catch { /* skip */ }
+  const cardBottom = PH - MY - 14;
+
+  if (benefits && benefits.length > 0) {
+    const cols = 3;
+    const colGap = 8;
+    const colW = (CW - colGap * (cols - 1)) / cols;
+    const cardH = 40;
+
+    benefits.forEach((b: any, i: number) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cx = MX + col * (colW + colGap);
+      const cy = y + row * (cardH + 6);
+      if (cy + cardH > cardBottom) return;
+
+      const bc = ACCENT_COLORS[i % ACCENT_COLORS.length];
+      cardWithBorder(pdf, cx, cy, colW, cardH, bc, h);
+      watermarkNumber(pdf, String(i + 1).padStart(2, "0"), cx, cy, colW, h);
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.white);
+      pdf.text(b.title || "", cx + 8, cy + 14);
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.lightGray);
+      const dl = pdf.splitTextToSize(b.desc || "", colW - 16);
+      pdf.text(dl.slice(0, 4), cx + 8, cy + 22);
+    });
+  } else {
+    // Fallback: scope donut + classification
+    const donutX = MX + CW / 2;
+    const donutY = y + 50;
+    drawDonutChart(pdf, donutX, donutY, 20,
+      [
+        { label: "Core", pct: 45, color: C.primary },
+        { label: "Gestão", pct: 30, color: C.green },
+        { label: "Design", pct: 15, color: C.purple },
+        { label: "QA", pct: 10, color: C.orange },
+      ], h, { white: C.white, midGray: C.midGray, bg: C.bg }
+    );
   }
 
-  // Large centered card
-  const cardW = 200;
-  const cardH = 100;
-  const cardY = centerY - cardH / 2 + 8; // shift down a bit to avoid logo overlap
+  // Expert reference at bottom
+  if (ni?.expert_reference) {
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(6.5);
+    pdf.setTextColor(...C.midGray);
+    const rl = pdf.splitTextToSize(`Fontes: ${ni.expert_reference}`, CW);
+    pdf.text(rl.slice(0, 2), MX, cardBottom + 2);
+  }
+}
+
+function pageClosing(pdf: jsPDF, p: Proposta, h: H, logos: PdfLogos, docCode?: string) {
+  drawBg(pdf, h);
+
+  // Large decorative circles
+  h.setOpacity(0.05);
   pdf.setFillColor(...C.primary);
-  h.setOpacity(0.07);
-  pdf.roundedRect(centerX - cardW / 2, cardY, cardW, cardH, 6, 6, "F");
-  h.restoreOpacity();
-  pdf.setDrawColor(...C.primary);
-  h.setOpacity(0.4);
-  pdf.setLineWidth(0.5);
-  pdf.roundedRect(centerX - cardW / 2, cardY, cardW, cardH, 6, 6, "S");
+  pdf.circle(PW / 2, PH / 2, 120, "F");
+  pdf.setFillColor(...C.purple);
+  pdf.circle(PW / 2 + 60, PH / 2 - 30, 80, "F");
   h.restoreOpacity();
 
-  const textCY = cardY + cardH / 2;
+  const cx = PW / 2;
+  const cy = PH / 2;
+
+  // Agency logo
+  if (logos.agencyLogo) {
+    try { pdf.addImage(logos.agencyLogo, "PNG", cx - 12, MY + 20, 24, 24); } catch {}
+  }
+
+  // Main CTA
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(22);
+  pdf.setFontSize(28);
   pdf.setTextColor(...C.white);
-  pdf.text("Pronto para transformar", centerX, textCY - 20, { align: "center" });
-  pdf.text("sua ideia em realidade?", centerX, textCY - 8, { align: "center" });
+  pdf.text("Pronto para transformar", cx, cy - 14, { align: "center" });
+  pdf.text("sua ideia em realidade?", cx, cy + 4, { align: "center" });
 
+  // Accent line
+  pdf.setFillColor(...C.primary);
+  pdf.rect(cx - 20, cy + 12, 40, 1.5, "F");
+
+  // Subtitle
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
   pdf.setTextColor(...C.lightGray);
-  pdf.text("Entre em contato para iniciar o desenvolvimento.", centerX, textCY + 8, { align: "center" });
+  pdf.text("Entre em contato para iniciar o desenvolvimento.", cx, cy + 24, { align: "center" });
 
+  // Validity
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(9);
-  pdf.setTextColor(...C.accent);
-  pdf.text(`Validade: ${p.proposal_validity || "30 dias"}`, centerX, textCY + 20, { align: "center" });
+  pdf.setTextColor(...C.primary);
+  pdf.text(`Validade: ${p.proposal_validity || "30 dias"}`, cx, cy + 36, { align: "center" });
 
+  // Closing strategy
   if (p.closing_strategy) {
     pdf.setFont("helvetica", "italic");
     pdf.setFontSize(8);
     pdf.setTextColor(...C.midGray);
-    const cs = pdf.splitTextToSize(p.closing_strategy, 170);
-    pdf.text(cs.slice(0, 2), centerX, textCY + 30, { align: "center" });
+    const cs = pdf.splitTextToSize(p.closing_strategy, 180);
+    pdf.text(cs.slice(0, 2), cx, cy + 46, { align: "center" });
   }
 
+  // Doc code
   if (docCode) {
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
+    pdf.setFontSize(6.5);
     pdf.setTextColor(...C.midGray);
-    pdf.text(`Código do documento: ${docCode}`, centerX, textCY + 42, { align: "center" });
+    pdf.text(`Código do documento: ${docCode}`, cx, cy + 58, { align: "center" });
   }
 
-  // Brand
+  // Brand footer
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(11);
   pdf.setTextColor(...C.primary);
-  pdf.text("HOLYNEX LABS", centerX, PH - 24, { align: "center" });
+  pdf.text("HOLYNEX LABS", cx, PH - 24, { align: "center" });
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
   pdf.setTextColor(...C.midGray);
-  pdf.text("holynex.com • Tecnologia & Inovação Digital", centerX, PH - 18, { align: "center" });
+  pdf.text("holynex.com • Tecnologia & Inovação Digital", cx, PH - 18, { align: "center" });
 }
 
 // ══════════════════════════════════════════════════════════════
-// MAIN GENERATOR
+//  MAIN GENERATOR
 // ══════════════════════════════════════════════════════════════
 
 export async function generatePropostaPdf(
@@ -760,14 +893,12 @@ export async function generatePropostaPdf(
 
   await logProposalEvent("proposal_pdf_render_started", proposta.id, {
     render_status: "started",
-    template_id: "jspdf-landscape-v3",
+    template_id: "jspdf-genspark-v4",
   });
 
   try {
     const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const helpers = makeOpacityHelpers(pdf);
-
-    // Load logos (agency + client from link_referencia)
     const logos = await loadPdfLogos(proposta.link_referencia || undefined);
 
     const hasTiers = proposta.proposal_tiers && proposta.proposal_tiers.length > 0;
@@ -791,13 +922,19 @@ export async function generatePropostaPdf(
     pageScopeFeatures(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 4: Strategic Analysis
+    // Page 4: Investment
     pdf.addPage();
     pageNum++;
-    pageStrategicAnalysis(pdf, proposta, helpers);
+    pageInvestment(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 5: Tiers (conditional)
+    // Page 5: Strategic Benefits
+    pdf.addPage();
+    pageNum++;
+    pageStrategicBenefits(pdf, proposta, helpers);
+    drawFooter(pdf, pageNum, totalPages, documentCode);
+
+    // Page 6: Tiers (conditional)
     if (hasTiers) {
       pdf.addPage();
       pageNum++;
@@ -805,29 +942,29 @@ export async function generatePropostaPdf(
       drawFooter(pdf, pageNum, totalPages, documentCode);
     }
 
-    // Page 6: Timeline
+    // Page 7: Timeline
     pdf.addPage();
     pageNum++;
     pageTimeline(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 7: Risks & Next Steps
+    // Page 8: Risks & Next Steps + Closing
     pdf.addPage();
     pageNum++;
     pageRisks(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 8 (or 7): Closing
+    // Final: Closing
     pdf.addPage();
     pageNum++;
     pageClosing(pdf, proposta, helpers, logos, documentCode);
-    drawFooter(pdf, pageNum, totalPages, documentCode);
+    // No footer on closing — clean exit
 
     const blob = pdf.output("blob");
 
     await logProposalEvent("proposal_pdf_generated", proposta.id, {
       render_status: "success",
-      template_id: "jspdf-landscape-v3",
+      template_id: "jspdf-genspark-v4",
       duration_ms: Date.now() - renderStart,
       pages: pageNum,
     });
@@ -836,7 +973,7 @@ export async function generatePropostaPdf(
   } catch (err) {
     await logProposalEvent("proposal_pdf_render_failed", proposta.id, {
       render_status: "failed",
-      template_id: "jspdf-landscape-v3",
+      template_id: "jspdf-genspark-v4",
       duration_ms: Date.now() - renderStart,
       render_error: err instanceof Error ? err.message : "Erro desconhecido",
     });
