@@ -4,6 +4,7 @@
  * A4 Landscape: 297mm × 210mm
  */
 import { jsPDF } from "jspdf";
+import agencyLogoUrl from "@/assets/logo-transparent.png";
 import type { Proposta } from "@/lib/propostas";
 import { logProposalEvent } from "@/lib/proposal-events";
 import { loadPdfLogos, type PdfLogos } from "@/lib/pdf-logos";
