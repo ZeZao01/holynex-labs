@@ -889,8 +889,11 @@ function pageClosing(pdf: jsPDF, p: Proposta, h: H, logos: PdfLogos, docCode?: s
   const cy = PH / 2;
 
   // Agency logo
-  if (logos.agencyLogo) {
-    try { pdf.addImage(logos.agencyLogo, "PNG", cx - 12, MY + 20, 24, 24); } catch {}
+  if (!addPdfImage(pdf, logos.agencyLogo, "PNG", cx - 12, MY + 20, 24, 24, "encerramento/logo")) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.setTextColor(...C.primary);
+    pdf.text("HOLYNEX LABS", cx, MY + 34, { align: "center" });
   }
 
   // Main CTA
