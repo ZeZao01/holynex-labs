@@ -68,7 +68,8 @@ function getLogoUrlFromSite(siteUrl: string): string | null {
 /** Load both agency and client logos for PDF embedding */
 export async function loadPdfLogos(clientSiteUrl?: string): Promise<PdfLogos> {
   const [agencyLogo, clientLogo] = await Promise.all([
-    loadImageAsBase64(agencyLogoUrl, 200),
+    // Use fetch+blob for bundled asset (most reliable, avoids canvas CORS issues)
+    loadLocalImageAsBase64(agencyLogoUrl),
     clientSiteUrl ? loadImageAsBase64(getLogoUrlFromSite(clientSiteUrl) || "", 128) : Promise.resolve(null),
   ]);
 
