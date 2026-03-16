@@ -4,7 +4,24 @@
  */
 import agencyLogoUrl from "@/assets/logo-transparent.png";
 
-/** Load an image URL into a base64 data URL via canvas */
+/** Load a local/bundled image via fetch → blob → dataURL (most reliable for same-origin) */
+async function loadLocalImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Load an external image URL into a base64 data URL via canvas (handles CORS) */
 function loadImageAsBase64(url: string, maxSize = 120): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -24,7 +41,6 @@ function loadImageAsBase64(url: string, maxSize = 120): Promise<string | null> {
       }
     };
     img.onerror = () => resolve(null);
-    // Timeout after 5s
     setTimeout(() => resolve(null), 5000);
     img.src = url;
   });
@@ -52,7 +68,8 @@ function getLogoUrlFromSite(siteUrl: string): string | null {
 /** Load both agency and client logos for PDF embedding */
 export async function loadPdfLogos(clientSiteUrl?: string): Promise<PdfLogos> {
   const [agencyLogo, clientLogo] = await Promise.all([
-    loadImageAsBase64(agencyLogoUrl, 200),
+    // Use fetch+blob for bundled asset (most reliable, avoids canvas CORS issues)
+    loadLocalImageAsBase64(agencyLogoUrl),
     clientSiteUrl ? loadImageAsBase64(getLogoUrlFromSite(clientSiteUrl) || "", 128) : Promise.resolve(null),
   ]);
 
