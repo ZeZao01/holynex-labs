@@ -1037,8 +1037,6 @@ export async function generatePropostaPdf(
       template_id: "jspdf-genspark-v4",
       duration_ms: Date.now() - renderStart,
       pages: pageNum,
-      agency_logo_loaded: Boolean(logos.agencyLogo),
-      client_logo_loaded: Boolean(logos.clientLogo),
     });
 
     return blob;
