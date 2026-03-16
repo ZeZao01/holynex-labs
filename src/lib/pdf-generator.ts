@@ -59,6 +59,69 @@ type H = ReturnType<typeof makeOpacityHelpers>;
 function fmt(v: number): string { return `R$ ${Number(v || 0).toLocaleString("pt-BR")}`; }
 function fmtDate(iso: string): string { return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }); }
 
+async function loadAssetAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.warn("[PDF] Falha ao carregar asset para base64", { url, status: response.status });
+      return null;
+    }
+
+    const blob = await response.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error("[PDF] Erro ao converter asset em base64", { url, error });
+    return null;
+  }
+}
+
+async function resolvePdfLogos(clientSiteUrl?: string): Promise<PdfLogos> {
+  const logos = await loadPdfLogos(clientSiteUrl);
+
+  if (logos.agencyLogo) return logos;
+
+  const officialAgencyLogo = await loadAssetAsDataUrl(agencyLogoUrl);
+  if (!officialAgencyLogo) {
+    console.error("[PDF] Logo oficial da agência não pôde ser carregada", { agencyLogoUrl });
+    return logos;
+  }
+
+  return {
+    ...logos,
+    agencyLogo: officialAgencyLogo,
+  };
+}
+
+function addPdfImage(
+  pdf: jsPDF,
+  imageData: string | null,
+  format: "PNG" | "JPEG",
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  context: string,
+): boolean {
+  if (!imageData) {
+    console.warn(`[PDF] Imagem ausente em ${context}`);
+    return false;
+  }
+
+  try {
+    const detectedFormat = imageData.startsWith("data:image/jpeg") || imageData.startsWith("data:image/jpg") ? "JPEG" : format;
+    pdf.addImage(imageData, detectedFormat, x, y, width, height);
+    return true;
+  } catch (error) {
+    console.error(`[PDF] Falha ao inserir imagem em ${context}`, error);
+    return false;
+  }
+}
+
 // ── Background with decorative circles ──
 function drawBg(pdf: jsPDF, h: H) {
   pdf.setFillColor(...C.bg);
