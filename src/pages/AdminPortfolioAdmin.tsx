@@ -141,10 +141,9 @@ export default function AdminPortfolioAdmin() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item) => (
-                (() => {
-                  const statusMeta = getStatusMeta(item);
-                  return (
+              {filtered.map((item) => {
+                const statusMeta = getStatusMeta(item);
+                return (
                 <TableRow key={item.id}>
                   <TableCell className="text-xs text-muted-foreground">
                     <div className="flex flex-col gap-0.5">
@@ -189,9 +188,8 @@ export default function AdminPortfolioAdmin() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-                  );
-                })())
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
