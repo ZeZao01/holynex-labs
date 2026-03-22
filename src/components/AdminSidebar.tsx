@@ -17,6 +17,7 @@ import {
   FilePlus,
   ClipboardList,
   Sparkles,
+  Layers,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -60,6 +61,7 @@ const comercialItems = [
 
 const sistemaItems = [
   { title: "Segurança & Auditoria", url: "/admin/seguranca", icon: ShieldCheck, module: "seguranca" },
+  { title: "Add-ons Ocultos", url: "/admin/addons", icon: Layers, module: "addons" },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, module: "configuracoes" },
 ];
 

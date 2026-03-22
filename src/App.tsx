@@ -43,6 +43,7 @@ import AdminFinanceiro from "./pages/AdminFinanceiro";
 import AdminSeguranca from "./pages/AdminSeguranca";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes";
 import AdminIA from "./pages/AdminIA";
+import AdminAddons from "./pages/AdminAddons";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ function AppRoutes() {
           <Route path="/admin/financeiro" element={<AdminRouteGuard module="financeiro"><AdminFinanceiro /></AdminRouteGuard>} />
           <Route path="/admin/ia" element={<AdminRouteGuard module="ia"><AdminIA /></AdminRouteGuard>} />
           <Route path="/admin/seguranca" element={<AdminRouteGuard module="seguranca"><AdminSeguranca /></AdminRouteGuard>} />
+          <Route path="/admin/addons" element={<AdminRouteGuard module="addons"><AdminAddons /></AdminRouteGuard>} />
           <Route path="/admin/configuracoes" element={<AdminRouteGuard module="configuracoes"><AdminConfiguracoes /></AdminRouteGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

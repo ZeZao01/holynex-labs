@@ -31,7 +31,7 @@ export const ROLE_LABELS: Record<string, string> = {
 export const MODULES = [
   "dashboard", "leads", "propostas", "projetos", "sistemas",
   "acessos", "modulos", "manutencao", "portfolio", "modelos",
-  "financeiro", "ia", "seguranca", "configuracoes",
+  "financeiro", "ia", "seguranca", "configuracoes", "addons",
 ] as const;
 
 export const MODULE_LABELS: Record<string, string> = {
@@ -39,7 +39,7 @@ export const MODULE_LABELS: Record<string, string> = {
   projetos: "Projetos", sistemas: "Sistemas Entregues", acessos: "Acessos",
   modulos: "Módulos", manutencao: "Manutenção", portfolio: "Portfólio",
   modelos: "Projetos Modelo", financeiro: "Financeiro", ia: "IA Assistiva",
-  seguranca: "Segurança", configuracoes: "Configurações",
+  seguranca: "Segurança", configuracoes: "Configurações", addons: "Add-ons Ocultos",
 };
 
 export const ACTIONS = [

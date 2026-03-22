@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAccessControl } from "@/hooks/useAccessControl";
+import { getAddonsBySource, createAddon, ADDON_STATUS_MAP, type Addon } from "@/lib/addons";
 import {
   ArrowLeft, Mail, Building2, FileBarChart, Sparkles, Target, Flame, Snowflake, Sun,
   Check, Monitor, Smartphone, Shield, Users as UsersIcon, Layers, Zap, Clock,
@@ -27,11 +29,15 @@ const tempConfig: Record<string, { icon: typeof Flame; color: string; label: str
 export default function AdminLeadDetalhe() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
+  const { canCreate } = useAccessControl();
   const navigate = useNavigate();
   const [lead, setLead] = useState<Orcamento | null>(null);
   const [loading, setLoading] = useState(true);
   const [assetsLoading, setAssetsLoading] = useState(true);
   const [assets, setAssets] = useState<OrcamentoAsset[]>([]);
+  const [addonsLoading, setAddonsLoading] = useState(true);
+  const [addons, setAddons] = useState<Addon[]>([]);
+  const [registeringAddons, setRegisteringAddons] = useState(false);
   const [obs, setObs] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
@@ -51,6 +57,10 @@ export default function AdminLeadDetalhe() {
         const analisesData = await getOrcamentoAnalises(id);
         setAnalises(analisesData || []);
       } catch { /* ignore analysis errors */ }
+      try {
+        const addonsData = await getAddonsBySource("lead", id);
+        setAddons(addonsData || []);
+      } catch { /* ignore addons errors */ }
       setLead(data);
       setObs(data?.observacoes_internas || "");
       setAssets(assetsData || []);
@@ -58,6 +68,7 @@ export default function AdminLeadDetalhe() {
       setLoading(false);
       setAssetsLoading(false);
       setAnaliseLoading(false);
+      setAddonsLoading(false);
     }
   }, [id]);
 
@@ -139,12 +150,60 @@ export default function AdminLeadDetalhe() {
    const estrategia = ESTRATEGIAS_COMERCIAIS.find(e => e.value === lead.estrategia_comercial);
    const latestAnalise = analises[0];
    const analiseData = (latestAnalise?.output_json as any) || null;
+   const aiAddonSuggestions = Array.isArray(analiseData?.addons_ocultos_sugeridos)
+     ? (analiseData.addons_ocultos_sugeridos as string[]).filter(Boolean)
+     : [];
    const statusMap: Record<string, { label: string; color: string }> = {
      em_processamento: { label: "Processando", color: "bg-amber-500/15 text-amber-400" },
      concluido: { label: "Concluído", color: "bg-emerald-500/15 text-emerald-400" },
      falhou: { label: "Falhou", color: "bg-destructive/15 text-destructive" },
    };
    const statusInfo = latestAnalise ? statusMap[latestAnalise.status] || { label: latestAnalise.status, color: "bg-muted text-muted-foreground" } : null;
+
+  const handleRegisterAiAddons = async () => {
+    if (!lead || aiAddonSuggestions.length === 0) return;
+    if (!canCreate("addons")) {
+      toast.error("Sem permissão para registrar add-ons");
+      return;
+    }
+    setRegisteringAddons(true);
+    try {
+      const existing = new Set(addons.map((a) => a.name.toLowerCase()));
+      const toCreate = aiAddonSuggestions
+        .map((s) => String(s).trim())
+        .filter((s) => s.length > 0 && !existing.has(s.toLowerCase()));
+      if (toCreate.length === 0) {
+        toast.success("Todos os add-ons sugeridos ja foram registrados");
+        return;
+      }
+      await Promise.all(
+        toCreate.map((name) =>
+          createAddon({
+            source_context: "lead",
+            source_id: lead.id,
+            name,
+            internal_description: "Sugerido pela IA a partir da analise do lead.",
+            commercial_description: "",
+            technical_impact: "",
+            estimated_value: 0,
+            dependencies: [],
+            activation_flag: false,
+            status: "suggested",
+            suggested_by: "ia",
+            niche: lead.nicho || "",
+            module_scope: [],
+          })
+        )
+      );
+      const refreshed = await getAddonsBySource("lead", lead.id);
+      setAddons(refreshed || []);
+      toast.success("Add-ons sugeridos registrados");
+    } catch {
+      toast.error("Erro ao registrar add-ons sugeridos");
+    } finally {
+      setRegisteringAddons(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -362,6 +421,57 @@ export default function AdminLeadDetalhe() {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard
+            title="Add-ons Ocultos"
+            action={
+              aiAddonSuggestions.length > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={registeringAddons || !canCreate("addons")}
+                  onClick={handleRegisterAiAddons}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {registeringAddons ? "Registrando..." : "Registrar sugeridos"}
+                </Button>
+              ) : undefined
+            }
+          >
+            {addonsLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando add-ons...</p>
+            ) : addons.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum add-on registrado para este lead.</p>
+            ) : (
+              <div className="space-y-2">
+                {addons.map((addon) => (
+                  <div key={addon.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-medium">{addon.name || "Add-on"}</div>
+                      <StatusBadge status={ADDON_STATUS_MAP[addon.status].badge} label={ADDON_STATUS_MAP[addon.status].label} />
+                    </div>
+                    {addon.internal_description && (
+                      <p className="text-xs text-muted-foreground mt-1">{addon.internal_description}</p>
+                    )}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {addon.module_scope?.slice(0, 3).map((mod, idx) => (
+                        <Badge key={`${addon.id}-scope-${idx}`} variant="outline" className="text-[10px]">{mod}</Badge>
+                      ))}
+                      {addon.module_scope?.length > 3 && (
+                        <Badge variant="outline" className="text-[10px]">+{addon.module_scope.length - 3}</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {aiAddonSuggestions.length > 0 && (
+              <div className="mt-3 text-xs text-muted-foreground">
+                {aiAddonSuggestions.length} sugestao(oes) detectada(s) na analise.
               </div>
             )}
           </SectionCard>

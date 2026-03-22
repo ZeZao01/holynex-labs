@@ -23,13 +23,19 @@ import { Switch } from "@/components/ui/switch";
 import PdfHistorico from "@/components/PdfHistorico";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import RevealBox from "@/components/RevealBox";
+import { useAccessControl } from "@/hooks/useAccessControl";
+import { getAddonsBySource, createAddon, ADDON_STATUS_MAP, type Addon } from "@/lib/addons";
 
 export default function AdminPropostaDetalhe() {
   const { user, loading: authLoading } = useAuth();
+  const { canCreate } = useAccessControl();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [proposta, setProposta] = useState<Proposta | null>(null);
   const [loading, setLoading] = useState(true);
+  const [addonsLoading, setAddonsLoading] = useState(true);
+  const [addons, setAddons] = useState<Addon[]>([]);
+  const [registeringAddons, setRegisteringAddons] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
@@ -54,7 +60,12 @@ export default function AdminPropostaDetalhe() {
     if (!id) return;
     const data = await getProposta(id);
     setProposta(data);
+    try {
+      const addonsData = await getAddonsBySource("proposta", id);
+      setAddons(addonsData || []);
+    } catch { /* ignore addons errors */ }
     setLoading(false);
+    setAddonsLoading(false);
   };
 
   const handleStatusChange = async (status: string) => {
@@ -166,6 +177,69 @@ export default function AdminPropostaDetalhe() {
   const pj = proposta.proposta_json;
   const st = PROPOSAL_STATUS_MAP[proposta.status] || PROPOSAL_STATUS_MAP.rascunho;
   const hasTiers = proposta.proposal_tiers.length > 0;
+  const hiddenAddonsRaw = Array.isArray(proposta.hidden_addons) ? proposta.hidden_addons : [];
+  const hiddenAddonSuggestions = hiddenAddonsRaw
+    .map((item: any) => {
+      if (typeof item === "string") return { name: item };
+      if (item && typeof item === "object") {
+        return {
+          name: item.name || item.title || item.addon || "Add-on",
+          internal_description: item.internal_description || item.description || "",
+          commercial_description: item.commercial_description || "",
+          technical_impact: item.technical_impact || item.impact || "",
+          estimated_value: Number(item.estimated_value || 0),
+          dependencies: Array.isArray(item.dependencies) ? item.dependencies : [],
+          module_scope: Array.isArray(item.module_scope) ? item.module_scope : [],
+        };
+      }
+      return { name: "Add-on" };
+    })
+    .filter((item) => item.name && String(item.name).trim().length > 0);
+
+  const handleRegisterHiddenAddons = async () => {
+    if (!proposta || hiddenAddonSuggestions.length === 0) return;
+    if (!canCreate("addons")) {
+      toast.error("Sem permissão para registrar add-ons");
+      return;
+    }
+    setRegisteringAddons(true);
+    try {
+      const existing = new Set(addons.map((a) => a.name.toLowerCase()));
+      const toCreate = hiddenAddonSuggestions.filter(
+        (s) => !existing.has(String(s.name).toLowerCase())
+      );
+      if (toCreate.length === 0) {
+        toast.success("Todos os add-ons sugeridos ja foram registrados");
+        return;
+      }
+      await Promise.all(
+        toCreate.map((s) =>
+          createAddon({
+            source_context: "proposta",
+            source_id: proposta.id,
+            name: String(s.name).trim(),
+            internal_description: s.internal_description || "Sugerido pela IA na proposta.",
+            commercial_description: s.commercial_description || "",
+            technical_impact: s.technical_impact || "",
+            estimated_value: s.estimated_value || 0,
+            dependencies: s.dependencies || [],
+            activation_flag: false,
+            status: "suggested",
+            suggested_by: "ia",
+            niche: proposta.segmento || "",
+            module_scope: s.module_scope || [],
+          })
+        )
+      );
+      const refreshed = await getAddonsBySource("proposta", proposta.id);
+      setAddons(refreshed || []);
+      toast.success("Add-ons sugeridos registrados");
+    } catch {
+      toast.error("Erro ao registrar add-ons sugeridos");
+    } finally {
+      setRegisteringAddons(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -301,6 +375,57 @@ export default function AdminPropostaDetalhe() {
           )}
         </>
       )}
+
+      <SectionCard
+        title="Add-ons Ocultos"
+        action={
+          hiddenAddonSuggestions.length > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={registeringAddons || !canCreate("addons")}
+              onClick={handleRegisterHiddenAddons}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {registeringAddons ? "Registrando..." : "Registrar sugeridos"}
+            </Button>
+          ) : undefined
+        }
+      >
+        {addonsLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando add-ons...</p>
+        ) : addons.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum add-on registrado para esta proposta.</p>
+        ) : (
+          <div className="space-y-2">
+            {addons.map((addon) => (
+              <div key={addon.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-medium">{addon.name || "Add-on"}</div>
+                  <StatusBadge status={ADDON_STATUS_MAP[addon.status].badge} label={ADDON_STATUS_MAP[addon.status].label} />
+                </div>
+                {addon.internal_description && (
+                  <p className="text-xs text-muted-foreground mt-1">{addon.internal_description}</p>
+                )}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {addon.module_scope?.slice(0, 3).map((mod, idx) => (
+                    <Badge key={`${addon.id}-scope-${idx}`} variant="outline" className="text-[10px]">{mod}</Badge>
+                  ))}
+                  {addon.module_scope?.length > 3 && (
+                    <Badge variant="outline" className="text-[10px]">+{addon.module_scope.length - 3}</Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {hiddenAddonSuggestions.length > 0 && (
+          <div className="mt-3 text-xs text-muted-foreground">
+            {hiddenAddonSuggestions.length} sugestao(oes) da IA detectada(s) nos artefatos da proposta.
+          </div>
+        )}
+      </SectionCard>
 
       {/* Tier Editor Mode */}
       {editingTiers && (

@@ -5,7 +5,13 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { useAccessControl } from "@/hooks/useAccessControl";
+import { getAddonsBySource, createAddon, ADDON_STATUS_MAP, type Addon } from "@/lib/addons";
 import {
   getDeliveredSystem, saveDeliveredSystem, deleteDeliveredSystem,
   getSystemTags, getSystemEvents, addSystemEvent, setSystemTags,
@@ -28,12 +34,25 @@ import { format } from "date-fns";
 export default function AdminSistemaDetalhe() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { canCreate } = useAccessControl();
   const [system, setSystem] = useState<DeliveredSystem | null>(null);
   const [tags, setTags] = useState<SystemTag[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [sysModules, setSysModules] = useState<ProjectModule[]>([]);
   const [sysChanges, setSysChanges] = useState<ProjectChange[]>([]);
+  const [addons, setAddons] = useState<Addon[]>([]);
+  const [addonsLoading, setAddonsLoading] = useState(true);
+  const [showAddonDialog, setShowAddonDialog] = useState(false);
+  const [addonDraft, setAddonDraft] = useState({
+    name: "",
+    internal_description: "",
+    commercial_description: "",
+    technical_impact: "",
+    estimated_value: "",
+    dependencies: "",
+    module_scope: "",
+  });
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -56,14 +75,18 @@ export default function AdminSistemaDetalhe() {
         getModulesBySystem(id!),
         listChanges({ delivered_system_id: id! }),
       ]);
+      const addonData = await getAddonsBySource("sistema", id!);
       setSystem(s);
       setTags(t);
       setEvents(e);
       setAccesses(ac);
       setSysModules(sm);
       setSysChanges(sc);
+      setAddons(addonData || []);
     } catch {
       toast({ title: "Erro ao carregar sistema", variant: "destructive" });
+    } finally {
+      setAddonsLoading(false);
     }
   }
 
@@ -129,6 +152,55 @@ export default function AdminSistemaDetalhe() {
     { label: "Design", url: system.design_url, icon: Palette },
     { label: "Analytics", url: system.analytics_url, icon: BarChart3 },
   ].filter((l) => l.url);
+
+  const handleCreateAddon = async () => {
+    if (!system || !id) return;
+    if (!addonDraft.name.trim()) {
+      toast({ title: "Informe o nome do add-on", variant: "destructive" });
+      return;
+    }
+    try {
+      const dependencies = addonDraft.dependencies
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const moduleScope = addonDraft.module_scope
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      await createAddon({
+        source_context: "sistema",
+        source_id: id,
+        name: addonDraft.name.trim(),
+        internal_description: addonDraft.internal_description.trim(),
+        commercial_description: addonDraft.commercial_description.trim(),
+        technical_impact: addonDraft.technical_impact.trim(),
+        estimated_value: Number(addonDraft.estimated_value || 0),
+        dependencies,
+        activation_flag: false,
+        status: "suggested",
+        suggested_by: "manual",
+        niche: system.nicho || "",
+        module_scope: moduleScope,
+      });
+      const refreshed = await getAddonsBySource("sistema", id);
+      setAddons(refreshed || []);
+      setAddonDraft({
+        name: "",
+        internal_description: "",
+        commercial_description: "",
+        technical_impact: "",
+        estimated_value: "",
+        dependencies: "",
+        module_scope: "",
+      });
+      setShowAddonDialog(false);
+      toast({ title: "Add-on registrado" });
+    } catch {
+      toast({ title: "Erro ao registrar add-on", variant: "destructive" });
+    }
+  };
 
   if (editing) {
     return (
@@ -238,6 +310,40 @@ export default function AdminSistemaDetalhe() {
               </div>
             </div>
           )}
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Add-ons Ocultos</h3>
+              <Button size="sm" variant="outline" onClick={() => setShowAddonDialog(true)} disabled={!canCreate("addons")}>Novo add-on</Button>
+            </div>
+            {addonsLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando add-ons...</p>
+            ) : addons.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum add-on registrado para este sistema.</p>
+            ) : (
+              <div className="space-y-2">
+                {addons.map((addon) => (
+                  <div key={addon.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-medium">{addon.name || "Add-on"}</div>
+                      <StatusBadge status={ADDON_STATUS_MAP[addon.status].badge} label={ADDON_STATUS_MAP[addon.status].label} />
+                    </div>
+                    {addon.internal_description && (
+                      <p className="text-xs text-muted-foreground mt-1">{addon.internal_description}</p>
+                    )}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {addon.module_scope?.slice(0, 3).map((mod, idx) => (
+                        <Badge key={`${addon.id}-scope-${idx}`} variant="outline" className="text-[10px]">{mod}</Badge>
+                      ))}
+                      {addon.module_scope?.length > 3 && (
+                        <Badge variant="outline" className="text-[10px]">+{addon.module_scope.length - 3}</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -335,6 +441,50 @@ export default function AdminSistemaDetalhe() {
           </div>
         </div>
       </div>
+
+      <Dialog open={showAddonDialog} onOpenChange={setShowAddonDialog}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Novo add-on oculto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Nome</Label>
+              <Input value={addonDraft.name} onChange={(e) => setAddonDraft((s) => ({ ...s, name: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Descricao interna</Label>
+              <Textarea rows={2} value={addonDraft.internal_description} onChange={(e) => setAddonDraft((s) => ({ ...s, internal_description: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Descricao comercial</Label>
+              <Textarea rows={2} value={addonDraft.commercial_description} onChange={(e) => setAddonDraft((s) => ({ ...s, commercial_description: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Impacto tecnico</Label>
+              <Textarea rows={2} value={addonDraft.technical_impact} onChange={(e) => setAddonDraft((s) => ({ ...s, technical_impact: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Valor estimado (R$)</Label>
+                <Input value={addonDraft.estimated_value} onChange={(e) => setAddonDraft((s) => ({ ...s, estimated_value: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs">Dependencias (separar por virgula)</Label>
+                <Input value={addonDraft.dependencies} onChange={(e) => setAddonDraft((s) => ({ ...s, dependencies: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Escopo de modulos (separar por virgula)</Label>
+              <Input value={addonDraft.module_scope} onChange={(e) => setAddonDraft((s) => ({ ...s, module_scope: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setShowAddonDialog(false)}>Cancelar</Button>
+            <Button onClick={handleCreateAddon}>Registrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
