@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropostaTiers, gerarPropostaIA, togglePropostaPublic, type Proposta, type PropostaInput } from "@/lib/propostas";
+import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropostaArtefatos, atualizarPropostaTiers, gerarPropostaIA, togglePropostaPublic, type Proposta, type PropostaInput } from "@/lib/propostas";
 import { createDefaultTiers, createDefaultAddons, PROPOSAL_STATUS_MAP, type ProposalTier, type ProposalAddon, type CommercialNotes } from "@/lib/proposal-tiers";
 import { uploadPdf } from "@/lib/pdf-storage";
 import { generatePropostaPdf } from "@/lib/pdf-generator";
@@ -12,7 +12,7 @@ import TierCard from "@/components/admin/TierCard";
 import ScopeComparison from "@/components/admin/ScopeComparison";
 import AddonSelector from "@/components/admin/AddonSelector";
 import TierEditor from "@/components/admin/TierEditor";
-import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X, Link2, ExternalLink, Copy } from "lucide-react";
+import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X, Link2, ExternalLink, Copy, Layers } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,12 @@ export default function AdminPropostaDetalhe() {
   const [regenerating, setRegenerating] = useState(false);
   const [pdfRefreshKey, setPdfRefreshKey] = useState(0);
   const [showRegenDialog, setShowRegenDialog] = useState(false);
+
+  const [stitchDraft, setStitchDraft] = useState("");
+  const [editingStitch, setEditingStitch] = useState(false);
+  const [savingStitch, setSavingStitch] = useState(false);
+  const [versioningStitch, setVersioningStitch] = useState(false);
+  const [regeneratingStitch, setRegeneratingStitch] = useState(false);
   
   const [orientacoes, setOrientacoes] = useState("");
   const [editingTiers, setEditingTiers] = useState(false);
@@ -55,6 +61,11 @@ export default function AdminPropostaDetalhe() {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
     if (user && id) loadProposta();
   }, [user, authLoading, id]);
+
+  useEffect(() => {
+    if (!proposta) return;
+    setStitchDraft(proposta.stitch_prompt || "");
+  }, [proposta?.stitch_prompt]);
 
   const loadProposta = async () => {
     if (!id) return;
@@ -131,6 +142,119 @@ export default function AdminPropostaDetalhe() {
     } finally { setExportingPdf(false); }
   };
 
+  type StitchPromptVersion = {
+    id: string;
+    created_at: string;
+    created_by: string;
+    label?: string;
+    prompt: string;
+  };
+
+  const getStitchHistory = (): StitchPromptVersion[] => {
+    const history = proposta?.ai_metadata?.stitch_prompt_versions;
+    return Array.isArray(history) ? history : [];
+  };
+
+  const handleSaveStitch = async () => {
+    if (!proposta) return;
+    if (!proposta.proposta_json) {
+      toast.error("Proposta sem conteúdo para atualizar o stitch prompt.");
+      return;
+    }
+    setSavingStitch(true);
+    try {
+      const nextPrompt = stitchDraft.trim();
+      const nextMeta = {
+        ...(proposta.ai_metadata || {}),
+        stitch_prompt_last_edit: new Date().toISOString(),
+        stitch_prompt_last_editor: user?.email || user?.id || "admin",
+      };
+      await atualizarPropostaArtefatos(proposta.id, { stitch_prompt: nextPrompt || null }, nextMeta);
+      toast.success("Stitch prompt atualizado!");
+      setEditingStitch(false);
+      loadProposta();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar stitch prompt");
+    } finally {
+      setSavingStitch(false);
+    }
+  };
+
+  const handleVersionStitch = async () => {
+    if (!proposta) return;
+    if (!proposta.stitch_prompt || proposta.stitch_prompt.trim().length === 0) {
+      toast.error("Nenhum stitch prompt para versionar.");
+      return;
+    }
+    setVersioningStitch(true);
+    try {
+      const history = getStitchHistory();
+      const nextVersion: StitchPromptVersion = {
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        created_by: user?.email || user?.id || "admin",
+        label: `v${history.length + 1}`,
+        prompt: proposta.stitch_prompt,
+      };
+      const nextMeta = {
+        ...(proposta.ai_metadata || {}),
+        stitch_prompt_versions: [nextVersion, ...history],
+      };
+      await atualizarPropostaArtefatos(proposta.id, {}, nextMeta);
+      toast.success("Versão do stitch prompt registrada!");
+      loadProposta();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao versionar stitch prompt");
+    } finally {
+      setVersioningStitch(false);
+    }
+  };
+
+  const handleRegenerateStitch = async () => {
+    if (!proposta) return;
+    setRegeneratingStitch(true);
+    try {
+      const input: PropostaInput = {
+        nome_cliente: proposta.nome_cliente,
+        empresa_cliente: proposta.empresa_cliente,
+        segmento: proposta.segmento,
+        email_cliente: proposta.email_cliente,
+        tipo_projeto: proposta.tipo_projeto,
+        descricao_projeto: proposta.descricao_projeto,
+        problema_cliente: "",
+        objetivo_cliente: "",
+        funcionalidades_desejadas: [],
+        integracoes: [],
+        numero_usuarios: "",
+        prazo_desejado: "",
+        orcamento_cliente: "",
+        nivel_urgencia: "medio",
+        link_referencia: proposta.link_referencia || "",
+        observacoes: "Regenerar stitch prompt",
+        orcamento_id: proposta.orcamento_id || undefined,
+        nicho: proposta.segmento || "",
+      };
+      const aiResult = await gerarPropostaIA(input);
+      const nextMeta = {
+        ...(proposta.ai_metadata || {}),
+        stitch_prompt_regenerated_at: new Date().toISOString(),
+        stitch_prompt_regenerated_by: user?.email || user?.id || "admin",
+        stitch_prompt_meta: aiResult.ai_metadata || null,
+      };
+      await atualizarPropostaArtefatos(
+        proposta.id,
+        { stitch_prompt: aiResult.stitch_prompt, hidden_addons: aiResult.hidden_addons },
+        nextMeta,
+      );
+      toast.success("Stitch prompt regenerado!");
+      loadProposta();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao regenerar stitch prompt");
+    } finally {
+      setRegeneratingStitch(false);
+    }
+  };
+
   const startEditTiers = () => {
     if (!proposta) return;
     setEditTiers(proposta.proposal_tiers.length > 0 ? [...proposta.proposal_tiers] : createDefaultTiers());
@@ -195,6 +319,9 @@ export default function AdminPropostaDetalhe() {
       return { name: "Add-on" };
     })
     .filter((item) => item.name && String(item.name).trim().length > 0);
+
+  const stitchHistory = getStitchHistory();
+  const currentStitchPrompt = proposta.stitch_prompt || "";
 
   const handleRegisterHiddenAddons = async () => {
     if (!proposta || hiddenAddonSuggestions.length === 0) return;
@@ -424,6 +551,151 @@ export default function AdminPropostaDetalhe() {
           <div className="mt-3 text-xs text-muted-foreground">
             {hiddenAddonSuggestions.length} sugestao(oes) da IA detectada(s) nos artefatos da proposta.
           </div>
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Stitch Prompt"
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={async () => {
+                if (!currentStitchPrompt) {
+                  toast.error("Nenhum stitch prompt para copiar.");
+                  return;
+                }
+                try {
+                  await navigator.clipboard.writeText(currentStitchPrompt);
+                  toast.success("Stitch prompt copiado!");
+                } catch {
+                  toast.error("Erro ao copiar stitch prompt");
+                }
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" /> Copiar
+            </Button>
+
+            {editingStitch ? (
+              <>
+                <Button size="sm" onClick={handleSaveStitch} disabled={savingStitch} className="gap-1">
+                  <Save className="h-3.5 w-3.5" /> {savingStitch ? "Salvando..." : "Salvar"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditingStitch(false);
+                    setStitchDraft(currentStitchPrompt);
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" /> Cancelar
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                onClick={() => setEditingStitch(true)}
+              >
+                <Edit3 className="h-3.5 w-3.5" /> Editar
+              </Button>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={versioningStitch || !currentStitchPrompt}
+              onClick={handleVersionStitch}
+            >
+              <Layers className="h-3.5 w-3.5" /> {versioningStitch ? "Versionando..." : "Versionar"}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={regeneratingStitch}
+              onClick={handleRegenerateStitch}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${regeneratingStitch ? "animate-spin" : ""}`} />
+              {regeneratingStitch ? "Regenerando..." : "Regenerar"}
+            </Button>
+          </div>
+        }
+      >
+        {editingStitch ? (
+          <Textarea
+            value={stitchDraft}
+            onChange={(e) => setStitchDraft(e.target.value)}
+            rows={12}
+            className="text-xs"
+          />
+        ) : currentStitchPrompt ? (
+          <pre className="text-xs whitespace-pre-wrap bg-muted/30 rounded-lg p-3 border border-border/60">
+            {currentStitchPrompt}
+          </pre>
+        ) : (
+          <p className="text-sm text-muted-foreground">Nenhum stitch prompt gerado ainda.</p>
+        )}
+
+        {stitchHistory.length > 0 && (
+          <details className="mt-3 text-xs">
+            <summary className="cursor-pointer text-muted-foreground">
+              Versões salvas ({stitchHistory.length})
+            </summary>
+            <div className="mt-2 space-y-2">
+              {stitchHistory.map((version) => (
+                <div key={version.id} className="rounded-lg border border-border/60 bg-muted/10 p-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{version.label || "Versão"}</span>
+                      <span className="mx-2">•</span>
+                      {new Date(version.created_at).toLocaleString("pt-BR")}
+                      {version.created_by && <span className="ml-2">• {version.created_by}</span>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => {
+                          setStitchDraft(version.prompt);
+                          setEditingStitch(true);
+                        }}
+                      >
+                        Aplicar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(version.prompt || "");
+                            toast.success("Versão copiada!");
+                          } catch {
+                            toast.error("Erro ao copiar versão");
+                          }
+                        }}
+                      >
+                        Copiar
+                      </Button>
+                    </div>
+                  </div>
+                  {version.prompt && (
+                    <pre className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">
+                      {version.prompt}
+                    </pre>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
         )}
       </SectionCard>
 

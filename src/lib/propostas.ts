@@ -27,6 +27,7 @@ export interface PropostaInput {
   referencias_portfolio?: any[];
   modulos_base?: string[];
   addons_sugeridos?: any[];
+  estilo_operacional?: string;
 }
 
 export interface PropostaFinanceiro {
@@ -349,6 +350,40 @@ export async function atualizarProposta(id: string, proposta: PropostaJSON, arti
       ai_metadata: artifacts?.ai_metadata || undefined,
       atualizado_em: new Date().toISOString(),
     } as any)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function atualizarPropostaArtefatos(
+  id: string,
+  artifacts: Partial<ProposalAIArtifacts> = {},
+  aiMetadata?: any,
+) {
+  const payload: any = { atualizado_em: new Date().toISOString() };
+
+  if (Object.prototype.hasOwnProperty.call(artifacts, "structured_content")) {
+    payload.structured_content = artifacts.structured_content;
+  }
+  if (Object.prototype.hasOwnProperty.call(artifacts, "pricing_sheet")) {
+    payload.pricing_sheet = artifacts.pricing_sheet;
+  }
+  if (Object.prototype.hasOwnProperty.call(artifacts, "document_spec")) {
+    payload.document_spec = artifacts.document_spec;
+  }
+  if (Object.prototype.hasOwnProperty.call(artifacts, "stitch_prompt")) {
+    payload.stitch_prompt = artifacts.stitch_prompt;
+  }
+  if (Object.prototype.hasOwnProperty.call(artifacts, "hidden_addons")) {
+    payload.hidden_addons = artifacts.hidden_addons;
+  }
+
+  if (typeof aiMetadata !== "undefined") {
+    payload.ai_metadata = aiMetadata;
+  }
+
+  const { error } = await supabase
+    .from("propostas" as any)
+    .update(payload as any)
     .eq("id", id);
   if (error) throw error;
 }

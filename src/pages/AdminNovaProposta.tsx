@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, ArrowLeft, Zap, Layers, Brain } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, Zap, Layers, Brain, Copy } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import TierEditor from "@/components/admin/TierEditor";
@@ -166,6 +166,10 @@ export default function AdminNovaProposta() {
         ordem: asset.sort_order ?? index,
       }));
 
+      const referenciasPortfolio = Array.isArray(orcamentoAnalise?.output_json?.referencias_portfolio)
+        ? orcamentoAnalise?.output_json?.referencias_portfolio
+        : [];
+
       const addonsSugeridos = addons.map(a => ({
         name: a.name,
         description: a.description,
@@ -179,9 +183,10 @@ export default function AdminNovaProposta() {
         nicho: formData.nicho || orcamento?.nicho || formData.segmento,
         analise_arquitetural: orcamentoAnalise?.output_json || undefined,
         referencias_visuais: referenciasVisuais,
-        referencias_portfolio: [],
+        referencias_portfolio: referenciasPortfolio,
         modulos_base: baseModules,
         addons_sugeridos: addonsSugeridos,
+        estilo_operacional: orcamentoAnalise?.output_json?.estilo_operacional || "",
       };
 
       const aiResult = await gerarPropostaIA(aiInput);
@@ -476,6 +481,44 @@ export default function AdminNovaProposta() {
           {result.resumo_executivo && (
             <SectionCard title="Resumo Executivo (IA)">
               <p className="text-sm text-muted-foreground whitespace-pre-line">{result.resumo_executivo}</p>
+            </SectionCard>
+          )}
+
+          {aiArtifacts?.stitch_prompt && (
+            <SectionCard
+              title="Stitch Prompt (IA)"
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(aiArtifacts?.stitch_prompt || "");
+                      toast.success("Stitch prompt copiado!");
+                    } catch {
+                      toast.error("Erro ao copiar stitch prompt");
+                    }
+                  }}
+                >
+                  <Copy className="h-3.5 w-3.5" /> Copiar
+                </Button>
+              }
+            >
+              <Textarea
+                value={aiArtifacts?.stitch_prompt || ""}
+                onChange={(e) => setAiArtifacts(prev => ({
+                  ...(prev || {}),
+                  stitch_prompt: e.target.value,
+                  structured_content: prev?.structured_content || null,
+                  pricing_sheet: prev?.pricing_sheet || null,
+                  document_spec: prev?.document_spec || null,
+                  hidden_addons: prev?.hidden_addons || null,
+                  ai_metadata: prev?.ai_metadata || null,
+                }))}
+                rows={10}
+                className="text-xs"
+              />
             </SectionCard>
           )}
 
