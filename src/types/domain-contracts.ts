@@ -78,14 +78,6 @@ export type AddonSourceContext = "lead" | "proposta" | "sistema";
 export type Priority = "critical" | "high" | "medium" | "low";
 export type Urgency = "sem_urgencia" | "baixa" | "media" | "alta" | "critica";
 
-// ── Future schemas (placeholders — DO NOT implement yet) ─────────────
-/** Will hold structured AI analysis output */
-export interface AnalysisResult { _placeholder: true }
-/** Will hold PDF document specification */
-export interface DocumentSpec { _placeholder: true }
-/** Will hold pricing sheet for tiers */
-export interface PricingSheet { _placeholder: true }
-/** Will hold stitch prompt for AI generation */
-export interface StitchPrompt { _placeholder: true }
-/** Will hold hidden addon configuration */
-export interface HiddenAddonConfig { _placeholder: true }
+// ── Structured types (implemented in lib/propostas.ts) ────────────────
+// Re-export from propostas for domain-level access
+export type { PricingSheet, PricingSheetTier, HiddenAddon, PortfolioRef, PdfBlueprint } from "@/lib/propostas";
