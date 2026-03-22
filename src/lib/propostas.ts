@@ -66,12 +66,54 @@ export interface StructuredContent {
   resumo_interno: string;
 }
 
+export interface PricingSheetTier {
+  price: number;
+  modules: string[];
+  days: number;
+}
+
+export interface PricingSheet {
+  setup_fee: number;
+  monthly_fee: number;
+  tier_starter: PricingSheetTier;
+  tier_mvp: PricingSheetTier;
+  tier_ideal: PricingSheetTier;
+  tier_premium: PricingSheetTier;
+  payment_options: string[];
+  discount_conditions: string;
+}
+
+export interface HiddenAddon {
+  name: string;
+  description: string;
+  category: string;
+  estimated_price: number;
+  trigger_condition: string;
+  priority: string;
+}
+
+export interface PortfolioRef {
+  reason: string;
+  niche_match: string;
+  modules_shared: string[];
+}
+
+export interface PdfBlueprint {
+  cover_title: string;
+  cover_subtitle: string;
+  sections_order: string[];
+  emphasis_sections: string[];
+  tone: string;
+}
+
 export interface ProposalAIArtifacts {
   structured_content: StructuredContent | null;
-  pricing_sheet: any | null;
+  pricing_sheet: PricingSheet | null;
   document_spec: any | null;
   stitch_prompt: string | null;
-  hidden_addons: any[] | null;
+  hidden_addons: HiddenAddon[] | null;
+  portfolio_refs: PortfolioRef[] | null;
+  pdf_blueprint: PdfBlueprint | null;
   ai_metadata: any | null;
 }
 
@@ -101,12 +143,14 @@ export interface Proposta {
   proposal_validity: string;
   is_phased: boolean;
   closing_strategy: string;
-  // DocumentSpec fields (Genspark pipeline)
+  // AI artifacts
   document_spec: any | null;
-  pricing_sheet: any | null;
+  pricing_sheet: PricingSheet | null;
   structured_content: StructuredContent | null;
   stitch_prompt: string | null;
-  hidden_addons: any[] | null;
+  hidden_addons: HiddenAddon[] | null;
+  portfolio_refs: PortfolioRef[] | null;
+  pdf_blueprint: PdfBlueprint | null;
   ai_metadata: any | null;
   // Public sharing
   is_public: boolean;
@@ -119,16 +163,18 @@ export interface GerarPropostaResult {
   proposta: PropostaJSON;
   structured_content: StructuredContent | null;
   document_spec: any | null;
-  pricing_sheet: any | null;
+  pricing_sheet: PricingSheet | null;
   stitch_prompt: string | null;
-  hidden_addons: any[] | null;
+  hidden_addons: HiddenAddon[] | null;
+  portfolio_refs: PortfolioRef[] | null;
+  pdf_blueprint: PdfBlueprint | null;
   ai_metadata: any | null;
 }
 
 export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropostaResult> {
   const requestId = crypto.randomUUID();
   await logProposalEvent("proposal_ai_requested", requestId, {
-    prompt_version: "v5.0-genspark-pipeline",
+    prompt_version: "v7.0-full-structured",
   });
 
   const startTime = Date.now();
@@ -152,7 +198,7 @@ export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropos
     await logProposalEvent("proposal_ai_completed", requestId, {
       provider_used: meta.provider_used,
       model_used: meta.model_used,
-      prompt_version: meta.prompt_version || "v5.0-genspark-pipeline",
+      prompt_version: meta.prompt_version || "v7.0-full-structured",
       schema_valid: normResult.schema_valid,
       structured_schema_valid: structuredResult.schema_valid,
       output_size: normResult.output_size,
@@ -169,6 +215,8 @@ export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropos
       pricing_sheet: data.pricing_sheet || null,
       stitch_prompt: typeof data.stitch_prompt === "string" ? data.stitch_prompt.trim() : null,
       hidden_addons: Array.isArray(data.hidden_addons) ? data.hidden_addons : null,
+      portfolio_refs: Array.isArray(data.portfolio_refs) ? data.portfolio_refs : null,
+      pdf_blueprint: data.pdf_blueprint || null,
       ai_metadata: Object.keys(aiMetadata).length ? aiMetadata : null,
     };
   } catch (err) {
@@ -232,6 +280,8 @@ export async function salvarProposta(
       document_spec: artifacts?.document_spec || null,
       stitch_prompt: artifacts?.stitch_prompt || null,
       hidden_addons: artifacts?.hidden_addons || null,
+      portfolio_refs: artifacts?.portfolio_refs || null,
+      pdf_blueprint: artifacts?.pdf_blueprint || null,
       ai_metadata: artifacts?.ai_metadata || null,
     } as any)
     .select("id")
@@ -249,6 +299,8 @@ function parseRow(row: any): Proposta {
   let pricingSheet: any | null = null;
   let documentSpec: any | null = null;
   let hiddenAddons: any[] | null = null;
+  let portfolioRefs: any[] | null = null;
+  let pdfBlueprint: any | null = null;
   let aiMetadata: any | null = null;
   try { tiers = typeof row.proposal_tiers === "string" ? JSON.parse(row.proposal_tiers) : (row.proposal_tiers || []); } catch {}
   try { addons = typeof row.proposal_addons === "string" ? JSON.parse(row.proposal_addons) : (row.proposal_addons || []); } catch {}
@@ -257,6 +309,8 @@ function parseRow(row: any): Proposta {
   try { pricingSheet = typeof row.pricing_sheet === "string" ? JSON.parse(row.pricing_sheet) : (row.pricing_sheet || null); } catch {}
   try { documentSpec = typeof row.document_spec === "string" ? JSON.parse(row.document_spec) : (row.document_spec || null); } catch {}
   try { hiddenAddons = typeof row.hidden_addons === "string" ? JSON.parse(row.hidden_addons) : (row.hidden_addons || null); } catch {}
+  try { portfolioRefs = typeof row.portfolio_refs === "string" ? JSON.parse(row.portfolio_refs) : (row.portfolio_refs || null); } catch {}
+  try { pdfBlueprint = typeof row.pdf_blueprint === "string" ? JSON.parse(row.pdf_blueprint) : (row.pdf_blueprint || null); } catch {}
   try { aiMetadata = typeof row.ai_metadata === "string" ? JSON.parse(row.ai_metadata) : (row.ai_metadata || null); } catch {}
 
   return {
@@ -289,6 +343,8 @@ function parseRow(row: any): Proposta {
     structured_content: structuredContent,
     stitch_prompt: row.stitch_prompt || null,
     hidden_addons: hiddenAddons,
+    portfolio_refs: portfolioRefs,
+    pdf_blueprint: pdfBlueprint,
     ai_metadata: aiMetadata,
     is_public: row.is_public || false,
     public_token: row.public_token || null,
@@ -347,6 +403,8 @@ export async function atualizarProposta(id: string, proposta: PropostaJSON, arti
       document_spec: artifacts?.document_spec || undefined,
       stitch_prompt: artifacts?.stitch_prompt || undefined,
       hidden_addons: artifacts?.hidden_addons || undefined,
+      portfolio_refs: artifacts?.portfolio_refs || undefined,
+      pdf_blueprint: artifacts?.pdf_blueprint || undefined,
       ai_metadata: artifacts?.ai_metadata || undefined,
       atualizado_em: new Date().toISOString(),
     } as any)
@@ -375,6 +433,12 @@ export async function atualizarPropostaArtefatos(
   }
   if (Object.prototype.hasOwnProperty.call(artifacts, "hidden_addons")) {
     payload.hidden_addons = artifacts.hidden_addons;
+  }
+  if (Object.prototype.hasOwnProperty.call(artifacts, "portfolio_refs")) {
+    payload.portfolio_refs = artifacts.portfolio_refs;
+  }
+  if (Object.prototype.hasOwnProperty.call(artifacts, "pdf_blueprint")) {
+    payload.pdf_blueprint = artifacts.pdf_blueprint;
   }
 
   if (typeof aiMetadata !== "undefined") {

@@ -1786,6 +1786,7 @@ export type Database = {
       }
       propostas: {
         Row: {
+          ai_metadata: Json | null
           atualizado_em: string
           classificacao_margem: string | null
           closing_strategy: string | null
@@ -1793,9 +1794,11 @@ export type Database = {
           complexidade: string | null
           criado_em: string
           descricao_projeto: string
+          document_spec: Json | null
           email_cliente: string | null
           empresa_cliente: string | null
           funcionalidades_desejadas: string[] | null
+          hidden_addons: Json | null
           id: string
           integracoes: string[] | null
           is_phased: boolean | null
@@ -1808,7 +1811,10 @@ export type Database = {
           observacoes: string | null
           orcamento_cliente: string | null
           orcamento_id: string | null
+          pdf_blueprint: Json | null
+          portfolio_refs: Json | null
           prazo_desejado: string | null
+          pricing_sheet: Json | null
           problema_cliente: string | null
           proposal_addons: Json | null
           proposal_tiers: Json | null
@@ -1819,12 +1825,15 @@ export type Database = {
           recommended_tier: string | null
           segmento: string | null
           status: string
+          stitch_prompt: string | null
+          structured_content: Json | null
           tipo_projeto: string
           valor_ideal: number | null
           valor_minimo: number | null
           valor_premium: number | null
         }
         Insert: {
+          ai_metadata?: Json | null
           atualizado_em?: string
           classificacao_margem?: string | null
           closing_strategy?: string | null
@@ -1832,9 +1841,11 @@ export type Database = {
           complexidade?: string | null
           criado_em?: string
           descricao_projeto: string
+          document_spec?: Json | null
           email_cliente?: string | null
           empresa_cliente?: string | null
           funcionalidades_desejadas?: string[] | null
+          hidden_addons?: Json | null
           id?: string
           integracoes?: string[] | null
           is_phased?: boolean | null
@@ -1847,7 +1858,10 @@ export type Database = {
           observacoes?: string | null
           orcamento_cliente?: string | null
           orcamento_id?: string | null
+          pdf_blueprint?: Json | null
+          portfolio_refs?: Json | null
           prazo_desejado?: string | null
+          pricing_sheet?: Json | null
           problema_cliente?: string | null
           proposal_addons?: Json | null
           proposal_tiers?: Json | null
@@ -1858,12 +1872,15 @@ export type Database = {
           recommended_tier?: string | null
           segmento?: string | null
           status?: string
+          stitch_prompt?: string | null
+          structured_content?: Json | null
           tipo_projeto?: string
           valor_ideal?: number | null
           valor_minimo?: number | null
           valor_premium?: number | null
         }
         Update: {
+          ai_metadata?: Json | null
           atualizado_em?: string
           classificacao_margem?: string | null
           closing_strategy?: string | null
@@ -1871,9 +1888,11 @@ export type Database = {
           complexidade?: string | null
           criado_em?: string
           descricao_projeto?: string
+          document_spec?: Json | null
           email_cliente?: string | null
           empresa_cliente?: string | null
           funcionalidades_desejadas?: string[] | null
+          hidden_addons?: Json | null
           id?: string
           integracoes?: string[] | null
           is_phased?: boolean | null
@@ -1886,7 +1905,10 @@ export type Database = {
           observacoes?: string | null
           orcamento_cliente?: string | null
           orcamento_id?: string | null
+          pdf_blueprint?: Json | null
+          portfolio_refs?: Json | null
           prazo_desejado?: string | null
+          pricing_sheet?: Json | null
           problema_cliente?: string | null
           proposal_addons?: Json | null
           proposal_tiers?: Json | null
@@ -1897,6 +1919,8 @@ export type Database = {
           recommended_tier?: string | null
           segmento?: string | null
           status?: string
+          stitch_prompt?: string | null
+          structured_content?: Json | null
           tipo_projeto?: string
           valor_ideal?: number | null
           valor_minimo?: number | null

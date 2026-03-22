@@ -39,20 +39,12 @@ export interface AiProviderRuntime {
 }
 
 export const DEFAULT_AI_PROVIDERS: AiProvidersSettings = {
-  default_provider: "OpenRouter",
-  fallback_order: ["OpenRouter", "Groq", "Genspark", "Lovable AI"],
+  default_provider: "Groq",
+  fallback_order: ["Groq", "OpenRouter"],
   fallback_enabled: true,
   temperature: 0.3,
-  max_tokens: 4000,
+  max_tokens: 8000,
   providers: [
-    {
-      name: "OpenRouter",
-      enabled: true,
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      model: "google/gemini-2.5-flash",
-      headers: { "HTTP-Referer": "https://holynexlabs.com.br", "X-Title": "HolyNex Labs" },
-      priority: 2,
-    },
     {
       name: "Groq",
       enabled: true,
@@ -61,39 +53,31 @@ export const DEFAULT_AI_PROVIDERS: AiProvidersSettings = {
       priority: 1,
     },
     {
-      name: "Genspark",
-      enabled: false,
-      url: "https://api.genspark.ai/v1/chat/completions",
-      model: "genspark-lite",
-      priority: 3,
-    },
-    {
-      name: "Lovable AI",
-      enabled: false,
-      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
-      model: "google/gemini-3-flash-preview",
-      priority: 4,
+      name: "OpenRouter",
+      enabled: true,
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      model: "google/gemini-2.5-flash",
+      headers: { "HTTP-Referer": "https://holynexlabs.com.br", "X-Title": "HolyNex Labs" },
+      priority: 2,
     },
   ],
 };
 
 export const DEFAULT_AI_MODELS: AiModelsSettings = {
-  default_model: "google/gemini-2.5-flash",
+  default_model: "llama-3.3-70b-versatile",
   provider_overrides: {},
   use_case_overrides: {},
 };
 
 export const DEFAULT_PROMPT_POLICIES: PromptPoliciesSettings = {
   temperature: 0.3,
-  max_tokens: 4000,
+  max_tokens: 8000,
   use_case_overrides: {},
 };
 
 const PROVIDER_ENV_MAP: Record<string, string> = {
-  "OpenRouter": "OPENROUTER_API_KEY",
   "Groq": "GROQ_API_KEY",
-  "Genspark": "GENSPARK_API_KEY",
-  "Lovable AI": "LOVABLE_API_KEY",
+  "OpenRouter": "OPENROUTER_API_KEY",
 };
 
 function createServiceClient() {

@@ -167,6 +167,8 @@ export default function AdminPropostaDetalhe() {
         pricing_sheet: aiResult.pricing_sheet,
         stitch_prompt: aiResult.stitch_prompt,
         hidden_addons: aiResult.hidden_addons,
+        portfolio_refs: aiResult.portfolio_refs,
+        pdf_blueprint: aiResult.pdf_blueprint,
         ai_metadata: aiResult.ai_metadata,
       });
       toast.success("Proposta regenerada!");
