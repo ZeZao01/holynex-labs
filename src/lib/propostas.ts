@@ -403,6 +403,8 @@ export async function atualizarProposta(id: string, proposta: PropostaJSON, arti
       document_spec: artifacts?.document_spec || undefined,
       stitch_prompt: artifacts?.stitch_prompt || undefined,
       hidden_addons: artifacts?.hidden_addons || undefined,
+      portfolio_refs: artifacts?.portfolio_refs || undefined,
+      pdf_blueprint: artifacts?.pdf_blueprint || undefined,
       ai_metadata: artifacts?.ai_metadata || undefined,
       atualizado_em: new Date().toISOString(),
     } as any)
