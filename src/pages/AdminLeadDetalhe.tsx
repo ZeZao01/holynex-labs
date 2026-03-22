@@ -92,10 +92,43 @@ export default function AdminLeadDetalhe() {
     }
   }, [id]);
 
+  // Portfolio references - compute before early returns so useEffect is always called
+  const latestAnalise = analises[0];
+  const analiseData = (latestAnalise?.output_json as any) || null;
+
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
     if (user) loadLead();
   }, [user, authLoading, navigate, loadLead]);
+
+  useEffect(() => {
+    if (!lead) return;
+    let active = true;
+    const fetchRefs = async () => {
+      setPortfolioLoading(true);
+      try {
+        const items = await listPortfolioItems(true);
+        const features = [
+          ...(Array.isArray(analiseData?.modulos_recomendados) ? analiseData.modulos_recomendados : []),
+          ...(Array.isArray(analiseData?.stack_sugerida) ? analiseData.stack_sugerida : []),
+          ...(Array.isArray(lead.tags_automaticas) ? lead.tags_automaticas : []),
+        ];
+        const refs = getPortfolioReferences(items, {
+          niche: lead.nicho,
+          category: lead.tipo_projeto,
+          solutionType: lead.tipo_projeto,
+          features,
+        }, { limit: 4, minScore: 3 });
+        if (active) setPortfolioRefs(refs);
+      } catch {
+        if (active) setPortfolioRefs([]);
+      } finally {
+        if (active) setPortfolioLoading(false);
+      }
+    };
+    fetchRefs();
+    return () => { active = false; };
+  }, [lead?.id, lead?.nicho, lead?.tipo_projeto, lead?.tags_automaticas, latestAnalise?.id]);
 
   const handleStatusChange = async (status: StatusComercial) => {
     if (!lead) return;
