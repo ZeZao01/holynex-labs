@@ -205,8 +205,10 @@ export default function Contato() {
     setLoading(true);
     setUploadError(null);
     try {
+      const fullDescricao = [form.descricao, form.descricao_detalhada].filter(Boolean).join("\n\n");
       const created = await salvarOrcamento({
         ...form,
+        descricao: fullDescricao,
         tipo_projeto: form.tipo_projeto.join(", "),
         nicho: form.nicho.join(", "),
         origem_lead: "site",
