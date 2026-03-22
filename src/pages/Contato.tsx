@@ -239,8 +239,9 @@ export default function Contato() {
       });
       resetVisuals();
       setStep(1);
-    } catch {
-      toast.error("Erro ao enviar. Tente novamente.");
+    } catch (error) {
+      console.error("Erro ao enviar orçamento", error);
+      toast.error(error instanceof Error ? error.message : "Erro ao enviar. Tente novamente.");
     } finally {
       setLoading(false);
     }
