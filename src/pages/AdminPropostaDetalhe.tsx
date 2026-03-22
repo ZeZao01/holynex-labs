@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropostaArtefatos, atualizarPropostaTiers, gerarPropostaIA, togglePropostaPublic, type Proposta, type PropostaInput } from "@/lib/propostas";
 import { createDefaultTiers, createDefaultAddons, PROPOSAL_STATUS_MAP, type ProposalTier, type ProposalAddon, type CommercialNotes } from "@/lib/proposal-tiers";
 import { uploadPdf } from "@/lib/pdf-storage";
@@ -315,36 +316,40 @@ export default function AdminPropostaDetalhe() {
     if (!proposta) return;
     setRegeneratingStitch(true);
     try {
-      const input: PropostaInput = {
+      const pj = proposta.proposta_json;
+      const body: Record<string, any> = {
         nome_cliente: proposta.nome_cliente,
         empresa_cliente: proposta.empresa_cliente,
         segmento: proposta.segmento,
-        email_cliente: proposta.email_cliente,
+        nicho: proposta.segmento,
         tipo_projeto: proposta.tipo_projeto,
         descricao_projeto: proposta.descricao_projeto,
-        problema_cliente: "",
-        objetivo_cliente: "",
-        funcionalidades_desejadas: [],
-        integracoes: [],
-        numero_usuarios: "",
-        prazo_desejado: "",
-        orcamento_cliente: "",
-        nivel_urgencia: "medio",
-        link_referencia: proposta.link_referencia || "",
-        observacoes: "Regenerar stitch prompt",
-        orcamento_id: proposta.orcamento_id || undefined,
-        nicho: proposta.segmento || "",
+        funcionalidades: pj?.funcionalidades || [],
+        funcionalidades_recomendadas: pj?.funcionalidades_recomendadas || [],
+        escopo: pj?.escopo || [],
+        modulos: proposta.structured_content?.modulos_recomendados || [],
+        diferenciais: proposta.structured_content?.diferenciais || [],
+        hidden_addons: proposta.hidden_addons || [],
+        portfolio_refs: proposta.portfolio_refs || [],
+        structured_content: proposta.structured_content || null,
+        pricing_sheet: proposta.pricing_sheet || null,
+        observacoes: "Regenerar stitch prompt com contexto completo da proposta",
       };
-      const aiResult = await gerarPropostaIA(input);
+
+      const { data, error } = await supabase.functions.invoke("gerar-stitch", { body });
+      if (error) throw new Error(error.message || "Erro ao gerar stitch");
+      if (data?.error) throw new Error(data.error);
+
+      const nextStitch = typeof data.stitch_prompt === "string" ? data.stitch_prompt.trim() : "";
       const nextMeta = {
         ...(proposta.ai_metadata || {}),
         stitch_prompt_regenerated_at: new Date().toISOString(),
         stitch_prompt_regenerated_by: user?.email || user?.id || "admin",
-        stitch_prompt_meta: aiResult.ai_metadata || null,
+        stitch_prompt_meta: data._meta || null,
       };
       await atualizarPropostaArtefatos(
         proposta.id,
-        { stitch_prompt: aiResult.stitch_prompt, hidden_addons: aiResult.hidden_addons },
+        { stitch_prompt: nextStitch || null },
         nextMeta,
       );
       toast.success("Stitch prompt regenerado!");
