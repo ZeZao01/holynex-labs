@@ -22,8 +22,8 @@ interface FormData {
   empresa: string;
   descricao: string;
   descricao_detalhada: string;
-  tipo_projeto: string;
-  nicho: string;
+  tipo_projeto: string[];
+  nicho: string[];
   objetivo: string;
   dor_principal: string;
   faixa_investimento: string;
