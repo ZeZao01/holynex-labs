@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { getEffectivePermissions, getUserRoleNames, PermissionMatrix } from "@/lib/rbac";
-import { logSecurityEvent } from "@/lib/security";
+import { getEffectivePermissions, getUserRoleNames, ensureUserSetup, PermissionMatrix } from "@/lib/rbac";
+import { initDefaultPermissions, logSecurityEvent } from "@/lib/security";
 
 interface GuardOptions {
   description?: string;
@@ -23,6 +23,8 @@ interface AccessControlContextValue {
   canApprove: (module: string) => boolean;
   canActivateAddon: () => boolean;
   canViewSensitiveData: () => boolean;
+  isDevAdmin: () => boolean;
+  isSuperAdmin: () => boolean;
   guardAction: (module: string, action: string, opts?: GuardOptions) => Promise<boolean>;
 }
 
@@ -43,8 +45,9 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<string[]>([]);
   const [permissions, setPermissions] = useState<PermissionMatrix>({});
+  const [bootstrapped, setBootstrapped] = useState(false);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!user) {
       setRoles([]);
       setPermissions({});
@@ -54,6 +57,13 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
     try {
+      // Bootstrap: ensure user has profile + role + default permissions exist
+      if (!bootstrapped) {
+        await ensureUserSetup(user);
+        try { await initDefaultPermissions(); } catch { /* ignore */ }
+        setBootstrapped(true);
+      }
+
       const roleNames = await getUserRoleNames(user.id, user);
       const perms = await getEffectivePermissions(roleNames);
       setRoles(roleNames);
@@ -71,34 +81,35 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, bootstrapped]);
 
   useEffect(() => {
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, refresh]);
 
-  const hasPermission = (module: string, action: string) => {
+  const hasPermission = useCallback((module: string, action: string) => {
     return !!permissions?.[module]?.[action];
-  };
+  }, [permissions]);
 
-  const canView = (module: string) => {
+  const canView = useCallback((module: string) => {
     const actions = VIEW_OVERRIDES[module] || ["visualizar"];
     return actions.some((action) => hasPermission(module, action));
-  };
+  }, [hasPermission]);
 
-  const canCreate = (module: string) => hasPermission(module, "criar");
-  const canEdit = (module: string) => {
+  const canCreate = useCallback((module: string) => hasPermission(module, "criar"), [hasPermission]);
+  const canEdit = useCallback((module: string) => {
     const actions = EDIT_OVERRIDES[module] || ["editar"];
     return actions.some((action) => hasPermission(module, action));
-  };
-  const canDelete = (module: string) => hasPermission(module, "excluir");
-  const canExport = (module: string) => hasPermission(module, "exportar");
-  const canApprove = (module: string) => hasPermission(module, "aprovar");
-  const canActivateAddon = () => hasPermission("configuracoes", "ativar_addon");
-  const canViewSensitiveData = () => hasPermission("acessos", "visualizar_segredo");
+  }, [hasPermission]);
+  const canDelete = useCallback((module: string) => hasPermission(module, "excluir"), [hasPermission]);
+  const canExport = useCallback((module: string) => hasPermission(module, "exportar"), [hasPermission]);
+  const canApprove = useCallback((module: string) => hasPermission(module, "aprovar"), [hasPermission]);
+  const canActivateAddon = useCallback(() => hasPermission("configuracoes", "ativar_addon"), [hasPermission]);
+  const canViewSensitiveData = useCallback(() => hasPermission("acessos", "visualizar_segredo"), [hasPermission]);
+  const isDevAdmin = useCallback(() => roles.includes("dev_admin") || roles.includes("super_admin"), [roles]);
+  const isSuperAdmin = useCallback(() => roles.includes("super_admin"), [roles]);
 
-  const guardAction = async (module: string, action: string, opts: GuardOptions = {}) => {
+  const guardAction = useCallback(async (module: string, action: string, opts: GuardOptions = {}) => {
     if (hasPermission(module, action)) return true;
     await logSecurityEvent(
       "acesso_negado",
@@ -112,27 +123,18 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
       }
     );
     return false;
-  };
+  }, [hasPermission]);
 
   const value = useMemo(
     () => ({
-      loading,
-      roles,
-      permissions,
-      refresh,
-      hasPermission,
-      canView,
-      canCreate,
-      canEdit,
-      canDelete,
-      canExport,
-      canApprove,
-      canActivateAddon,
-      canViewSensitiveData,
-      guardAction,
+      loading, roles, permissions, refresh,
+      hasPermission, canView, canCreate, canEdit, canDelete,
+      canExport, canApprove, canActivateAddon, canViewSensitiveData,
+      isDevAdmin, isSuperAdmin, guardAction,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [loading, roles, permissions]
+    [loading, roles, permissions, refresh, hasPermission, canView, canCreate, canEdit,
+     canDelete, canExport, canApprove, canActivateAddon, canViewSensitiveData,
+     isDevAdmin, isSuperAdmin, guardAction]
   );
 
   return <AccessControlContext.Provider value={value}>{children}</AccessControlContext.Provider>;
