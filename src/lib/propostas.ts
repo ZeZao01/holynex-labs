@@ -198,7 +198,7 @@ export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropos
     await logProposalEvent("proposal_ai_completed", requestId, {
       provider_used: meta.provider_used,
       model_used: meta.model_used,
-      prompt_version: meta.prompt_version || "v5.0-genspark-pipeline",
+      prompt_version: meta.prompt_version || "v7.0-full-structured",
       schema_valid: normResult.schema_valid,
       structured_schema_valid: structuredResult.schema_valid,
       output_size: normResult.output_size,
