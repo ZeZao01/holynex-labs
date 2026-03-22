@@ -14,21 +14,32 @@ export default function AdminLogin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError("");
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (authError) {
-      setError("Credenciais inválidas. Tente novamente.");
+      if (authError) {
+        setError("Credenciais inválidas. Tente novamente.");
+        return;
+      }
+
+      if (!data?.session) {
+        setError("Não foi possível iniciar a sessão. Verifique o acesso e tente novamente.");
+        return;
+      }
+
+      navigate("/admin/dashboard", { replace: true });
+    } catch (err) {
+      setError("Falha ao entrar. Verifique sua conexão e tente novamente.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    navigate("/admin/orcamentos");
   };
 
   return (
