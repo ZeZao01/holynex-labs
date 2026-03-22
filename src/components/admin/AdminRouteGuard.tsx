@@ -12,11 +12,11 @@ interface AdminRouteGuardProps {
 }
 
 export default function AdminRouteGuard({ module, action, children }: AdminRouteGuardProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { loading, canView, canCreate, canEdit, canDelete, canExport, canApprove, hasPermission } = useAccessControl();
   const loggedRef = useRef(false);
 
-  if (loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
+  if (authLoading || loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
   if (!user) return <Navigate to="/admin/login" replace />;
 
   const allowed = (() => {
