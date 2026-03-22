@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      addon_extensions: {
+        Row: {
+          activation_flag: boolean
+          atualizado_em: string
+          commercial_description: string
+          criado_em: string
+          dependencies: string[]
+          estimated_value: number
+          id: string
+          internal_description: string
+          module_scope: string[]
+          name: string
+          niche: string
+          source_context: string
+          source_id: string | null
+          status: string
+          suggested_by: string
+          technical_impact: string
+        }
+        Insert: {
+          activation_flag?: boolean
+          atualizado_em?: string
+          commercial_description?: string
+          criado_em?: string
+          dependencies?: string[]
+          estimated_value?: number
+          id?: string
+          internal_description?: string
+          module_scope?: string[]
+          name?: string
+          niche?: string
+          source_context?: string
+          source_id?: string | null
+          status?: string
+          suggested_by?: string
+          technical_impact?: string
+        }
+        Update: {
+          activation_flag?: boolean
+          atualizado_em?: string
+          commercial_description?: string
+          criado_em?: string
+          dependencies?: string[]
+          estimated_value?: number
+          id?: string
+          internal_description?: string
+          module_scope?: string[]
+          name?: string
+          niche?: string
+          source_context?: string
+          source_id?: string | null
+          status?: string
+          suggested_by?: string
+          technical_impact?: string
+        }
+        Relationships: []
+      }
       ai_executions: {
         Row: {
           atualizado_em: string
