@@ -122,42 +122,6 @@ export type Database = {
         }
         Relationships: []
       }
-      system_settings: {
-        Row: {
-          id: string
-          key: string
-          category: string
-          value: Json
-          version: number
-          is_active: boolean
-          is_sensitive: boolean
-          criado_em: string
-          atualizado_em: string
-        }
-        Insert: {
-          id?: string
-          key: string
-          category: string
-          value?: Json
-          version?: number
-          is_active?: boolean
-          is_sensitive?: boolean
-          criado_em?: string
-          atualizado_em?: string
-        }
-        Update: {
-          id?: string
-          key?: string
-          category?: string
-          value?: Json
-          version?: number
-          is_active?: boolean
-          is_sensitive?: boolean
-          criado_em?: string
-          atualizado_em?: string
-        }
-        Relationships: []
-      }
       delivered_system_events: {
         Row: {
           criado_em: string | null
@@ -393,7 +357,6 @@ export type Database = {
           complexidade_estimada: string | null
           criado_em: string
           descricao: string
-          descricao_detalhada: string | null
           dor_principal: string | null
           email: string
           empresa: string | null
@@ -407,7 +370,6 @@ export type Database = {
           numero_usuarios: string | null
           objetivo: string | null
           observacoes_internas: string | null
-          orcamento_estimado: string | null
           origem_lead: string | null
           prazo_desejado: string | null
           precisa_admin: boolean | null
@@ -430,7 +392,6 @@ export type Database = {
           complexidade_estimada?: string | null
           criado_em?: string
           descricao: string
-          descricao_detalhada?: string | null
           dor_principal?: string | null
           email: string
           empresa?: string | null
@@ -444,7 +405,6 @@ export type Database = {
           numero_usuarios?: string | null
           objetivo?: string | null
           observacoes_internas?: string | null
-          orcamento_estimado?: string | null
           origem_lead?: string | null
           prazo_desejado?: string | null
           precisa_admin?: boolean | null
@@ -467,7 +427,6 @@ export type Database = {
           complexidade_estimada?: string | null
           criado_em?: string
           descricao?: string
-          descricao_detalhada?: string | null
           dor_principal?: string | null
           email?: string
           empresa?: string | null
@@ -481,7 +440,6 @@ export type Database = {
           numero_usuarios?: string | null
           objetivo?: string | null
           observacoes_internas?: string | null
-          orcamento_estimado?: string | null
           origem_lead?: string | null
           prazo_desejado?: string | null
           precisa_admin?: boolean | null
@@ -500,115 +458,6 @@ export type Database = {
           urgencia?: string | null
         }
         Relationships: []
-      }
-      orcamento_analises: {
-        Row: {
-          atualizado_em: string | null
-          criado_em: string | null
-          cost_estimated: number | null
-          duration_ms: number | null
-          error_reason: string | null
-          fallback_triggered: boolean | null
-          id: string
-          input_summary: string | null
-          model_used: string | null
-          orcamento_id: string
-          output_json: Json | null
-          output_text: string | null
-          prompt_version: string | null
-          provider_used: string | null
-          status: string
-          tokens_input: number | null
-          tokens_output: number | null
-          version: number
-        }
-        Insert: {
-          atualizado_em?: string | null
-          criado_em?: string | null
-          cost_estimated?: number | null
-          duration_ms?: number | null
-          error_reason?: string | null
-          fallback_triggered?: boolean | null
-          id?: string
-          input_summary?: string | null
-          model_used?: string | null
-          orcamento_id: string
-          output_json?: Json | null
-          output_text?: string | null
-          prompt_version?: string | null
-          provider_used?: string | null
-          status?: string
-          tokens_input?: number | null
-          tokens_output?: number | null
-          version?: number
-        }
-        Update: {
-          atualizado_em?: string | null
-          criado_em?: string | null
-          cost_estimated?: number | null
-          duration_ms?: number | null
-          error_reason?: string | null
-          fallback_triggered?: boolean | null
-          id?: string
-          input_summary?: string | null
-          model_used?: string | null
-          orcamento_id?: string
-          output_json?: Json | null
-          output_text?: string | null
-          prompt_version?: string | null
-          provider_used?: string | null
-          status?: string
-          tokens_input?: number | null
-          tokens_output?: number | null
-          version?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "orcamento_analises_orcamento_id_fkey"
-            columns: ["orcamento_id"]
-            isOneToOne: false
-            referencedRelation: "orcamentos"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      orcamento_assets: {
-        Row: {
-          created_at: string
-          file_type: string | null
-          file_url: string
-          id: string
-          orcamento_id: string
-          original_name: string | null
-          sort_order: number | null
-        }
-        Insert: {
-          created_at?: string
-          file_type?: string | null
-          file_url: string
-          id?: string
-          orcamento_id: string
-          original_name?: string | null
-          sort_order?: number | null
-        }
-        Update: {
-          created_at?: string
-          file_type?: string | null
-          file_url?: string
-          id?: string
-          orcamento_id?: string
-          original_name?: string | null
-          sort_order?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "orcamento_assets_orcamento_id_fkey"
-            columns: ["orcamento_id"]
-            isOneToOne: false
-            referencedRelation: "orcamentos"
-            referencedColumns: ["id"]
-          }
-        ]
       }
       pdf_versoes: {
         Row: {
@@ -701,7 +550,6 @@ export type Database = {
       portfolio_items: {
         Row: {
           atualizado_em: string | null
-          allow_public_preview: boolean | null
           badges: string[] | null
           category: string | null
           client_context: string | null
@@ -714,9 +562,6 @@ export type Database = {
           delivered_system_id: string | null
           differentials: string[] | null
           display_order: number | null
-          features: string[] | null
-          full_description: string | null
-          gallery_images: string[] | null
           gallery_urls: string[] | null
           highlight_section: string | null
           hover_image_url: string | null
@@ -728,27 +573,19 @@ export type Database = {
           item_type: string | null
           main_modules: string[] | null
           niche: string | null
-          open_mode: string | null
           objective: string | null
-          preview_mode: string | null
           problem_solved: string | null
           public_url: string | null
           short_description: string | null
-          slug: string | null
-          sort_order: number | null
-          status: string | null
-          system_url: string | null
           solution_type: string | null
           subtitle: string | null
           target_audience: string | null
-          tech_stack: string[] | null
           thumbnail_url: string | null
           title: string
           video_url: string | null
         }
         Insert: {
           atualizado_em?: string | null
-          allow_public_preview?: boolean | null
           badges?: string[] | null
           category?: string | null
           client_context?: string | null
@@ -761,9 +598,6 @@ export type Database = {
           delivered_system_id?: string | null
           differentials?: string[] | null
           display_order?: number | null
-          features?: string[] | null
-          full_description?: string | null
-          gallery_images?: string[] | null
           gallery_urls?: string[] | null
           highlight_section?: string | null
           hover_image_url?: string | null
@@ -775,27 +609,19 @@ export type Database = {
           item_type?: string | null
           main_modules?: string[] | null
           niche?: string | null
-          open_mode?: string | null
           objective?: string | null
-          preview_mode?: string | null
           problem_solved?: string | null
           public_url?: string | null
           short_description?: string | null
-          slug?: string | null
-          sort_order?: number | null
-          status?: string | null
-          system_url?: string | null
           solution_type?: string | null
           subtitle?: string | null
           target_audience?: string | null
-          tech_stack?: string[] | null
           thumbnail_url?: string | null
           title: string
           video_url?: string | null
         }
         Update: {
           atualizado_em?: string | null
-          allow_public_preview?: boolean | null
           badges?: string[] | null
           category?: string | null
           client_context?: string | null
@@ -808,9 +634,6 @@ export type Database = {
           delivered_system_id?: string | null
           differentials?: string[] | null
           display_order?: number | null
-          features?: string[] | null
-          full_description?: string | null
-          gallery_images?: string[] | null
           gallery_urls?: string[] | null
           highlight_section?: string | null
           hover_image_url?: string | null
@@ -822,20 +645,13 @@ export type Database = {
           item_type?: string | null
           main_modules?: string[] | null
           niche?: string | null
-          open_mode?: string | null
           objective?: string | null
-          preview_mode?: string | null
           problem_solved?: string | null
           public_url?: string | null
           short_description?: string | null
-          slug?: string | null
-          sort_order?: number | null
-          status?: string | null
-          system_url?: string | null
           solution_type?: string | null
           subtitle?: string | null
           target_audience?: string | null
-          tech_stack?: string[] | null
           thumbnail_url?: string | null
           title?: string
           video_url?: string | null
@@ -1861,7 +1677,6 @@ export type Database = {
       }
       propostas: {
         Row: {
-          ai_metadata: Json | null
           atualizado_em: string
           classificacao_margem: string | null
           closing_strategy: string | null
@@ -1869,11 +1684,9 @@ export type Database = {
           complexidade: string | null
           criado_em: string
           descricao_projeto: string
-          document_spec: Json | null
           email_cliente: string | null
           empresa_cliente: string | null
           funcionalidades_desejadas: string[] | null
-          hidden_addons: Json | null
           id: string
           integracoes: string[] | null
           is_phased: boolean | null
@@ -1888,7 +1701,6 @@ export type Database = {
           orcamento_id: string | null
           prazo_desejado: string | null
           problema_cliente: string | null
-          pricing_sheet: Json | null
           proposal_addons: Json | null
           proposal_tiers: Json | null
           proposal_validity: string | null
@@ -1898,15 +1710,12 @@ export type Database = {
           recommended_tier: string | null
           segmento: string | null
           status: string
-          stitch_prompt: string | null
-          structured_content: Json | null
           tipo_projeto: string
           valor_ideal: number | null
           valor_minimo: number | null
           valor_premium: number | null
         }
         Insert: {
-          ai_metadata?: Json | null
           atualizado_em?: string
           classificacao_margem?: string | null
           closing_strategy?: string | null
@@ -1914,11 +1723,9 @@ export type Database = {
           complexidade?: string | null
           criado_em?: string
           descricao_projeto: string
-          document_spec?: Json | null
           email_cliente?: string | null
           empresa_cliente?: string | null
           funcionalidades_desejadas?: string[] | null
-          hidden_addons?: Json | null
           id?: string
           integracoes?: string[] | null
           is_phased?: boolean | null
@@ -1933,7 +1740,6 @@ export type Database = {
           orcamento_id?: string | null
           prazo_desejado?: string | null
           problema_cliente?: string | null
-          pricing_sheet?: Json | null
           proposal_addons?: Json | null
           proposal_tiers?: Json | null
           proposal_validity?: string | null
@@ -1943,15 +1749,12 @@ export type Database = {
           recommended_tier?: string | null
           segmento?: string | null
           status?: string
-          stitch_prompt?: string | null
-          structured_content?: Json | null
           tipo_projeto?: string
           valor_ideal?: number | null
           valor_minimo?: number | null
           valor_premium?: number | null
         }
         Update: {
-          ai_metadata?: Json | null
           atualizado_em?: string
           classificacao_margem?: string | null
           closing_strategy?: string | null
@@ -1959,11 +1762,9 @@ export type Database = {
           complexidade?: string | null
           criado_em?: string
           descricao_projeto?: string
-          document_spec?: Json | null
           email_cliente?: string | null
           empresa_cliente?: string | null
           funcionalidades_desejadas?: string[] | null
-          hidden_addons?: Json | null
           id?: string
           integracoes?: string[] | null
           is_phased?: boolean | null
@@ -1978,7 +1779,6 @@ export type Database = {
           orcamento_id?: string | null
           prazo_desejado?: string | null
           problema_cliente?: string | null
-          pricing_sheet?: Json | null
           proposal_addons?: Json | null
           proposal_tiers?: Json | null
           proposal_validity?: string | null
@@ -1988,8 +1788,6 @@ export type Database = {
           recommended_tier?: string | null
           segmento?: string | null
           status?: string
-          stitch_prompt?: string | null
-          structured_content?: Json | null
           tipo_projeto?: string
           valor_ideal?: number | null
           valor_minimo?: number | null
