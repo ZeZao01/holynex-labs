@@ -163,9 +163,11 @@ export interface GerarPropostaResult {
   proposta: PropostaJSON;
   structured_content: StructuredContent | null;
   document_spec: any | null;
-  pricing_sheet: any | null;
+  pricing_sheet: PricingSheet | null;
   stitch_prompt: string | null;
-  hidden_addons: any[] | null;
+  hidden_addons: HiddenAddon[] | null;
+  portfolio_refs: PortfolioRef[] | null;
+  pdf_blueprint: PdfBlueprint | null;
   ai_metadata: any | null;
 }
 
