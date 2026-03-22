@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Settings,
   LogOut,
-  
   FilePlus,
   ClipboardList,
   Sparkles,
@@ -22,6 +21,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccessControl } from "@/hooks/useAccessControl";
+import { ROLE_LABELS } from "@/lib/security";
 import {
   Sidebar,
   SidebarContent,
@@ -37,14 +37,22 @@ import {
 } from "@/components/ui/sidebar";
 import logo from "@/assets/logo.png";
 
-const operacionalItems = [
+interface SidebarItem {
+  title: string;
+  url: string;
+  icon: any;
+  module: string;
+  action?: string;
+}
+
+const operacionalItems: SidebarItem[] = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard, module: "dashboard" },
   { title: "Leads & Orçamentos", url: "/admin/orcamentos", icon: Users, module: "leads" },
   { title: "Propostas", url: "/admin/propostas", icon: ClipboardList, module: "propostas" },
   { title: "Nova Proposta", url: "/admin/propostas/nova", icon: FilePlus, module: "propostas", action: "criar" },
 ];
 
-const projetosItems = [
+const projetosItems: SidebarItem[] = [
   { title: "Projetos", url: "/admin/projetos", icon: FolderKanban, module: "projetos" },
   { title: "Sistemas Entregues", url: "/admin/sistemas", icon: PackageCheck, module: "sistemas" },
   { title: "Acessos & Credenciais", url: "/admin/acessos", icon: KeyRound, module: "acessos" },
@@ -52,14 +60,14 @@ const projetosItems = [
   { title: "Manutenção", url: "/admin/manutencao", icon: Wrench, module: "manutencao" },
 ];
 
-const comercialItems = [
+const comercialItems: SidebarItem[] = [
   { title: "Portfólio Público", url: "/admin/portfolio-admin", icon: Globe, module: "portfolio" },
   { title: "Projetos Modelo", url: "/admin/modelos", icon: LayoutTemplate, module: "modelos" },
   { title: "Financeiro", url: "/admin/financeiro", icon: DollarSign, module: "financeiro" },
   { title: "IA Assistiva", url: "/admin/ia", icon: Sparkles, module: "ia" },
 ];
 
-const sistemaItems = [
+const sistemaItems: SidebarItem[] = [
   { title: "Segurança & Auditoria", url: "/admin/seguranca", icon: ShieldCheck, module: "seguranca" },
   { title: "Add-ons Ocultos", url: "/admin/addons", icon: Layers, module: "addons" },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, module: "configuracoes" },
@@ -70,23 +78,28 @@ export default function AdminSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const { canView, canCreate, loading: accessLoading } = useAccessControl();
+  const { user, signOut } = useAuth();
+  const { canView, canCreate, roles, loading: accessLoading, isDevAdmin } = useAccessControl();
 
   const isActive = (path: string) => {
     if (path === "/admin/dashboard") return location.pathname === path;
     return location.pathname.startsWith(path);
   };
 
-  const renderItems = (items: typeof operacionalItems) => (
-    <SidebarMenu>
-      {items
-        .filter((item) => {
-          if (accessLoading) return true;
-          if (item.action === "criar") return canCreate(item.module);
-          return canView(item.module);
-        })
-        .map((item) => (
+  const filterItems = (items: SidebarItem[]) =>
+    items.filter((item) => {
+      if (accessLoading) return true;
+      if (item.action === "criar") return canCreate(item.module);
+      return canView(item.module);
+    });
+
+  const renderItems = (items: SidebarItem[]) => {
+    const filtered = filterItems(items);
+    if (filtered.length === 0) return null;
+
+    return (
+      <SidebarMenu>
+        {filtered.map((item) => (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton
               isActive={isActive(item.url)}
@@ -98,8 +111,25 @@ export default function AdminSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}
-    </SidebarMenu>
-  );
+      </SidebarMenu>
+    );
+  };
+
+  const renderGroup = (label: string, items: SidebarItem[]) => {
+    const filtered = filterItems(items);
+    if (filtered.length === 0) return null;
+
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel>{label}</SidebarGroupLabel>
+        <SidebarGroupContent>{renderItems(items)}</SidebarGroupContent>
+      </SidebarGroup>
+    );
+  };
+
+  // Derive display role
+  const primaryRole = roles[0] || "somente_leitura";
+  const roleLabel = ROLE_LABELS[primaryRole] || primaryRole;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/40">
@@ -118,28 +148,19 @@ export default function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Comercial</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(operacionalItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Operacional</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(projetosItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Estratégico</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(comercialItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(sistemaItems)}</SidebarGroupContent>
-        </SidebarGroup>
+        {renderGroup("Comercial", operacionalItems)}
+        {renderGroup("Operacional", projetosItems)}
+        {renderGroup("Estratégico", comercialItems)}
+        {renderGroup("Sistema", sistemaItems)}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border/40">
+        {!collapsed && (
+          <div className="px-3 py-2">
+            <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+            <p className="text-[10px] text-primary/80 font-medium">{roleLabel}</p>
+          </div>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
