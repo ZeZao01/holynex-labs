@@ -19,13 +19,27 @@ import { getAddonsBySource, createAddon, ADDON_STATUS_MAP, type Addon } from "@/
 import {
   ArrowLeft, Mail, Building2, FileBarChart, Sparkles, Target, Flame, Snowflake, Sun,
   Check, Monitor, Smartphone, Shield, Users as UsersIcon, Layers, Zap, Clock,
-  Loader2, Brain,
+  Loader2, Brain, Copy,
 } from "lucide-react";
 
 const tempConfig: Record<string, { icon: typeof Flame; color: string; label: string }> = {
   quente: { icon: Flame, color: "text-red-400", label: "Quente" },
   morno: { icon: Sun, color: "text-amber-400", label: "Morno" },
   frio: { icon: Snowflake, color: "text-sky-400", label: "Frio" },
+};
+
+const prioridadeMap: Record<string, { label: string; className: string }> = {
+  alta: { label: "Alta", className: "bg-red-500/15 text-red-400" },
+  media: { label: "Média", className: "bg-amber-500/15 text-amber-400" },
+  baixa: { label: "Baixa", className: "bg-emerald-500/15 text-emerald-400" },
+};
+
+const urgenciaMap: Record<string, string> = {
+  sem_urgencia: "Sem urgência",
+  baixa: "Baixa",
+  media: "Média",
+  alta: "Alta",
+  critica: "Crítica",
 };
 
 export default function AdminLeadDetalhe() {
@@ -259,7 +273,7 @@ export default function AdminLeadDetalhe() {
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
           {/* Contact info */}
-          <SectionCard title="Informações de Contato">
+          <SectionCard title="Dados de Contato">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground"><Mail className="h-4 w-4" /> {lead.email}</div>
               {lead.empresa && <div className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-4 w-4" /> {lead.empresa}</div>}
@@ -268,21 +282,33 @@ export default function AdminLeadDetalhe() {
             </div>
           </SectionCard>
 
-          {/* Project description */}
-            <SectionCard title="Descrição do Projeto">
-              <p className="text-sm text-foreground/80 whitespace-pre-wrap">{lead.descricao}</p>
+          {/* Original briefing */}
+          <SectionCard title="Briefing Original">
+            <p className="text-sm text-foreground/80 whitespace-pre-wrap">{lead.descricao}</p>
             {lead.objetivo && (
               <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
-                <span className="text-xs font-medium text-primary">Objetivo:</span>
+                <span className="text-xs font-medium text-primary">Objetivo</span>
                 <p className="text-sm mt-1">{lead.objetivo}</p>
               </div>
             )}
             {lead.descricao_detalhada && (
               <div className="mt-3 p-3 bg-muted/40 rounded-lg border border-border/60">
-                <span className="text-xs font-medium text-muted-foreground">Detalhamento:</span>
+                <span className="text-xs font-medium text-muted-foreground">Detalhamento</span>
                 <p className="text-sm mt-1 whitespace-pre-wrap">{lead.descricao_detalhada}</p>
               </div>
             )}
+          </SectionCard>
+
+          <SectionCard title="Contexto Comercial">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {lead.tipo_projeto && <InfoTag label="Tipo" value={lead.tipo_projeto} />}
+              {lead.nicho && <InfoTag label="Nicho" value={lead.nicho} />}
+              {lead.faixa_investimento && <InfoTag label="Faixa" value={lead.faixa_investimento} />}
+              {lead.orcamento_estimado && <InfoTag label="Orçamento" value={lead.orcamento_estimado} />}
+              {lead.prazo_desejado && <InfoTag label="Prazo" value={lead.prazo_desejado} />}
+              {lead.urgencia && <InfoTag label="Urgência" value={urgenciaMap[lead.urgencia] || lead.urgencia} />}
+              {lead.origem_lead && <InfoTag label="Origem" value={lead.origem_lead} />}
+            </div>
           </SectionCard>
 
           <SectionCard title="Referências Visuais">
@@ -307,14 +333,7 @@ export default function AdminLeadDetalhe() {
 
           {/* Scope */}
           <SectionCard title="Escopo Solicitado">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {lead.tipo_projeto && <InfoTag label="Tipo" value={lead.tipo_projeto} />}
-              {lead.nicho && <InfoTag label="Nicho" value={lead.nicho} />}
-              {lead.faixa_investimento && <InfoTag label="Investimento" value={lead.faixa_investimento} />}
-              {lead.orcamento_estimado && <InfoTag label="Orçamento" value={lead.orcamento_estimado} />}
-              {lead.prazo_desejado && <InfoTag label="Prazo" value={lead.prazo_desejado} />}
-            </div>
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-wrap gap-2">
               {lead.precisa_login && <SmallTag icon={Shield}>Login</SmallTag>}
               {lead.precisa_admin && <SmallTag icon={Monitor}>Admin</SmallTag>}
               {lead.precisa_area_cliente && <SmallTag icon={UsersIcon}>Área Cliente</SmallTag>}
@@ -509,6 +528,28 @@ export default function AdminLeadDetalhe() {
             )}
           </SectionCard>
 
+          <SectionCard title="Referências Sugeridas do Portfólio">
+            {portfolioLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando referências...</p>
+            ) : portfolioRefs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma referência semelhante encontrada.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {portfolioRefs.map((ref) => (
+                  <div key={ref.id} className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <div className="text-sm font-medium text-foreground">{ref.title}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{ref.reason || "Semelhante ao lead"}</div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {ref.item.category && <Badge variant="outline" className="text-[10px]">{ref.item.category}</Badge>}
+                      {ref.item.niche && <Badge variant="outline" className="text-[10px]">{ref.item.niche}</Badge>}
+                      {ref.item.solution_type && <Badge variant="outline" className="text-[10px]">{ref.item.solution_type}</Badge>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </SectionCard>
+
           {/* Internal notes */}
           <SectionCard title="Observações Internas">
             <Textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Notas internas sobre este lead..." rows={4} className="text-sm" />
@@ -548,13 +589,46 @@ export default function AdminLeadDetalhe() {
             </Select>
           </SectionCard>
 
+          <SectionCard title="Prioridade & Urgência">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Prioridade</span>
+              <Badge className={`text-[11px] ${lead.prioridade ? prioridadeMap[lead.prioridade]?.className : "bg-muted text-muted-foreground"}`}>
+                {lead.prioridade ? prioridadeMap[lead.prioridade]?.label || lead.prioridade : "Não definida"}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between text-sm mt-3">
+              <span className="text-muted-foreground">Urgência</span>
+              <span className="font-medium">{lead.urgencia ? (urgenciaMap[lead.urgencia] || lead.urgencia) : "—"}</span>
+            </div>
+          </SectionCard>
+
           {/* Quick actions */}
           <SectionCard title="Ações Rápidas">
             <div className="space-y-2">
               <Button variant="default" size="sm" className="w-full gap-1.5" onClick={() => navigate(`/admin/propostas/nova?orcamento=${lead.id}`)}>
                 <FileBarChart className="h-4 w-4" /> Converter em Proposta
               </Button>
-              <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => handleStatusChange("qualificado")}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(lead.email);
+                    toast.success("Email copiado");
+                  } catch {
+                    toast.error("Erro ao copiar email");
+                  }
+                }}
+              >
+                <Copy className="h-4 w-4" /> Copiar Email
+              </Button>
+              <Button variant="outline" size="sm" className="w-full gap-1.5" asChild>
+                <a href={`mailto:${lead.email}`}>
+                  <Mail className="h-4 w-4" /> Abrir Email
+                </a>
+              </Button>
+              <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => handleStatusChange("qualificado")}> 
                 <Target className="h-4 w-4" /> Marcar como Qualificado
               </Button>
               <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => handleStatusChange("aguardando_contato")}>
@@ -570,28 +644,6 @@ export default function AdminLeadDetalhe() {
                 <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-foreground/80">{lead.resumoIA}</p>
               </div>
-            </SectionCard>
-
-            <SectionCard title="Referências Sugeridas do Portfólio">
-              {portfolioLoading ? (
-                <p className="text-sm text-muted-foreground">Carregando referências...</p>
-              ) : portfolioRefs.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhuma referência semelhante encontrada.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {portfolioRefs.map((ref) => (
-                    <div key={ref.id} className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                      <div className="text-sm font-medium text-foreground">{ref.title}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{ref.reason || "Semelhante ao lead"}</div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {ref.item.category && <Badge variant="outline" className="text-[10px]">{ref.item.category}</Badge>}
-                        {ref.item.niche && <Badge variant="outline" className="text-[10px]">{ref.item.niche}</Badge>}
-                        {ref.item.solution_type && <Badge variant="outline" className="text-[10px]">{ref.item.solution_type}</Badge>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </SectionCard>
           )}
         </div>
