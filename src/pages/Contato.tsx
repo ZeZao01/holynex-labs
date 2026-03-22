@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import { Send, ArrowRight, ArrowLeft, Check, ChevronRight } from "lucide-react";
 import RevealBox from "@/components/RevealBox";
-import { salvarOrcamento, TIPOS_PROJETO, FAIXAS_INVESTIMENTO, PRAZOS, URGENCIAS, ESTAGIOS_OPERACAO } from "@/lib/orcamentos";
+import { salvarOrcamento, uploadOrcamentoAssets, TIPOS_PROJETO, FAIXAS_INVESTIMENTO, PRAZOS, URGENCIAS, ESTAGIOS_OPERACAO } from "@/lib/orcamentos";
 import { NICHES } from "@/lib/admin-types";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { cn } from "@/lib/utils";
@@ -21,11 +21,13 @@ interface FormData {
   email: string;
   empresa: string;
   descricao: string;
+  descricao_detalhada: string;
   tipo_projeto: string;
   nicho: string;
   objetivo: string;
   dor_principal: string;
   faixa_investimento: string;
+  orcamento_estimado: string;
   prazo_desejado: string;
   urgencia: string;
   numero_usuarios: string;
@@ -37,6 +39,15 @@ interface FormData {
   aceita_mvp: boolean;
   estagio_operacao: string;
 }
+
+interface VisualRef {
+  file: File;
+  previewUrl: string;
+}
+
+const MAX_FILES = 6;
+const MAX_FILE_SIZE = 6 * 1024 * 1024;
+const ACCEPTED_MIME = ["image/jpeg", "image/png", "image/webp"];
 
 function SelectChips({ options, value, onChange, className }: { options: readonly string[]; value: string; onChange: (v: string) => void; className?: string }) {
   return (
@@ -80,12 +91,15 @@ function ToggleChip({ label, checked, onChange }: { label: string; checked: bool
 
 export default function Contato() {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const { t } = useLanguage();
+  const [visualRefs, setVisualRefs] = useState<VisualRef[]>([]);
   const [form, setForm] = useState<FormData>({
-    nome: "", email: "", empresa: "", descricao: "",
+    nome: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
     tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
-    faixa_investimento: "", prazo_desejado: "", urgencia: "sem_urgencia",
+    faixa_investimento: "", orcamento_estimado: "", prazo_desejado: "", urgencia: "sem_urgencia",
     numero_usuarios: "", precisa_login: false, precisa_admin: false,
     precisa_area_cliente: false, precisa_integracoes: false,
     precisa_app_mobile: false, aceita_mvp: true, estagio_operacao: "",
@@ -98,22 +112,91 @@ export default function Contato() {
     return true;
   };
 
+  const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const next: VisualRef[] = [];
+    const errors: string[] = [];
+    const remainingSlots = MAX_FILES - visualRefs.length;
+
+    files.slice(0, remainingSlots).forEach((file) => {
+      if (!ACCEPTED_MIME.includes(file.type)) {
+        errors.push(`${file.name}: formato não suportado.`);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        errors.push(`${file.name}: excede 6MB.`);
+        return;
+      }
+      next.push({ file, previewUrl: URL.createObjectURL(file) });
+    });
+
+    if (files.length > remainingSlots) {
+      errors.push(`Limite de ${MAX_FILES} imagens atingido.`);
+    }
+
+    if (errors.length) {
+      const message = errors.join(" ");
+      setUploadError(message);
+      toast.error(message);
+    } else {
+      setUploadError(null);
+    }
+
+    if (next.length) {
+      setVisualRefs((prev) => [...prev, ...next]);
+    }
+
+    event.target.value = "";
+  };
+
+  const removeVisual = (index: number) => {
+    setVisualRefs((prev) => {
+      const item = prev[index];
+      if (item) URL.revokeObjectURL(item.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const resetVisuals = () => {
+    visualRefs.forEach((ref) => URL.revokeObjectURL(ref.previewUrl));
+    setVisualRefs([]);
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
+    setUploadError(null);
     try {
-      await salvarOrcamento({
+      const created = await salvarOrcamento({
         ...form,
         origem_lead: "site",
       });
+
+      if (visualRefs.length) {
+        setUploading(true);
+        try {
+          await uploadOrcamentoAssets(created.id, visualRefs.map((ref) => ref.file));
+        } catch {
+          const message = "Orçamento recebido, mas houve erro no envio das imagens.";
+          setUploadError(message);
+          toast.error(message);
+        } finally {
+          setUploading(false);
+        }
+      }
+
       toast.success(t("contact.success"));
+
       setForm({
-        nome: "", email: "", empresa: "", descricao: "",
+        nome: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
         tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
-        faixa_investimento: "", prazo_desejado: "", urgencia: "sem_urgencia",
+        faixa_investimento: "", orcamento_estimado: "", prazo_desejado: "", urgencia: "sem_urgencia",
         numero_usuarios: "", precisa_login: false, precisa_admin: false,
         precisa_area_cliente: false, precisa_integracoes: false,
         precisa_app_mobile: false, aceita_mvp: true, estagio_operacao: "",
       });
+      resetVisuals();
       setStep(1);
     } catch {
       toast.error("Erro ao enviar. Tente novamente.");
@@ -194,6 +277,10 @@ export default function Contato() {
                 <Textarea value={form.dor_principal} onChange={(e) => set("dor_principal", e.target.value)} placeholder="Qual problema mais urgente precisa resolver? O que mais atrapalha sua operação hoje?" rows={3} className="bg-muted/50 border-border/50" />
               </div>
               <div>
+                <label className="text-sm font-medium mb-1.5 block">Descrição detalhada da necessidade</label>
+                <Textarea value={form.descricao_detalhada} onChange={(e) => set("descricao_detalhada", e.target.value)} placeholder="Explique o contexto, processos, dores e resultados esperados." rows={4} className="bg-muted/50 border-border/50" />
+              </div>
+              <div>
                 <label className="text-sm font-medium mb-2 block">Estágio da operação</label>
                 <SelectChips options={ESTAGIOS_OPERACAO} value={form.estagio_operacao} onChange={(v) => set("estagio_operacao", v)} />
               </div>
@@ -207,6 +294,10 @@ export default function Contato() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Faixa de investimento</label>
                 <SelectChips options={FAIXAS_INVESTIMENTO} value={form.faixa_investimento} onChange={(v) => set("faixa_investimento", v)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Orçamento estimado (opcional)</label>
+                <Input value={form.orcamento_estimado} onChange={(e) => set("orcamento_estimado", e.target.value)} placeholder="Ex: R$ 25.000" className="bg-muted/50 border-border/50" />
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Prazo desejado</label>
@@ -231,6 +322,40 @@ export default function Contato() {
                   <ToggleChip label="Aceita MVP" checked={form.aceita_mvp} onChange={(v) => set("aceita_mvp", v)} />
                 </div>
               </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Referências visuais</label>
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleFiles}
+                    className="block w-full text-xs text-muted-foreground file:mr-4 file:py-2 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                  />
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>PNG, JPG ou WEBP até 6MB • Máx. {MAX_FILES} imagens</span>
+                    <span>{visualRefs.length}/{MAX_FILES}</span>
+                  </div>
+                  {uploading && <p className="text-xs text-primary">Enviando imagens...</p>}
+                  {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}
+                  {visualRefs.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {visualRefs.map((ref, index) => (
+                        <div key={ref.previewUrl} className="relative group">
+                          <img src={ref.previewUrl} alt={`Referência ${index + 1}`} className="h-20 w-full rounded-lg object-cover border border-border/50" />
+                          <button
+                            type="button"
+                            onClick={() => removeVisual(index)}
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-background/80 border border-border text-[10px] hover:bg-background"
+                          >
+                            x
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -247,9 +372,12 @@ export default function Contato() {
                 {form.nicho && <Row label="Nicho" value={form.nicho} />}
                 {form.objetivo && <Row label="Objetivo" value={form.objetivo} />}
                 {form.dor_principal && <Row label="Dor principal" value={form.dor_principal} />}
+                {form.descricao_detalhada && <Row label="Detalhamento" value={form.descricao_detalhada} />}
                 {form.faixa_investimento && <Row label="Investimento" value={form.faixa_investimento} />}
+                {form.orcamento_estimado && <Row label="Orçamento" value={form.orcamento_estimado} />}
                 {form.prazo_desejado && <Row label="Prazo" value={form.prazo_desejado} />}
                 {form.numero_usuarios && <Row label="Usuários" value={form.numero_usuarios} />}
+                {visualRefs.length > 0 && <Row label="Referências" value={`${visualRefs.length} imagem(ns)`} />}
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {form.precisa_login && <Tag>Login</Tag>}
                   {form.precisa_admin && <Tag>Admin</Tag>}
@@ -286,7 +414,7 @@ export default function Contato() {
                 className="btn-glow inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold text-foreground disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
-                {loading ? t("contact.sending") : t("contact.submit")}
+                {loading || uploading ? t("contact.sending") : t("contact.submit")}
               </button>
             )}
           </div>

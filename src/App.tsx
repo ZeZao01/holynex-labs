@@ -9,6 +9,8 @@ import Navbar from "@/components/Navbar";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import Footer from "@/components/Footer";
 import AdminLayout from "@/components/AdminLayout";
+import { AccessControlProvider } from "@/hooks/useAccessControl";
+import AdminRouteGuard from "@/components/admin/AdminRouteGuard";
 
 import Index from "./pages/Index";
 import Servicos from "./pages/Servicos";
@@ -54,26 +56,26 @@ function AppRoutes() {
       <AdminLayout>
         <Routes>
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/orcamentos" element={<AdminOrcamentos />} />
-          <Route path="/admin/orcamentos/:id" element={<AdminLeadDetalhe />} />
-          <Route path="/admin/propostas" element={<AdminPropostas />} />
-          <Route path="/admin/propostas/nova" element={<AdminNovaProposta />} />
-          <Route path="/admin/propostas/:id" element={<AdminPropostaDetalhe />} />
+          <Route path="/admin/dashboard" element={<AdminRouteGuard module="dashboard"><AdminDashboard /></AdminRouteGuard>} />
+          <Route path="/admin/orcamentos" element={<AdminRouteGuard module="leads"><AdminOrcamentos /></AdminRouteGuard>} />
+          <Route path="/admin/orcamentos/:id" element={<AdminRouteGuard module="leads"><AdminLeadDetalhe /></AdminRouteGuard>} />
+          <Route path="/admin/propostas" element={<AdminRouteGuard module="propostas"><AdminPropostas /></AdminRouteGuard>} />
+          <Route path="/admin/propostas/nova" element={<AdminRouteGuard module="propostas" action="criar"><AdminNovaProposta /></AdminRouteGuard>} />
+          <Route path="/admin/propostas/:id" element={<AdminRouteGuard module="propostas"><AdminPropostaDetalhe /></AdminRouteGuard>} />
           
-          <Route path="/admin/projetos" element={<AdminProjetos />} />
-          <Route path="/admin/projetos/:id" element={<AdminProjetoDetalhe />} />
-          <Route path="/admin/sistemas" element={<AdminSistemas />} />
-          <Route path="/admin/sistemas/:id" element={<AdminSistemaDetalhe />} />
-          <Route path="/admin/acessos" element={<AdminAcessos />} />
-          <Route path="/admin/modulos" element={<AdminModulos />} />
-          <Route path="/admin/manutencao" element={<AdminManutencao />} />
-          <Route path="/admin/portfolio-admin" element={<AdminPortfolioAdmin />} />
-          <Route path="/admin/modelos" element={<AdminModelos />} />
-          <Route path="/admin/financeiro" element={<AdminFinanceiro />} />
-          <Route path="/admin/ia" element={<AdminIA />} />
-          <Route path="/admin/seguranca" element={<AdminSeguranca />} />
-          <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+          <Route path="/admin/projetos" element={<AdminRouteGuard module="projetos"><AdminProjetos /></AdminRouteGuard>} />
+          <Route path="/admin/projetos/:id" element={<AdminRouteGuard module="projetos"><AdminProjetoDetalhe /></AdminRouteGuard>} />
+          <Route path="/admin/sistemas" element={<AdminRouteGuard module="sistemas"><AdminSistemas /></AdminRouteGuard>} />
+          <Route path="/admin/sistemas/:id" element={<AdminRouteGuard module="sistemas"><AdminSistemaDetalhe /></AdminRouteGuard>} />
+          <Route path="/admin/acessos" element={<AdminRouteGuard module="acessos"><AdminAcessos /></AdminRouteGuard>} />
+          <Route path="/admin/modulos" element={<AdminRouteGuard module="modulos"><AdminModulos /></AdminRouteGuard>} />
+          <Route path="/admin/manutencao" element={<AdminRouteGuard module="manutencao"><AdminManutencao /></AdminRouteGuard>} />
+          <Route path="/admin/portfolio-admin" element={<AdminRouteGuard module="portfolio"><AdminPortfolioAdmin /></AdminRouteGuard>} />
+          <Route path="/admin/modelos" element={<AdminRouteGuard module="modelos"><AdminModelos /></AdminRouteGuard>} />
+          <Route path="/admin/financeiro" element={<AdminRouteGuard module="financeiro"><AdminFinanceiro /></AdminRouteGuard>} />
+          <Route path="/admin/ia" element={<AdminRouteGuard module="ia"><AdminIA /></AdminRouteGuard>} />
+          <Route path="/admin/seguranca" element={<AdminRouteGuard module="seguranca"><AdminSeguranca /></AdminRouteGuard>} />
+          <Route path="/admin/configuracoes" element={<AdminRouteGuard module="configuracoes"><AdminConfiguracoes /></AdminRouteGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AdminLayout>
@@ -110,9 +112,11 @@ const App = () => (
       <LanguageProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <AccessControlProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AccessControlProvider>
       </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>

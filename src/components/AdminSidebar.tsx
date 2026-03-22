@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import {
   Sidebar,
   SidebarContent,
@@ -36,31 +37,30 @@ import {
 import logo from "@/assets/logo.png";
 
 const operacionalItems = [
-  { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
-  { title: "Leads & Orçamentos", url: "/admin/orcamentos", icon: Users },
-  { title: "Propostas", url: "/admin/propostas", icon: ClipboardList },
-  { title: "Nova Proposta", url: "/admin/propostas/nova", icon: FilePlus },
-  
+  { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard, module: "dashboard" },
+  { title: "Leads & Orçamentos", url: "/admin/orcamentos", icon: Users, module: "leads" },
+  { title: "Propostas", url: "/admin/propostas", icon: ClipboardList, module: "propostas" },
+  { title: "Nova Proposta", url: "/admin/propostas/nova", icon: FilePlus, module: "propostas", action: "criar" },
 ];
 
 const projetosItems = [
-  { title: "Projetos", url: "/admin/projetos", icon: FolderKanban },
-  { title: "Sistemas Entregues", url: "/admin/sistemas", icon: PackageCheck },
-  { title: "Acessos & Credenciais", url: "/admin/acessos", icon: KeyRound },
-  { title: "Módulos", url: "/admin/modulos", icon: Blocks },
-  { title: "Manutenção", url: "/admin/manutencao", icon: Wrench },
+  { title: "Projetos", url: "/admin/projetos", icon: FolderKanban, module: "projetos" },
+  { title: "Sistemas Entregues", url: "/admin/sistemas", icon: PackageCheck, module: "sistemas" },
+  { title: "Acessos & Credenciais", url: "/admin/acessos", icon: KeyRound, module: "acessos" },
+  { title: "Módulos", url: "/admin/modulos", icon: Blocks, module: "modulos" },
+  { title: "Manutenção", url: "/admin/manutencao", icon: Wrench, module: "manutencao" },
 ];
 
 const comercialItems = [
-  { title: "Portfólio Público", url: "/admin/portfolio-admin", icon: Globe },
-  { title: "Projetos Modelo", url: "/admin/modelos", icon: LayoutTemplate },
-  { title: "Financeiro", url: "/admin/financeiro", icon: DollarSign },
-  { title: "IA Assistiva", url: "/admin/ia", icon: Sparkles },
+  { title: "Portfólio Público", url: "/admin/portfolio-admin", icon: Globe, module: "portfolio" },
+  { title: "Projetos Modelo", url: "/admin/modelos", icon: LayoutTemplate, module: "modelos" },
+  { title: "Financeiro", url: "/admin/financeiro", icon: DollarSign, module: "financeiro" },
+  { title: "IA Assistiva", url: "/admin/ia", icon: Sparkles, module: "ia" },
 ];
 
 const sistemaItems = [
-  { title: "Segurança & Auditoria", url: "/admin/seguranca", icon: ShieldCheck },
-  { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
+  { title: "Segurança & Auditoria", url: "/admin/seguranca", icon: ShieldCheck, module: "seguranca" },
+  { title: "Configurações", url: "/admin/configuracoes", icon: Settings, module: "configuracoes" },
 ];
 
 export default function AdminSidebar() {
@@ -69,6 +69,7 @@ export default function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { canView, canCreate, loading: accessLoading } = useAccessControl();
 
   const isActive = (path: string) => {
     if (path === "/admin/dashboard") return location.pathname === path;
@@ -77,18 +78,24 @@ export default function AdminSidebar() {
 
   const renderItems = (items: typeof operacionalItems) => (
     <SidebarMenu>
-      {items.map((item) => (
-        <SidebarMenuItem key={item.title}>
-          <SidebarMenuButton
-            isActive={isActive(item.url)}
-            onClick={() => navigate(item.url)}
-            tooltip={item.title}
-          >
-            <item.icon className="h-4 w-4" />
-            {!collapsed && <span>{item.title}</span>}
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      ))}
+      {items
+        .filter((item) => {
+          if (accessLoading) return true;
+          if (item.action === "criar") return canCreate(item.module);
+          return canView(item.module);
+        })
+        .map((item) => (
+          <SidebarMenuItem key={item.title}>
+            <SidebarMenuButton
+              isActive={isActive(item.url)}
+              onClick={() => navigate(item.url)}
+              tooltip={item.title}
+            >
+              <item.icon className="h-4 w-4" />
+              {!collapsed && <span>{item.title}</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))}
     </SidebarMenu>
   );
 

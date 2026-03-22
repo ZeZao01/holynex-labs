@@ -22,11 +22,18 @@ import { getAuditLogs, logAction, AuditLog } from "@/lib/audit-logs";
 import {
   getSecurityEvents, getSecurityAlerts, getSecurityIncidents,
   getRolePermissions, updateAlertStatus, updateIncidentStatus,
-  setPermission, initDefaultPermissions, buildPermissionMatrix,
+  setPermission, initDefaultPermissions, buildPermissionMatrix, logSecurityEvent,
   SecurityEvent, SecurityAlert, SecurityIncident, RolePermission,
   SEVERITY_LABELS, ALERT_STATUS_LABELS, INCIDENT_STATUS_LABELS,
   ROLES, ROLE_LABELS, MODULES, MODULE_LABELS, ACTIONS, ACTION_LABELS,
 } from "@/lib/security";
+import {
+  getUserProfiles,
+  getUserRoleAssignments,
+  upsertUserRoleAssignment,
+  UserProfile,
+  UserRoleAssignment,
+} from "@/lib/rbac";
 
 const AUDIT_ACTION_COLORS: Record<string, string> = {
   create: "bg-primary/15 text-primary border-primary/30",
@@ -47,6 +54,10 @@ export default function AdminSeguranca() {
   const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
   const [incidents, setIncidents] = useState<SecurityIncident[]>([]);
   const [permissions, setPermissions] = useState<RolePermission[]>([]);
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [roleAssignments, setRoleAssignments] = useState<UserRoleAssignment[]>([]);
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, string>>({});
+  const [savingRoles, setSavingRoles] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("all");
@@ -64,6 +75,31 @@ export default function AdminSeguranca() {
         getRolePermissions(),
       ]);
       setLogs(l); setEvents(e); setAlerts(a); setIncidents(i); setPermissions(p);
+      try {
+        const [profilesData, assignmentsData] = await Promise.all([
+          getUserProfiles(),
+          getUserRoleAssignments(),
+        ]);
+        setProfiles(profilesData);
+        setRoleAssignments(assignmentsData);
+        const assignmentMap = new Map(assignmentsData.map(a => [a.user_id, a.role_name || ""]));
+        const draft: Record<string, string> = {};
+        if (profilesData.length > 0) {
+          profilesData.forEach((profile) => {
+            const currentRole = assignmentMap.get(profile.user_id) || profile.role_name || ROLES[0];
+            draft[profile.user_id] = currentRole;
+          });
+        } else {
+          assignmentsData.forEach((assignment) => {
+            draft[assignment.user_id] = assignment.role_name || "somente_leitura";
+          });
+        }
+        setRoleDrafts(draft);
+      } catch {
+        setProfiles([]);
+        setRoleAssignments([]);
+        setRoleDrafts({});
+      }
     } catch {
       toast({ title: "Erro ao carregar dados de segurança", variant: "destructive" });
     } finally { setLoading(false); }
@@ -125,6 +161,32 @@ export default function AdminSeguranca() {
 
   const fmtDate = (d: string) => new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const logActions = [...new Set(logs.map(l => l.action).filter(Boolean))];
+  const assignmentByUser = useMemo(
+    () => new Map(roleAssignments.map(a => [a.user_id, a])),
+    [roleAssignments]
+  );
+
+  async function handleRoleSave(userId: string) {
+    const nextRole = roleDrafts[userId];
+    if (!nextRole) return;
+    setSavingRoles(true);
+    try {
+      await upsertUserRoleAssignment(userId, nextRole);
+      await logAction("update", "user_role_assignments", userId, { role: nextRole });
+      await logSecurityEvent("alteracao_papel", "medium", "Alteração de papel do usuário", {
+        source: "seguranca",
+        entityType: "user_role_assignments",
+        entityId: userId,
+        metadata: { role: nextRole },
+      });
+      toast({ title: "Papel atualizado" });
+      load();
+    } catch {
+      toast({ title: "Erro ao atualizar papel", variant: "destructive" });
+    } finally {
+      setSavingRoles(false);
+    }
+  }
 
   if (loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
 
@@ -150,6 +212,7 @@ export default function AdminSeguranca() {
           <TabsTrigger value="incidents" className="gap-1">
             Incidentes {stats.openIncidents > 0 && <Badge variant="destructive" className="text-[10px] h-4 px-1">{stats.openIncidents}</Badge>}
           </TabsTrigger>
+          <TabsTrigger value="roles">Papéis</TabsTrigger>
           <TabsTrigger value="permissions">Permissões</TabsTrigger>
         </TabsList>
 
@@ -349,7 +412,7 @@ export default function AdminSeguranca() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[140px]">Módulo</TableHead>
-                    {ACTIONS.slice(0, 7).map(a => (
+                    {ACTIONS.map(a => (
                       <TableHead key={a} className="text-center text-[10px] px-1 min-w-[60px]">{ACTION_LABELS[a]}</TableHead>
                     ))}
                   </TableRow>
@@ -358,7 +421,7 @@ export default function AdminSeguranca() {
                   {MODULES.map(mod => (
                     <TableRow key={mod}>
                       <TableCell className="font-medium text-sm">{MODULE_LABELS[mod]}</TableCell>
-                      {ACTIONS.slice(0, 7).map(action => {
+                      {ACTIONS.map(action => {
                         const allowed = permMatrix[selectedRole]?.[mod]?.[action] ?? false;
                         return (
                           <TableCell key={action} className="text-center">
@@ -376,6 +439,65 @@ export default function AdminSeguranca() {
               </Table>
             </div>
           </SectionCard>
+        </TabsContent>
+
+        {/* Roles Tab */}
+        <TabsContent value="roles" className="space-y-4">
+          {profiles.length === 0 && roleAssignments.length === 0 ? (
+            <EmptyState icon={<User className="h-10 w-10 text-muted-foreground" />} title="Nenhum usuário" description="Cadastre usuários e vincule papéis para controlar acessos." />
+          ) : (
+            <SectionCard noPadding>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Papel</TableHead>
+                    <TableHead className="w-[120px]" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(profiles.length > 0 ? profiles : roleAssignments.map((a) => ({
+                    id: a.user_id,
+                    user_id: a.user_id,
+                    full_name: "—",
+                    email: "—",
+                    role_name: a.role_name || "somente_leitura",
+                  }))).map((profile) => {
+                    const assignment = assignmentByUser.get(profile.user_id);
+                    const currentRole = roleDrafts[profile.user_id] || assignment?.role_name || profile.role_name || "somente_leitura";
+                    return (
+                      <TableRow key={profile.user_id}>
+                        <TableCell className="text-sm font-medium">{profile.full_name || profile.user_id}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{profile.email || "—"}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={currentRole}
+                            onValueChange={(value) => setRoleDrafts((prev) => ({ ...prev, [profile.user_id]: value }))}
+                          >
+                            <SelectTrigger className="w-[220px] h-9"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {ROLES.map(r => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={savingRoles}
+                            onClick={() => handleRoleSave(profile.user_id)}
+                          >
+                            Salvar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </SectionCard>
+          )}
         </TabsContent>
       </Tabs>
     </div>

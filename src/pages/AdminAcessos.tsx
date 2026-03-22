@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/admin/PageHeader";
 import FilterToolbar from "@/components/admin/FilterToolbar";
 import EmptyState from "@/components/admin/EmptyState";
@@ -12,14 +11,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import {
-  getProjectAccesses, saveProjectAccess, deleteProjectAccess, addAccessEvent, getAccessEvents,
+  getProjectAccesses, saveProjectAccess, addAccessEvent, getAccessEvents,
   ProjectAccess, AccessEvent, ACCESS_TYPES, ENVIRONMENTS, ACCESS_STATUS,
   maskSecret, getAccessAlerts,
 } from "@/lib/project-accesses";
 import { getDeliveredSystems, DeliveredSystem } from "@/lib/delivered-systems";
 import { getProjects, Project } from "@/lib/projects";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import { logSecurityEvent } from "@/lib/security";
 import {
   KeyRound, Plus, Copy, ExternalLink, Eye, EyeOff, CheckCircle2, Edit, Trash2,
   AlertTriangle, Clock, Shield,
@@ -27,6 +28,7 @@ import {
 import { format } from "date-fns";
 
 export default function AdminAcessos() {
+  const { canCreate, canEdit, canViewSensitiveData, guardAction } = useAccessControl();
   const [accesses, setAccesses] = useState<ProjectAccess[]>([]);
   const [systems, setSystems] = useState<DeliveredSystem[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -69,6 +71,15 @@ export default function AdminAcessos() {
   }
 
   async function handleSave(data: Partial<ProjectAccess>) {
+    const action = data.id ? "editar" : "criar";
+    const allowed = await guardAction("acessos", action, {
+      description: `Tentativa de ${action} acesso`,
+      metadata: { accessId: data.id || null },
+    });
+    if (!allowed) {
+      toast({ title: "Sem permissão para salvar acesso", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       const saved = await saveProjectAccess(data);
@@ -85,6 +96,14 @@ export default function AdminAcessos() {
   }
 
   async function handleVerify(access: ProjectAccess) {
+    const allowed = await guardAction("acessos", "editar", {
+      description: "Tentativa de verificação de acesso",
+      metadata: { accessId: access.id },
+    });
+    if (!allowed) {
+      toast({ title: "Sem permissão para verificar acesso", variant: "destructive" });
+      return;
+    }
     try {
       await saveProjectAccess({ id: access.id, last_verified_at: new Date().toISOString() });
       await addAccessEvent(access.id, "acesso_verificado", "Marcado como verificado");
@@ -96,8 +115,23 @@ export default function AdminAcessos() {
   }
 
   async function handleRevealSecret(accessId: string) {
+    const allowed = await guardAction("acessos", "visualizar_segredo", {
+      description: "Tentativa de visualização de segredo",
+      severity: "high",
+      metadata: { accessId },
+    });
+    if (!allowed) {
+      toast({ title: "Sem permissão para visualizar segredo", variant: "destructive" });
+      return;
+    }
     setConfirmReveal(null);
     setRevealedSecrets((s) => new Set(s).add(accessId));
+    await logSecurityEvent(
+      "visualizacao_dados_sensiveis",
+      "high",
+      "Segredo de acesso visualizado",
+      { source: "acessos", entityType: "project_access", entityId: accessId }
+    );
     await addAccessEvent(accessId, "segredo_visualizado", "Segredo revelado pelo admin");
     setTimeout(() => {
       setRevealedSecrets((s) => { const n = new Set(s); n.delete(accessId); return n; });
@@ -244,7 +278,19 @@ export default function AdminAcessos() {
             <AlertTriangle className="h-3 w-3 mr-1" /> Sem verificação
           </Button>
         </FilterToolbar>
-        <Button size="sm" onClick={() => setShowNew(true)}><Plus className="h-4 w-4 mr-1" /> Novo Acesso</Button>
+        <Button
+          size="sm"
+          onClick={async () => {
+            if (!canCreate("acessos")) {
+              await guardAction("acessos", "criar", { description: "Tentativa de criar acesso" });
+              toast({ title: "Sem permissão para criar acesso", variant: "destructive" });
+              return;
+            }
+            setShowNew(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-1" /> Novo Acesso
+        </Button>
       </div>
 
       {loading ? (
@@ -254,7 +300,17 @@ export default function AdminAcessos() {
           icon={<KeyRound className="h-10 w-10 text-muted-foreground" />}
           title="Nenhum acesso encontrado"
           description="Registre acessos para centralizar credenciais da agência."
-          action={{ label: "Registrar Acesso", onClick: () => setShowNew(true) }}
+          action={{
+            label: "Registrar Acesso",
+            onClick: async () => {
+              if (!canCreate("acessos")) {
+                await guardAction("acessos", "criar", { description: "Tentativa de criar acesso" });
+                toast({ title: "Sem permissão para criar acesso", variant: "destructive" });
+                return;
+              }
+              setShowNew(true);
+            },
+          }}
         />
       ) : grouped ? (
         <div className="space-y-6">
@@ -365,13 +421,21 @@ export default function AdminAcessos() {
                       {revealedSecrets.has(detailAccess.id) ? detailAccess.secret_masked : maskSecret(detailAccess.secret_masked)}
                     </span>
                     {detailAccess.secret_masked && (
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => {
-                        if (revealedSecrets.has(detailAccess.id)) {
-                          setRevealedSecrets((s) => { const n = new Set(s); n.delete(detailAccess.id); return n; });
-                        } else {
-                          setConfirmReveal(detailAccess.id);
-                        }
-                      }}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          if (revealedSecrets.has(detailAccess.id)) {
+                            setRevealedSecrets((s) => { const n = new Set(s); n.delete(detailAccess.id); return n; });
+                          } else if (canViewSensitiveData()) {
+                            setConfirmReveal(detailAccess.id);
+                          } else {
+                            void guardAction("acessos", "visualizar_segredo", { description: "Tentativa de visualização de segredo" });
+                            toast({ title: "Sem permissão para visualizar segredo", variant: "destructive" });
+                          }
+                        }}
+                      >
                         {revealedSecrets.has(detailAccess.id) ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                       </Button>
                     )}
@@ -398,7 +462,22 @@ export default function AdminAcessos() {
               <Separator />
 
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => { setDetailAccess(null); setEditAccess(detailAccess); }}><Edit className="h-4 w-4 mr-1" /> Editar</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!canEdit("acessos")}
+                  onClick={() => {
+                    if (!canEdit("acessos")) {
+                      guardAction("acessos", "editar", { description: "Tentativa de editar acesso" });
+                      toast({ title: "Sem permissão para editar", variant: "destructive" });
+                      return;
+                    }
+                    setDetailAccess(null);
+                    setEditAccess(detailAccess);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-1" /> Editar
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => handleVerify(detailAccess)}><CheckCircle2 className="h-4 w-4 mr-1" /> Verificar Agora</Button>
                 {detailAccess.access_url && (
                   <a href={detailAccess.access_url} target="_blank" rel="noopener noreferrer">

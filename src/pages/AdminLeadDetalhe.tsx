@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getOrcamentoById, atualizarStatusComercial, atualizarOrcamento, type Orcamento, type StatusComercial, STATUS_COMERCIAL_MAP, ESTRATEGIAS_COMERCIAIS } from "@/lib/orcamentos";
+import { getOrcamentoById, getOrcamentoAssets, atualizarStatusComercial, atualizarOrcamento, type Orcamento, type OrcamentoAsset, type StatusComercial, STATUS_COMERCIAL_MAP, ESTRATEGIAS_COMERCIAIS } from "@/lib/orcamentos";
 import PageHeader from "@/components/admin/PageHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -30,6 +30,8 @@ export default function AdminLeadDetalhe() {
   const navigate = useNavigate();
   const [lead, setLead] = useState<Orcamento | null>(null);
   const [loading, setLoading] = useState(true);
+  const [assetsLoading, setAssetsLoading] = useState(true);
+  const [assets, setAssets] = useState<OrcamentoAsset[]>([]);
   const [obs, setObs] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
@@ -38,10 +40,16 @@ export default function AdminLeadDetalhe() {
     if (!id) return;
     try {
       const data = await getOrcamentoById(id);
+      let assetsData: OrcamentoAsset[] = [];
+      try {
+        assetsData = await getOrcamentoAssets(id);
+      } catch { /* ignore assets errors */ }
       setLead(data);
       setObs(data?.observacoes_internas || "");
+      setAssets(assetsData || []);
     } catch { /* silent */ } finally {
       setLoading(false);
+      setAssetsLoading(false);
     }
   }, [id]);
 
@@ -141,6 +149,32 @@ export default function AdminLeadDetalhe() {
                 <p className="text-sm mt-1">{lead.objetivo}</p>
               </div>
             )}
+            {lead.descricao_detalhada && (
+              <div className="mt-3 p-3 bg-muted/40 rounded-lg border border-border/60">
+                <span className="text-xs font-medium text-muted-foreground">Detalhamento:</span>
+                <p className="text-sm mt-1 whitespace-pre-wrap">{lead.descricao_detalhada}</p>
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Referências Visuais">
+            {assetsLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando imagens...</p>
+            ) : assets.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma referência enviada.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {assets.map((asset) => (
+                  <a key={asset.id} href={asset.file_url} target="_blank" rel="noreferrer" className="group">
+                    <img
+                      src={asset.file_url}
+                      alt={asset.original_name}
+                      className="h-28 w-full rounded-lg object-cover border border-border/60 group-hover:border-primary/40 transition-colors"
+                    />
+                  </a>
+                ))}
+              </div>
+            )}
           </SectionCard>
 
           {/* Scope */}
@@ -149,6 +183,7 @@ export default function AdminLeadDetalhe() {
               {lead.tipo_projeto && <InfoTag label="Tipo" value={lead.tipo_projeto} />}
               {lead.nicho && <InfoTag label="Nicho" value={lead.nicho} />}
               {lead.faixa_investimento && <InfoTag label="Investimento" value={lead.faixa_investimento} />}
+              {lead.orcamento_estimado && <InfoTag label="Orçamento" value={lead.orcamento_estimado} />}
               {lead.prazo_desejado && <InfoTag label="Prazo" value={lead.prazo_desejado} />}
             </div>
             <div className="flex flex-wrap gap-2 mt-4">

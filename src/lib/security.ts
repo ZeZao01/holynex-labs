@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const ROLES = [
   "super_admin",
+  "dev_admin",
   "admin_comercial",
   "admin_operacional",
   "admin_tecnico",
@@ -17,6 +18,7 @@ export type RoleName = (typeof ROLES)[number];
 
 export const ROLE_LABELS: Record<string, string> = {
   super_admin: "Super Admin",
+  dev_admin: "Dev Admin",
   admin_comercial: "Admin Comercial",
   admin_operacional: "Admin Operacional",
   admin_tecnico: "Admin Técnico",
@@ -42,25 +44,34 @@ export const MODULE_LABELS: Record<string, string> = {
 
 export const ACTIONS = [
   "visualizar", "criar", "editar", "excluir", "exportar",
-  "gerar_pdf", "baixar_pdf", "visualizar_segredo", "revogar_documento",
+  "gerar_pdf", "baixar_pdf", "aprovar", "visualizar_segredo", "revogar_documento",
   "alterar_permissoes", "acessar_financeiro", "acessar_seguranca",
-  "gerenciar_configuracoes",
+  "gerenciar_configuracoes", "ativar_addon", "gerenciar_provedores_ia",
+  "revisar_blueprint", "acessar_avancado",
 ] as const;
 
 export const ACTION_LABELS: Record<string, string> = {
   visualizar: "Visualizar", criar: "Criar", editar: "Editar", excluir: "Excluir",
   exportar: "Exportar", gerar_pdf: "Gerar PDF", baixar_pdf: "Baixar PDF",
-  visualizar_segredo: "Ver Segredo", revogar_documento: "Revogar Doc",
+  aprovar: "Aprovar", visualizar_segredo: "Ver Segredo", revogar_documento: "Revogar Doc",
   alterar_permissoes: "Alterar Permissões", acessar_financeiro: "Acessar Financeiro",
   acessar_seguranca: "Acessar Segurança", gerenciar_configuracoes: "Config. Sistema",
+  ativar_addon: "Ativar Add-on", gerenciar_provedores_ia: "Gerenciar IA",
+  revisar_blueprint: "Revisar Blueprint", acessar_avancado: "Acesso Avançado",
 };
 
 // Default permissions matrix
 export const DEFAULT_PERMISSIONS: Record<string, Record<string, string[]>> = {
   super_admin: Object.fromEntries(MODULES.map(m => [m, [...ACTIONS]])),
+  dev_admin: Object.fromEntries(MODULES.map(m => [m, [
+    "visualizar", "criar", "editar", "excluir", "exportar",
+    "gerar_pdf", "baixar_pdf", "aprovar", "visualizar_segredo",
+    "acessar_financeiro", "acessar_seguranca", "gerenciar_configuracoes",
+    "ativar_addon", "gerenciar_provedores_ia", "revisar_blueprint", "acessar_avancado",
+  ]])),
   admin_comercial: {
     dashboard: ["visualizar"], leads: ["visualizar", "criar", "editar", "excluir", "exportar"],
-    propostas: ["visualizar", "criar", "editar", "excluir", "gerar_pdf", "baixar_pdf"],
+    propostas: ["visualizar", "criar", "editar", "excluir", "gerar_pdf", "baixar_pdf", "aprovar"],
     projetos: ["visualizar"], portfolio: ["visualizar", "criar", "editar"],
     modelos: ["visualizar", "criar", "editar"], financeiro: ["visualizar", "acessar_financeiro"],
     ia: ["visualizar"],
@@ -75,7 +86,7 @@ export const DEFAULT_PERMISSIONS: Record<string, Record<string, string[]>> = {
     dashboard: ["visualizar"], projetos: ["visualizar", "editar"],
     sistemas: ["visualizar", "editar"], modulos: ["visualizar", "criar", "editar", "excluir"],
     manutencao: ["visualizar", "criar", "editar"], acessos: ["visualizar", "criar", "editar", "visualizar_segredo"],
-    ia: ["visualizar"],
+    ia: ["visualizar", "aprovar"],
   },
   financeiro: {
     dashboard: ["visualizar"], financeiro: ["visualizar", "acessar_financeiro", "exportar"],
@@ -95,7 +106,7 @@ export const DEFAULT_PERMISSIONS: Record<string, Record<string, string[]>> = {
 // Critical actions requiring confirmation
 export const CRITICAL_ACTIONS = [
   "visualizar_segredo", "excluir", "revogar_documento",
-  "exportar", "alterar_permissoes",
+  "exportar", "alterar_permissoes", "ativar_addon",
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────

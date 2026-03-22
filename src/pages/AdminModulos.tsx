@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/admin/PageHeader";
 import FilterToolbar from "@/components/admin/FilterToolbar";
 import EmptyState from "@/components/admin/EmptyState";
@@ -14,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { Blocks, Plus, Pencil, Trash2, Loader2, Copy, Clock } from "lucide-react";
 import {
@@ -35,7 +35,7 @@ const emptyModule: Partial<ProjectModule> = {
 };
 
 export default function AdminModulos() {
-  const navigate = useNavigate();
+  const { canCreate, canEdit, canDelete, guardAction } = useAccessControl();
   const [modules, setModules] = useState<ProjectModule[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [systems, setSystems] = useState<DeliveredSystem[]>([]);
@@ -69,6 +69,15 @@ export default function AdminModulos() {
 
   async function handleSave() {
     if (!form.nome?.trim()) { toast({ title: "Nome é obrigatório", variant: "destructive" }); return; }
+    const action = form.id ? "editar" : "criar";
+    const allowed = await guardAction("modulos", action, {
+      description: `Tentativa de ${action} módulo`,
+      metadata: { moduleId: form.id || null },
+    });
+    if (!allowed) {
+      toast({ title: "Sem permissão para salvar módulo", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       const isNew = !form.id;
@@ -81,12 +90,29 @@ export default function AdminModulos() {
   }
 
   async function handleDelete(id: string) {
+    const allowed = await guardAction("modulos", "excluir", {
+      description: "Tentativa de exclusão de módulo",
+      severity: "high",
+      metadata: { moduleId: id },
+    });
+    if (!allowed) {
+      toast({ title: "Sem permissão para excluir módulo", variant: "destructive" });
+      return;
+    }
     if (!confirm("Excluir este módulo?")) return;
     try { await deleteModule(id); toast({ title: "Módulo excluído" }); await load(); }
     catch { toast({ title: "Erro ao excluir", variant: "destructive" }); }
   }
 
   async function handleDuplicate(m: ProjectModule) {
+    const allowed = await guardAction("modulos", "criar", {
+      description: "Tentativa de duplicação de módulo",
+      metadata: { moduleId: m.id },
+    });
+    if (!allowed) {
+      toast({ title: "Sem permissão para duplicar módulo", variant: "destructive" });
+      return;
+    }
     try {
       const { id, criado_em, atualizado_em, ...rest } = m;
       const dup = await saveModule({ ...rest, nome: `${m.nome} (Cópia)` });
@@ -124,12 +150,27 @@ export default function AdminModulos() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Módulos por Projeto"
-        description="Gestão modular dos sistemas entregues e em andamento"
-        breadcrumbs={[{ label: "Módulos" }]}
-        actions={<Button size="sm" onClick={() => { setForm(emptyModule); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Adicionar Módulo</Button>}
-      />
+        <PageHeader
+          title="Módulos por Projeto"
+          description="Gestão modular dos sistemas entregues e em andamento"
+          breadcrumbs={[{ label: "Módulos" }]}
+          actions={
+            <Button
+              size="sm"
+              onClick={async () => {
+                if (!canCreate("modulos")) {
+                  await guardAction("modulos", "criar", { description: "Tentativa de criar módulo" });
+                  toast({ title: "Sem permissão para criar módulo", variant: "destructive" });
+                  return;
+                }
+                setForm(emptyModule);
+                setOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Adicionar Módulo
+            </Button>
+          }
+        />
 
       <div className="flex flex-wrap items-center gap-3">
         <FilterToolbar searchPlaceholder="Buscar módulo..." searchValue={search} onSearchChange={setSearch} />
@@ -189,7 +230,23 @@ export default function AdminModulos() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={<Blocks className="h-10 w-10 text-muted-foreground" />} title="Nenhum módulo encontrado" description="Adicione módulos vinculados a projetos ou sistemas." action={{ label: "Adicionar Módulo", onClick: () => { setForm(emptyModule); setOpen(true); } }} />
+        <EmptyState
+          icon={<Blocks className="h-10 w-10 text-muted-foreground" />}
+          title="Nenhum módulo encontrado"
+          description="Adicione módulos vinculados a projetos ou sistemas."
+          action={{
+            label: "Adicionar Módulo",
+            onClick: async () => {
+              if (!canCreate("modulos")) {
+                await guardAction("modulos", "criar", { description: "Tentativa de criar módulo" });
+                toast({ title: "Sem permissão para criar módulo", variant: "destructive" });
+                return;
+              }
+              setForm(emptyModule);
+              setOpen(true);
+            },
+          }}
+        />
       ) : (
         <SectionCard noPadding>
           <Table>
@@ -222,9 +279,33 @@ export default function AdminModulos() {
                   <TableCell>{FUNCTIONAL_PRIORITIES[m.functional_priority] && <StatusBadge status={FUNCTIONAL_PRIORITIES[m.functional_priority].color} label={FUNCTIONAL_PRIORITIES[m.functional_priority].label} />}</TableCell>
                   <TableCell>
                     <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setForm(m); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={!canEdit("modulos")}
+                        onClick={() => {
+                          if (!canEdit("modulos")) {
+                            void guardAction("modulos", "editar", { description: "Tentativa de editar módulo" });
+                            toast({ title: "Sem permissão para editar", variant: "destructive" });
+                            return;
+                          }
+                          setForm(m);
+                          setOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(m)}><Copy className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(m.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive"
+                        disabled={!canDelete("modulos")}
+                        onClick={() => handleDelete(m.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -290,7 +371,23 @@ export default function AdminModulos() {
                 </div>
 
                 <div className="flex gap-2 justify-end pt-2">
-                  <Button size="sm" variant="outline" onClick={() => { setForm(detailModule); setDetailOpen(false); setOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-1" /> Editar</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!canEdit("modulos")}
+                    onClick={() => {
+                      if (!canEdit("modulos")) {
+                        void guardAction("modulos", "editar", { description: "Tentativa de editar módulo" });
+                        toast({ title: "Sem permissão para editar", variant: "destructive" });
+                        return;
+                      }
+                      setForm(detailModule);
+                      setDetailOpen(false);
+                      setOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => { handleDuplicate(detailModule); setDetailOpen(false); }}><Copy className="h-3.5 w-3.5 mr-1" /> Duplicar</Button>
                 </div>
               </div>

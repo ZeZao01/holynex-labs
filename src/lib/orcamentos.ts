@@ -97,6 +97,7 @@ export interface Orcamento {
   email: string;
   empresa: string;
   descricao: string;
+  descricao_detalhada?: string;
   status: OrcamentoStatus;
   criadoEm: string;
   prioridade?: "alta" | "media" | "baixa";
@@ -106,6 +107,7 @@ export interface Orcamento {
   nicho?: string;
   objetivo?: string;
   faixa_investimento?: string;
+  orcamento_estimado?: string;
   prazo_desejado?: string;
   urgencia?: string;
   numero_usuarios?: string;
@@ -127,6 +129,18 @@ export interface Orcamento {
   tags_automaticas?: string[];
   dor_principal?: string;
 }
+
+export interface OrcamentoAsset {
+  id: string;
+  orcamento_id: string;
+  file_url: string;
+  file_type: string;
+  original_name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+const ORCAMENTO_ASSETS_BUCKET = "orcamentos-assets";
 
 function classificarPrioridade(descricao: string): "alta" | "media" | "baixa" {
   const lower = descricao.toLowerCase();
@@ -221,10 +235,12 @@ export async function salvarOrcamento(data: {
   email: string;
   empresa: string;
   descricao: string;
+  descricao_detalhada?: string;
   tipo_projeto?: string;
   nicho?: string;
   objetivo?: string;
   faixa_investimento?: string;
+  orcamento_estimado?: string;
   prazo_desejado?: string;
   urgencia?: string;
   numero_usuarios?: string;
@@ -243,11 +259,12 @@ export async function salvarOrcamento(data: {
 
   const qual = qualificarLead(data);
 
-  const { error } = await supabase.from("orcamentos").insert({
+  const { data: created, error } = await supabase.from("orcamentos").insert({
     nome: data.nome,
     email: data.email,
     empresa: data.empresa,
     descricao: data.descricao,
+    descricao_detalhada: data.descricao_detalhada || "",
     status: "pendente",
     prioridade,
     resumo_ia,
@@ -255,6 +272,7 @@ export async function salvarOrcamento(data: {
     nicho: data.nicho || "",
     objetivo: data.objetivo || "",
     faixa_investimento: data.faixa_investimento || "",
+    orcamento_estimado: data.orcamento_estimado || "",
     prazo_desejado: data.prazo_desejado || "",
     urgencia: data.urgencia || "sem_urgencia",
     numero_usuarios: data.numero_usuarios || "",
@@ -273,9 +291,10 @@ export async function salvarOrcamento(data: {
     complexidade_estimada: qual.complexidade,
     temperatura_lead: qual.temperatura,
     estrategia_comercial: qual.estrategia,
-  });
+  }).select().single();
 
   if (error) throw error;
+  return created as any;
 }
 
 export async function getOrcamentos(): Promise<Orcamento[]> {
@@ -292,6 +311,7 @@ export async function getOrcamentos(): Promise<Orcamento[]> {
     email: row.email,
     empresa: row.empresa || "",
     descricao: row.descricao,
+    descricao_detalhada: row.descricao_detalhada || "",
     status: row.status as OrcamentoStatus,
     criadoEm: row.criado_em,
     prioridade: row.prioridade as Orcamento["prioridade"],
@@ -300,6 +320,7 @@ export async function getOrcamentos(): Promise<Orcamento[]> {
     nicho: row.nicho || "",
     objetivo: row.objetivo || "",
     faixa_investimento: row.faixa_investimento || "",
+    orcamento_estimado: row.orcamento_estimado || "",
     prazo_desejado: row.prazo_desejado || "",
     urgencia: row.urgencia || "",
     numero_usuarios: row.numero_usuarios || "",
@@ -340,6 +361,7 @@ export async function getOrcamentoById(id: string): Promise<Orcamento | null> {
     email: row.email,
     empresa: row.empresa || "",
     descricao: row.descricao,
+    descricao_detalhada: row.descricao_detalhada || "",
     status: row.status as OrcamentoStatus,
     criadoEm: row.criado_em,
     prioridade: row.prioridade as Orcamento["prioridade"],
@@ -348,6 +370,7 @@ export async function getOrcamentoById(id: string): Promise<Orcamento | null> {
     nicho: row.nicho || "",
     objetivo: row.objetivo || "",
     faixa_investimento: row.faixa_investimento || "",
+    orcamento_estimado: row.orcamento_estimado || "",
     prazo_desejado: row.prazo_desejado || "",
     urgencia: row.urgencia || "",
     numero_usuarios: row.numero_usuarios || "",
@@ -405,4 +428,44 @@ export async function removerOrcamento(id: string) {
     .eq("id", id);
 
   if (error) throw error;
+}
+
+export async function uploadOrcamentoAssets(orcamentoId: string, files: File[]) {
+  const uploads = files.map(async (file, index) => {
+    const ext = file.name.split(".").pop() || "bin";
+    const storagePath = `${orcamentoId}/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from(ORCAMENTO_ASSETS_BUCKET)
+      .upload(storagePath, file, { contentType: file.type, upsert: false });
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from(ORCAMENTO_ASSETS_BUCKET).getPublicUrl(storagePath);
+    const payload = {
+      orcamento_id: orcamentoId,
+      file_url: data.publicUrl,
+      file_type: file.type || "image",
+      original_name: file.name,
+      sort_order: index,
+    };
+    const { data: created, error: insertError } = await supabase
+      .from("orcamento_assets")
+      .insert(payload)
+      .select()
+      .single();
+    if (insertError) throw insertError;
+    return created as OrcamentoAsset;
+  });
+
+  return Promise.all(uploads);
+}
+
+export async function getOrcamentoAssets(orcamentoId: string): Promise<OrcamentoAsset[]> {
+  const { data, error } = await supabase
+    .from("orcamento_assets")
+    .select("*")
+    .eq("orcamento_id", orcamentoId)
+    .order("sort_order", { ascending: true, nullsFirst: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data || []) as OrcamentoAsset[];
 }

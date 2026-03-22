@@ -12,17 +12,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import {
   Sparkles, Brain, Zap, AlertTriangle, CheckCircle, XCircle,
-  Clock, RefreshCw, Eye, ChevronDown, ChevronUp,
+  RefreshCw, Eye, ChevronDown, ChevronUp,
 } from "lucide-react";
 import {
   getAiExecutions, getPendingReviews, reviewExecution,
   AiExecution, USE_CASE_LABELS, STATUS_LABELS,
 } from "@/lib/ai-copilot";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import { logSecurityEvent } from "@/lib/security";
 
 export default function AdminIA() {
+  const { canApprove, guardAction } = useAccessControl();
   const [executions, setExecutions] = useState<AiExecution[]>([]);
   const [pending, setPending] = useState<AiExecution[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,8 +51,22 @@ export default function AdminIA() {
   }
 
   async function handleReview(id: string, approved: boolean) {
+    const allowed = await guardAction("ia", "aprovar", {
+      description: "Tentativa de revisão IA",
+      metadata: { executionId: id, approved },
+    });
+    if (!allowed) {
+      toast({ title: "Sem permissão para revisar IA", variant: "destructive" });
+      return;
+    }
     try {
       await reviewExecution(id, approved, "admin", reviewNote);
+      await logSecurityEvent(
+        "revisao_ia",
+        "medium",
+        approved ? "Execução IA aprovada" : "Execução IA rejeitada",
+        { source: "ia", entityType: "ai_execution", entityId: id, metadata: { approved } }
+      );
       toast({ title: approved ? "Saída aprovada!" : "Saída rejeitada" });
       setReviewNote("");
       setExpandedId(null);
@@ -153,10 +170,10 @@ export default function AdminIA() {
                       className="h-16 text-sm"
                     />
                     <div className="flex gap-2 justify-end">
-                      <Button size="sm" variant="destructive" onClick={() => handleReview(ex.id, false)}>
+                      <Button size="sm" variant="destructive" disabled={!canApprove("ia")} onClick={() => handleReview(ex.id, false)}>
                         <XCircle className="h-3 w-3 mr-1" /> Rejeitar
                       </Button>
-                      <Button size="sm" onClick={() => handleReview(ex.id, true)}>
+                      <Button size="sm" disabled={!canApprove("ia")} onClick={() => handleReview(ex.id, true)}>
                         <CheckCircle className="h-3 w-3 mr-1" /> Aprovar
                       </Button>
                     </div>
