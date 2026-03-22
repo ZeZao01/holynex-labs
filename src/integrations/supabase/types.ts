@@ -459,6 +459,77 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_analises: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          cost_estimated: number | null
+          duration_ms: number | null
+          error_reason: string | null
+          fallback_triggered: boolean | null
+          id: string
+          input_summary: string | null
+          model_used: string | null
+          orcamento_id: string
+          output_json: Json | null
+          output_text: string | null
+          prompt_version: string | null
+          provider_used: string | null
+          status: string
+          tokens_input: number | null
+          tokens_output: number | null
+          version: number
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          cost_estimated?: number | null
+          duration_ms?: number | null
+          error_reason?: string | null
+          fallback_triggered?: boolean | null
+          id?: string
+          input_summary?: string | null
+          model_used?: string | null
+          orcamento_id: string
+          output_json?: Json | null
+          output_text?: string | null
+          prompt_version?: string | null
+          provider_used?: string | null
+          status?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          version?: number
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          cost_estimated?: number | null
+          duration_ms?: number | null
+          error_reason?: string | null
+          fallback_triggered?: boolean | null
+          id?: string
+          input_summary?: string | null
+          model_used?: string | null
+          orcamento_id?: string
+          output_json?: Json | null
+          output_text?: string | null
+          prompt_version?: string | null
+          provider_used?: string | null
+          status?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_analises_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       pdf_versoes: {
         Row: {
           criado_em: string

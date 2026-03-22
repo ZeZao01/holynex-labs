@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getOrcamentoById, getOrcamentoAssets, atualizarStatusComercial, atualizarOrcamento, type Orcamento, type OrcamentoAsset, type StatusComercial, STATUS_COMERCIAL_MAP, ESTRATEGIAS_COMERCIAIS } from "@/lib/orcamentos";
+import { getOrcamentoById, getOrcamentoAssets, getOrcamentoAnalises, atualizarStatusComercial, atualizarOrcamento, type Orcamento, type OrcamentoAsset, type OrcamentoAnalise, type StatusComercial, STATUS_COMERCIAL_MAP, ESTRATEGIAS_COMERCIAIS } from "@/lib/orcamentos";
 import PageHeader from "@/components/admin/PageHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -35,6 +35,9 @@ export default function AdminLeadDetalhe() {
   const [obs, setObs] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
+  const [analises, setAnalises] = useState<OrcamentoAnalise[]>([]);
+  const [analiseLoading, setAnaliseLoading] = useState(true);
+  const [analiseRunning, setAnaliseRunning] = useState(false);
 
   const loadLead = useCallback(async () => {
     if (!id) return;
@@ -44,12 +47,17 @@ export default function AdminLeadDetalhe() {
       try {
         assetsData = await getOrcamentoAssets(id);
       } catch { /* ignore assets errors */ }
+      try {
+        const analisesData = await getOrcamentoAnalises(id);
+        setAnalises(analisesData || []);
+      } catch { /* ignore analysis errors */ }
       setLead(data);
       setObs(data?.observacoes_internas || "");
       setAssets(assetsData || []);
     } catch { /* silent */ } finally {
       setLoading(false);
       setAssetsLoading(false);
+      setAnaliseLoading(false);
     }
   }, [id]);
 
@@ -103,12 +111,40 @@ export default function AdminLeadDetalhe() {
     }
   };
 
+  const handleAnalyzeBudget = async () => {
+    if (!lead) return;
+    setAnaliseRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analisar-orcamento", {
+        body: { orcamento_id: lead.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Análise iniciada e concluída com sucesso!");
+      const analisesData = await getOrcamentoAnalises(lead.id);
+      setAnalises(analisesData || []);
+    } catch (err) {
+      toast.error("Erro ao analisar orçamento com IA");
+      console.error(err);
+    } finally {
+      setAnaliseRunning(false);
+    }
+  };
+
   if (authLoading || loading) return <div className="flex items-center justify-center py-20"><Skeleton className="h-8 w-8 rounded-full" /></div>;
   if (!lead) return <div className="text-center py-20 text-muted-foreground">Lead não encontrado.</div>;
 
   const temp = tempConfig[lead.temperatura_lead || "morno"] || tempConfig.morno;
   const TempIcon = temp.icon;
-  const estrategia = ESTRATEGIAS_COMERCIAIS.find(e => e.value === lead.estrategia_comercial);
+   const estrategia = ESTRATEGIAS_COMERCIAIS.find(e => e.value === lead.estrategia_comercial);
+   const latestAnalise = analises[0];
+   const analiseData = (latestAnalise?.output_json as any) || null;
+   const statusMap: Record<string, { label: string; color: string }> = {
+     em_processamento: { label: "Processando", color: "bg-amber-500/15 text-amber-400" },
+     concluido: { label: "Concluído", color: "bg-emerald-500/15 text-emerald-400" },
+     falhou: { label: "Falhou", color: "bg-destructive/15 text-destructive" },
+   };
+   const statusInfo = latestAnalise ? statusMap[latestAnalise.status] || { label: latestAnalise.status, color: "bg-muted text-muted-foreground" } : null;
 
   return (
     <div className="space-y-6">
@@ -221,6 +257,115 @@ export default function AdminLeadDetalhe() {
             )}
           </SectionCard>
 
+          <SectionCard title="Análise Operacional do Orçamento" action={
+            <Button variant="outline" size="sm" onClick={handleAnalyzeBudget} disabled={analiseRunning} className="gap-1.5">
+              {analiseRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {analiseRunning ? "Processando..." : "Gerar análise"}
+            </Button>
+          }>
+            {analiseLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando análises...</p>
+            ) : !latestAnalise ? (
+              <p className="text-sm text-muted-foreground">Nenhuma análise gerada ainda.</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  {statusInfo && <Badge className={`text-[10px] ${statusInfo.color}`}>{statusInfo.label}</Badge>}
+                  <span className="text-muted-foreground">v{latestAnalise.version}</span>
+                  {latestAnalise.provider_used && <span className="text-muted-foreground">{latestAnalise.provider_used}</span>}
+                  {latestAnalise.model_used && <span className="text-muted-foreground">{latestAnalise.model_used}</span>}
+                  {latestAnalise.duration_ms && <span className="text-muted-foreground">{latestAnalise.duration_ms}ms</span>}
+                </div>
+
+                {latestAnalise.status === "falhou" && (
+                  <div className="text-xs text-destructive bg-destructive/10 rounded p-2">
+                    {latestAnalise.error_reason || "Falha ao gerar análise."}
+                  </div>
+                )}
+
+                {analiseData && (
+                  <div className="space-y-3 text-sm">
+                    {analiseData.resumo_executivo && (
+                      <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                        <span className="text-xs font-medium text-primary">Resumo Executivo</span>
+                        <p className="mt-1 text-sm text-foreground/80">{analiseData.resumo_executivo}</p>
+                      </div>
+                    )}
+                    {analiseData.leitura_tecnica && (
+                      <div className="p-3 bg-muted/40 rounded-lg border border-border/60">
+                        <span className="text-xs font-medium text-muted-foreground">Leitura Técnica</span>
+                        <p className="mt-1 text-sm text-foreground/80">{analiseData.leitura_tecnica}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {analiseData.prioridade && <InfoTag label="Prioridade" value={analiseData.prioridade} />}
+                      {analiseData.complexidade && <InfoTag label="Complexidade" value={analiseData.complexidade} />}
+                    </div>
+
+                    {Array.isArray(analiseData.modulos_recomendados) && analiseData.modulos_recomendados.length > 0 && (
+                      <AnalysisList title="Módulos Recomendados" items={analiseData.modulos_recomendados} />
+                    )}
+                    {Array.isArray(analiseData.oportunidades_adicionais) && analiseData.oportunidades_adicionais.length > 0 && (
+                      <AnalysisList title="Oportunidades" items={analiseData.oportunidades_adicionais} />
+                    )}
+                    {Array.isArray(analiseData.riscos) && analiseData.riscos.length > 0 && (
+                      <AnalysisList title="Riscos" items={analiseData.riscos} />
+                    )}
+                    {Array.isArray(analiseData.stack_sugerida) && analiseData.stack_sugerida.length > 0 && (
+                      <AnalysisList title="Stack Sugerida" items={analiseData.stack_sugerida} />
+                    )}
+                    {Array.isArray(analiseData.roadmap_resumido) && analiseData.roadmap_resumido.length > 0 && (
+                      <AnalysisList title="Roadmap Resumido" items={analiseData.roadmap_resumido} />
+                    )}
+                    {Array.isArray(analiseData.addons_ocultos_sugeridos) && analiseData.addons_ocultos_sugeridos.length > 0 && (
+                      <AnalysisList title="Add-ons Ocultos" items={analiseData.addons_ocultos_sugeridos} />
+                    )}
+
+                    {Array.isArray(analiseData.referencias_portfolio) && analiseData.referencias_portfolio.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-muted-foreground">Referências de Portfólio</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {analiseData.referencias_portfolio.map((ref: any, idx: number) => (
+                            <div key={ref?.id || idx} className="rounded-lg border border-border/60 p-2 text-xs">
+                              <div className="font-medium">{ref?.title || "Item"}</div>
+                              {ref?.motivo && <div className="text-muted-foreground mt-1">{ref.motivo}</div>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {analiseData.base_stitch && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-muted-foreground">Base para Stitch</span>
+                        {analiseData.base_stitch.objetivo && <p className="text-sm text-foreground/80">{analiseData.base_stitch.objetivo}</p>}
+                        {Array.isArray(analiseData.base_stitch.principais_entregas) && (
+                          <AnalysisList title="Entregas" items={analiseData.base_stitch.principais_entregas} />
+                        )}
+                        {Array.isArray(analiseData.base_stitch.metricas_sucesso) && (
+                          <AnalysisList title="Métricas" items={analiseData.base_stitch.metricas_sucesso} />
+                        )}
+                      </div>
+                    )}
+
+                    {analiseData.base_pdf && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-muted-foreground">Base para PDF</span>
+                        {Array.isArray(analiseData.base_pdf.sumario) && (
+                          <AnalysisList title="Sumário" items={analiseData.base_pdf.sumario} />
+                        )}
+                        {Array.isArray(analiseData.base_pdf.destaques) && (
+                          <AnalysisList title="Destaques" items={analiseData.base_pdf.destaques} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </SectionCard>
+
           {/* Internal notes */}
           <SectionCard title="Observações Internas">
             <Textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Notas internas sobre este lead..." rows={4} className="text-sm" />
@@ -312,6 +457,20 @@ function QualRow({ label, value, icon }: { label: string; value: string; icon?: 
     <div className="flex items-center justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="flex items-center gap-1.5 font-medium">{icon}{value}</span>
+    </div>
+  );
+}
+
+function AnalysisList({ title, items }: { title: string; items: string[] }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="space-y-1">
+      <span className="text-xs font-medium text-muted-foreground">{title}</span>
+      <ul className="list-disc list-inside text-sm text-foreground/80 space-y-0.5">
+        {items.map((item, idx) => (
+          <li key={`${title}-${idx}`}>{item}</li>
+        ))}
+      </ul>
     </div>
   );
 }

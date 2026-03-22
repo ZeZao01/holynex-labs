@@ -140,6 +140,27 @@ export interface OrcamentoAsset {
   created_at: string;
 }
 
+export interface OrcamentoAnalise {
+  id: string;
+  orcamento_id: string;
+  version: number;
+  status: string;
+  provider_used: string | null;
+  model_used: string | null;
+  prompt_version: string | null;
+  output_json: any;
+  output_text: string | null;
+  duration_ms: number | null;
+  tokens_input: number | null;
+  tokens_output: number | null;
+  cost_estimated: number | null;
+  error_reason: string | null;
+  input_summary: string | null;
+  fallback_triggered: boolean | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
 const ORCAMENTO_ASSETS_BUCKET = "orcamentos-assets";
 
 function classificarPrioridade(descricao: string): "alta" | "media" | "baixa" {
@@ -468,4 +489,14 @@ export async function getOrcamentoAssets(orcamentoId: string): Promise<Orcamento
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data || []) as OrcamentoAsset[];
+}
+
+export async function getOrcamentoAnalises(orcamentoId: string): Promise<OrcamentoAnalise[]> {
+  const { data, error } = await supabase
+    .from("orcamento_analises")
+    .select("*")
+    .eq("orcamento_id", orcamentoId)
+    .order("criado_em", { ascending: false });
+  if (error) throw error;
+  return (data || []) as OrcamentoAnalise[];
 }
