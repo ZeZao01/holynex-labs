@@ -201,8 +201,7 @@ export default function AdminLeadDetalhe() {
   const temp = tempConfig[lead.temperatura_lead || "morno"] || tempConfig.morno;
   const TempIcon = temp.icon;
   const estrategia = ESTRATEGIAS_COMERCIAIS.find(e => e.value === lead.estrategia_comercial);
-  const latestAnalise = analises[0];
-  const analiseData = (latestAnalise?.output_json as any) || null;
+  // latestAnalise and analiseData already computed above (before hooks)
   const aiAddonSuggestions = Array.isArray(analiseData?.addons_ocultos_sugeridos)
     ? (analiseData.addons_ocultos_sugeridos as string[]).filter(Boolean)
     : [];
