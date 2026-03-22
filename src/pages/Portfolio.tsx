@@ -11,9 +11,12 @@ export default function Portfolio() {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [filter, setFilter] = useState("todos");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    listPortfolioItems(true).then((data) => { setItems(data); setLoading(false); }).catch(() => setLoading(false));
+    listPortfolioItems(true)
+      .then((data) => { setItems(data); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
   }, []);
 
   const categories = [...new Set(items.map((i) => i.category).filter(Boolean))];
@@ -43,6 +46,10 @@ export default function Portfolio() {
 
         {loading ? (
           <div className="text-center text-muted-foreground py-20">Carregando portfólio...</div>
+        ) : error ? (
+          <RevealBox className="text-center py-20">
+            <p className="text-muted-foreground">Não foi possível carregar o portfólio agora.</p>
+          </RevealBox>
         ) : items.length === 0 ? (
           <RevealBox className="text-center py-20">
             <p className="text-muted-foreground">O portfólio está sendo atualizado. Volte em breve!</p>

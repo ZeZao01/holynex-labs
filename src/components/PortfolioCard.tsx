@@ -11,11 +11,13 @@ interface Props {
 export default function PortfolioCard({ item }: Props) {
   const navigate = useNavigate();
   const typeLabel = ITEM_TYPES.find((t) => t.value === item.item_type)?.label;
+  const itemPath = item.slug || item.id;
+  const modules = item.tech_stack || item.main_modules || [];
 
   return (
     <div
       className="group relative rounded-2xl border border-border bg-card overflow-hidden cursor-pointer transition-all duration-500 hover:border-primary/40 hover:shadow-[0_0_40px_-10px_hsl(var(--primary)/0.3)] hover:-translate-y-1"
-      onClick={() => navigate(`/portfolio/${item.id}`)}
+      onClick={() => navigate(`/portfolio/${itemPath}`)}
     >
       {/* Thumbnail */}
       <div className="relative h-44 sm:h-52 overflow-hidden bg-muted">
@@ -57,9 +59,9 @@ export default function PortfolioCard({ item }: Props) {
 
         {/* Hover content */}
         <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-          {(item.main_modules || []).length > 0 && (
+          {modules.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-3">
-              {(item.main_modules || []).slice(0, 4).map((m) => (
+              {modules.slice(0, 4).map((m) => (
                 <Badge key={m} variant="outline" className="text-[10px] bg-background/60 backdrop-blur-sm border-border/60">{m}</Badge>
               ))}
             </div>
@@ -69,7 +71,7 @@ export default function PortfolioCard({ item }: Props) {
               Ver Projeto <ArrowRight className="h-3 w-3" />
             </Button>
             <Button size="sm" variant="outline" className="text-xs bg-background/60 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); navigate(`/contato?ref=${item.id}`); }}>
-              Quero algo parecido
+              {item.cta_label || "Quero algo parecido"}
             </Button>
           </div>
         </div>

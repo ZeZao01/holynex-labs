@@ -4,18 +4,26 @@ export interface PortfolioItem {
   id: string;
   delivered_system_id: string | null;
   title: string;
+  slug: string | null;
   subtitle: string | null;
   short_description: string | null;
+  full_description: string | null;
   commercial_description: string | null;
   problem_solved: string | null;
   target_audience: string | null;
+  features: string[] | null;
   differentials: string[] | null;
+  tech_stack: string[] | null;
   main_modules: string[] | null;
   thumbnail_url: string | null;
   cover_image_url: string | null;
   hover_image_url: string | null;
+  gallery_images: string[] | null;
   gallery_urls: string[] | null;
   video_url: string | null;
+  system_url: string | null;
+  preview_mode: string | null;
+  open_mode: string | null;
   badges: string[] | null;
   category: string | null;
   niche: string | null;
@@ -26,6 +34,9 @@ export interface PortfolioItem {
   cta_label: string | null;
   cta_url: string | null;
   public_url: string | null;
+  allow_public_preview: boolean | null;
+  status: string | null;
+  sort_order: number | null;
   display_order: number | null;
   is_active: boolean | null;
   is_featured: boolean | null;
@@ -72,10 +83,36 @@ export const INVESTMENT_RANGES = [
   "R$ 60.000+",
 ];
 
+export const PORTFOLIO_STATUSES = [
+  { value: "draft", label: "Rascunho" },
+  { value: "published", label: "Publicado" },
+  { value: "archived", label: "Arquivado" },
+];
+
+export const PREVIEW_MODES = [
+  { value: "none", label: "Sem preview" },
+  { value: "iframe", label: "Preview incorporado" },
+  { value: "image", label: "Imagem/galeria" },
+];
+
+export const OPEN_MODES = [
+  { value: "new_tab", label: "Nova aba" },
+  { value: "same_tab", label: "Mesma aba" },
+  { value: "modal", label: "Modal" },
+];
+
 // ── CRUD ──
 export async function listPortfolioItems(onlyActive = false) {
-  let query = supabase.from("portfolio_items").select("*").order("display_order", { ascending: true });
-  if (onlyActive) query = query.eq("is_active", true);
+  let query = supabase
+    .from("portfolio_items")
+    .select("*")
+    .order("sort_order", { ascending: true, nullsFirst: true })
+    .order("display_order", { ascending: true, nullsFirst: true });
+  if (onlyActive) {
+    query = query
+      .or("status.eq.published,status.is.null")
+      .or("is_active.eq.true,is_active.is.null");
+  }
   const { data, error } = await query;
   if (error) throw error;
   return (data || []) as PortfolioItem[];
@@ -88,7 +125,11 @@ export async function getPortfolioItem(id: string) {
 }
 
 export async function getPortfolioItemBySlug(title: string) {
-  const { data, error } = await supabase.from("portfolio_items").select("*").eq("title", title).eq("is_active", true).maybeSingle();
+  const { data, error } = await supabase
+    .from("portfolio_items")
+    .select("*")
+    .eq("slug", title)
+    .maybeSingle();
   if (error) throw error;
   return data as PortfolioItem | null;
 }

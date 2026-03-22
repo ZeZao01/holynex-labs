@@ -25,14 +25,27 @@ export default function AdminPortfolioAdmin() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<PortfolioItem | null>(null);
   const [loading, setLoading] = useState(false);
+  const [listState, setListState] = useState<"loading" | "success" | "empty" | "error">("loading");
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => { load(); }, []);
   useEffect(() => {
-    setFiltered(search ? items.filter((i) => i.title.toLowerCase().includes(search.toLowerCase())) : items);
+    const term = search.toLowerCase();
+    setFiltered(search ? items.filter((i) => i.title.toLowerCase().includes(term) || (i.slug || "").toLowerCase().includes(term)) : items);
   }, [items, search]);
 
   async function load() {
-    try { setItems(await listPortfolioItems()); } catch { toast({ title: "Erro ao carregar portfólio", variant: "destructive" }); }
+    setListState("loading");
+    setLoadError("");
+    try {
+      const data = await listPortfolioItems();
+      setItems(data);
+      setListState(data.length === 0 ? "empty" : "success");
+    } catch {
+      setListState("error");
+      setLoadError("Não foi possível carregar os itens do portfólio.");
+      toast({ title: "Erro ao carregar portfólio", variant: "destructive" });
+    }
   }
 
   async function handleSave(data: Partial<PortfolioItem>) {
@@ -48,9 +61,19 @@ export default function AdminPortfolioAdmin() {
 
   async function handleToggleActive(item: PortfolioItem) {
     try {
-      await savePortfolioItem({ id: item.id, is_active: !item.is_active });
-      await addPortfolioEvent(item.id, item.is_active ? "desativado" : "ativado");
-      toast({ title: item.is_active ? "Desativado!" : "Ativado!" }); load();
+      const nextStatus = (item.status || (item.is_active ? "published" : "draft")) === "published" ? "draft" : "published";
+      await savePortfolioItem({ id: item.id, is_active: nextStatus === "published", status: nextStatus });
+      await addPortfolioEvent(item.id, nextStatus === "published" ? "publicado" : "desativado");
+      toast({ title: nextStatus === "published" ? "Publicado!" : "Desativado!" }); load();
+    } catch { toast({ title: "Erro", variant: "destructive" }); }
+  }
+
+  async function handleArchive(item: PortfolioItem) {
+    try {
+      const nextStatus = item.status === "archived" ? "draft" : "archived";
+      await savePortfolioItem({ id: item.id, status: nextStatus, is_active: nextStatus === "published" });
+      await addPortfolioEvent(item.id, nextStatus === "archived" ? "arquivado" : "restaurado");
+      toast({ title: nextStatus === "archived" ? "Arquivado!" : "Restaurado!" }); load();
     } catch { toast({ title: "Erro", variant: "destructive" }); }
   }
 
@@ -70,10 +93,18 @@ export default function AdminPortfolioAdmin() {
 
   async function handleReorder(item: PortfolioItem, direction: number) {
     try {
-      await savePortfolioItem({ id: item.id, display_order: (item.display_order || 0) + direction });
+      const currentOrder = item.sort_order ?? item.display_order ?? 0;
+      await savePortfolioItem({ id: item.id, sort_order: currentOrder + direction, display_order: currentOrder + direction });
       load();
     } catch {}
   }
+
+  const getStatusMeta = (item: PortfolioItem) => {
+    const status = item.status || (item.is_active ? "published" : "draft");
+    if (status === "published") return { label: "Publicado", variant: "active" };
+    if (status === "archived") return { label: "Arquivado", variant: "cancelled" };
+    return { label: "Rascunho", variant: "paused" };
+  };
 
   return (
     <div className="space-y-6">
@@ -86,7 +117,11 @@ export default function AdminPortfolioAdmin() {
         <Button onClick={() => { setEditing(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Item</Button>
       </div>
 
-      {filtered.length === 0 ? (
+      {listState === "loading" ? (
+        <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">Carregando portfólio...</div>
+      ) : listState === "error" ? (
+        <EmptyState icon={<Globe className="h-10 w-10 text-muted-foreground" />} title="Erro ao carregar" description={loadError} action={{ label: "Tentar novamente", onClick: () => load() }} />
+      ) : listState === "empty" ? (
         <EmptyState icon={<Globe className="h-10 w-10 text-muted-foreground" />} title="Nenhum projeto no portfólio" description="Adicione projetos com thumbnails, badges e CTAs para conversão." action={{ label: "Adicionar ao Portfólio", onClick: () => { setEditing(null); setFormOpen(true); } }} />
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -96,8 +131,10 @@ export default function AdminPortfolioAdmin() {
                 <TableHead className="w-10">#</TableHead>
                 <TableHead>Thumb</TableHead>
                 <TableHead>Título</TableHead>
+                <TableHead>Slug</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Categoria</TableHead>
+                <TableHead>Preview</TableHead>
                 <TableHead>Badges</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10"></TableHead>
@@ -105,11 +142,14 @@ export default function AdminPortfolioAdmin() {
             </TableHeader>
             <TableBody>
               {filtered.map((item) => (
+                (() => {
+                  const statusMeta = getStatusMeta(item);
+                  return (
                 <TableRow key={item.id}>
                   <TableCell className="text-xs text-muted-foreground">
                     <div className="flex flex-col gap-0.5">
                       <button onClick={() => handleReorder(item, -1)}><ArrowUp className="h-3 w-3" /></button>
-                      <span>{item.display_order}</span>
+                      <span>{item.sort_order ?? item.display_order}</span>
                       <button onClick={() => handleReorder(item, 1)}><ArrowDown className="h-3 w-3" /></button>
                     </div>
                   </TableCell>
@@ -117,14 +157,22 @@ export default function AdminPortfolioAdmin() {
                     {item.thumbnail_url ? <img src={item.thumbnail_url} alt="" className="h-10 w-16 rounded object-cover" /> : <div className="h-10 w-16 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">—</div>}
                   </TableCell>
                   <TableCell className="font-medium">{item.title}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{item.slug || "—"}</TableCell>
                   <TableCell><Badge variant="secondary" className="text-xs">{ITEM_TYPES.find((t) => t.value === item.item_type)?.label || item.item_type}</Badge></TableCell>
                   <TableCell className="text-xs">{item.category || "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {item.system_url ? (
+                      <span className={item.allow_public_preview ? "text-emerald-500" : "text-muted-foreground"}>
+                        {item.allow_public_preview ? "Público" : "Privado"}
+                      </span>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">{(item.badges || []).slice(0, 2).map((b) => <Badge key={b} variant="outline" className="text-[10px]">{b}</Badge>)}</div>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {item.is_active ? <StatusBadge status="active" label="Ativo" /> : <StatusBadge status="paused" label="Inativo" />}
+                      <StatusBadge status={statusMeta.variant} label={statusMeta.label} />
                       {item.is_featured && <StatusBadge status="hot" label="⭐" />}
                     </div>
                   </TableCell>
@@ -135,11 +183,14 @@ export default function AdminPortfolioAdmin() {
                         <DropdownMenuItem onClick={() => { setEditing(item); setFormOpen(true); }}><Edit className="h-3 w-3 mr-2" /> Editar</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggleActive(item)}>{item.is_active ? <><EyeOff className="h-3 w-3 mr-2" /> Desativar</> : <><Eye className="h-3 w-3 mr-2" /> Ativar</>}</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggleFeatured(item)}><Star className="h-3 w-3 mr-2" /> {item.is_featured ? "Remover Destaque" : "Destacar"}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleArchive(item)}><Globe className="h-3 w-3 mr-2" /> {item.status === "archived" ? "Restaurar" : "Arquivar"}</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDelete(item)} className="text-destructive"><Trash2 className="h-3 w-3 mr-2" /> Remover</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
+                  );
+                })())
               ))}
             </TableBody>
           </Table>

@@ -4,28 +4,88 @@ import RevealBox from "@/components/RevealBox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, ArrowRight, Sparkles, CheckCircle, ExternalLink } from "lucide-react";
-import { PortfolioItem, getPortfolioItem, ITEM_TYPES } from "@/lib/portfolio-items";
+import { PortfolioItem, getPortfolioItem, getPortfolioItemBySlug, ITEM_TYPES } from "@/lib/portfolio-items";
 
 export default function PortfolioDetalhe() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [item, setItem] = useState<PortfolioItem | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (id) getPortfolioItem(id).then((data) => { if (data) setItem(data); else navigate("/portfolio"); });
-  }, [id]);
+    if (!id) return;
+    let isMounted = true;
+    const loadItem = async () => {
+      setLoading(true);
+      setError(false);
+      try {
+        const bySlug = await getPortfolioItemBySlug(id);
+        const data = bySlug || await getPortfolioItem(id);
+        if (!isMounted) return;
+        if (data) {
+          if ((data.status && data.status !== "published") || (data.status == null && data.is_active === false)) {
+            navigate("/portfolio");
+            return;
+          }
+          setItem(data);
+        } else {
+          navigate("/portfolio");
+        }
+      } catch {
+        if (!isMounted) return;
+        setError(true);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    loadItem();
+    return () => { isMounted = false; };
+  }, [id, navigate]);
 
-  if (!item) return <div className="min-h-screen pt-28 text-center text-muted-foreground">Carregando...</div>;
+  if (loading) return <div className="min-h-screen pt-28 text-center text-muted-foreground">Carregando...</div>;
+  if (error) return <div className="min-h-screen pt-28 text-center text-muted-foreground">Não foi possível carregar este projeto.</div>;
+  if (!item) return <div className="min-h-screen pt-28 text-center text-muted-foreground">Projeto não encontrado.</div>;
 
   const typeLabel = ITEM_TYPES.find((t) => t.value === item.item_type)?.label;
-  const gallery = item.gallery_urls || [];
+  const gallery = item.gallery_images || item.gallery_urls || [];
   const heroImage = selectedImage || item.cover_image_url || item.thumbnail_url;
+  const fullDescription = item.full_description || item.commercial_description;
+  const techStack = item.tech_stack || item.main_modules || [];
+  const features = item.features || item.differentials || [];
+  const previewMode = item.preview_mode || "image";
+  const canPreview = Boolean(item.allow_public_preview && item.system_url);
+  const subtitle = item.short_description || item.subtitle;
+
+  const handlePrimaryCta = () => {
+    if (item.cta_url) {
+      window.open(item.cta_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    navigate(`/contato?ref=${item.id}`);
+  };
+
+  const handleOpenSystem = () => {
+    if (!item.system_url) return;
+    if (item.open_mode === "modal" && canPreview) {
+      setPreviewOpen(true);
+      return;
+    }
+    if (item.open_mode === "same_tab") {
+      window.location.href = item.system_url;
+      return;
+    }
+    window.open(item.system_url, "_blank", "noopener,noreferrer");
+  };
 
   return (
-    <div className="min-h-screen pt-24 sm:pt-28 pb-16 relative z-10">
-      <div className="container mx-auto px-4 max-w-5xl">
+    <>
+      <div className="min-h-screen pt-24 sm:pt-28 pb-16 relative z-10">
+        <div className="container mx-auto px-4 max-w-5xl">
         {/* Back */}
         <RevealBox>
           <Button variant="ghost" size="sm" onClick={() => navigate("/portfolio")} className="mb-6 gap-1 text-muted-foreground hover:text-foreground">
@@ -68,8 +128,8 @@ export default function PortfolioDetalhe() {
                 ))}
               </div>
               <h1 className="font-display text-3xl sm:text-4xl font-bold">{item.title}</h1>
-              {item.subtitle && <p className="text-lg text-muted-foreground">{item.subtitle}</p>}
-              {item.commercial_description && <p className="text-sm text-muted-foreground leading-relaxed">{item.commercial_description}</p>}
+              {subtitle && <p className="text-lg text-muted-foreground">{subtitle}</p>}
+              {fullDescription && <p className="text-sm text-muted-foreground leading-relaxed">{fullDescription}</p>}
 
               {item.investment_range && (
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20">
@@ -79,10 +139,15 @@ export default function PortfolioDetalhe() {
               )}
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button size="lg" className="gap-2" onClick={() => navigate(`/contato?ref=${item.id}`)}>
+                <Button size="lg" className="gap-2" onClick={handlePrimaryCta}>
                   {item.cta_label || "Quero algo parecido"} <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button size="lg" variant="outline" className="gap-2" onClick={() => navigate("/contato")}>
+                {item.system_url && (
+                  <Button size="lg" variant="outline" className="gap-2" onClick={handleOpenSystem}>
+                    Abrir sistema <ExternalLink className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button size="lg" variant="ghost" className="gap-2" onClick={() => navigate("/contato")}>
                   Solicitar Orçamento
                 </Button>
               </div>
@@ -108,11 +173,11 @@ export default function PortfolioDetalhe() {
           )}
         </div>
 
-        {(item.main_modules || []).length > 0 && (
+        {techStack.length > 0 && (
           <RevealBox delay={0.2} className="mt-8 space-y-4">
-            <h3 className="font-display text-lg font-semibold">Módulos Principais</h3>
+            <h3 className="font-display text-lg font-semibold">Stack Técnica</h3>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {(item.main_modules || []).map((m) => (
+              {techStack.map((m) => (
                 <div key={m} className="flex items-center gap-2 p-3 rounded-xl border border-border bg-card/50">
                   <CheckCircle className="h-4 w-4 text-primary shrink-0" />
                   <span className="text-sm">{m}</span>
@@ -122,11 +187,11 @@ export default function PortfolioDetalhe() {
           </RevealBox>
         )}
 
-        {(item.differentials || []).length > 0 && (
+        {features.length > 0 && (
           <RevealBox delay={0.25} className="mt-8 space-y-4">
-            <h3 className="font-display text-lg font-semibold">Diferenciais</h3>
+            <h3 className="font-display text-lg font-semibold">Funcionalidades</h3>
             <div className="flex flex-wrap gap-2">
-              {(item.differentials || []).map((d) => (
+              {features.map((d) => (
                 <Badge key={d} variant="outline" className="text-sm py-1.5 px-3">{d}</Badge>
               ))}
             </div>
@@ -147,6 +212,27 @@ export default function PortfolioDetalhe() {
           </RevealBox>
         )}
 
+        {canPreview && previewMode !== "none" && (
+          <RevealBox delay={0.32} className="mt-10 space-y-3">
+            <h3 className="font-display text-lg font-semibold">Preview do Sistema</h3>
+            {previewMode === "iframe" ? (
+              <div className="rounded-2xl overflow-hidden border border-border aspect-video bg-muted">
+                <iframe src={item.system_url || ""} className="w-full h-full" title={item.title} loading="lazy" />
+              </div>
+            ) : (
+              <div className="rounded-2xl overflow-hidden border border-border">
+                {heroImage ? (
+                  <img src={heroImage} alt={item.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <span className="font-display text-5xl font-bold text-primary/20">{item.title.charAt(0)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </RevealBox>
+        )}
+
         {/* Final CTA */}
         <RevealBox delay={0.35} className="mt-12">
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-8 text-center space-y-4">
@@ -162,7 +248,18 @@ export default function PortfolioDetalhe() {
             </div>
           </div>
         </RevealBox>
+        </div>
       </div>
-    </div>
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader><DialogTitle>Preview do Sistema</DialogTitle></DialogHeader>
+          {item?.system_url ? (
+            <div className="rounded-xl overflow-hidden border border-border aspect-video bg-muted">
+              <iframe src={item.system_url} className="w-full h-full" title={item.title} loading="lazy" />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
