@@ -300,12 +300,12 @@ export default function Contato() {
             <div className="space-y-5">
               <h2 className="font-display text-lg font-semibold mb-4">Contexto do Projeto</h2>
               <div>
-                <label className="text-sm font-medium mb-2 block">Tipo de Projeto</label>
-                <SelectChips options={TIPOS_PROJETO} value={form.tipo_projeto} onChange={(v) => set("tipo_projeto", v)} />
+                <label className="text-sm font-medium mb-2 block">Tipo de Projeto <span className="text-muted-foreground font-normal">(até 3)</span></label>
+                <MultiSelectChips options={TIPOS_PROJETO} value={form.tipo_projeto} onChange={(v) => set("tipo_projeto", v)} max={3} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Nicho / Segmento</label>
-                <SelectChips options={NICHES} value={form.nicho} onChange={(v) => set("nicho", v)} />
+                <label className="text-sm font-medium mb-2 block">Nicho / Segmento <span className="text-muted-foreground font-normal">(até 3)</span></label>
+                <MultiSelectChips options={NICHES} value={form.nicho} onChange={(v) => set("nicho", v)} max={3} />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Objetivo principal</label>
