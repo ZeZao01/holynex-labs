@@ -464,20 +464,20 @@ export async function uploadOrcamentoAssets(orcamentoId: string, files: File[]) 
     if (uploadError) throw uploadError;
 
     const { data } = supabase.storage.from(ORCAMENTO_ASSETS_BUCKET).getPublicUrl(storagePath);
+    const assetId = crypto.randomUUID();
     const payload = {
+      id: assetId,
       orcamento_id: orcamentoId,
       file_url: data.publicUrl,
       file_type: file.type || "image",
       original_name: file.name,
       sort_order: index,
     };
-    const { data: created, error: insertError } = await sb
+    const { error: insertError } = await sb
       .from("orcamento_assets")
-      .insert(payload)
-      .select()
-      .single();
+      .insert(payload);
     if (insertError) throw insertError;
-    return created as OrcamentoAsset;
+    return { ...payload, created_at: new Date().toISOString() } as OrcamentoAsset;
   });
 
   return Promise.all(uploads);
