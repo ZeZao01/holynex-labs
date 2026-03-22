@@ -92,10 +92,43 @@ export default function AdminLeadDetalhe() {
     }
   }, [id]);
 
+  // Portfolio references - compute before early returns so useEffect is always called
+  const latestAnalise = analises[0];
+  const analiseData = (latestAnalise?.output_json as any) || null;
+
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
     if (user) loadLead();
   }, [user, authLoading, navigate, loadLead]);
+
+  useEffect(() => {
+    if (!lead) return;
+    let active = true;
+    const fetchRefs = async () => {
+      setPortfolioLoading(true);
+      try {
+        const items = await listPortfolioItems(true);
+        const features = [
+          ...(Array.isArray(analiseData?.modulos_recomendados) ? analiseData.modulos_recomendados : []),
+          ...(Array.isArray(analiseData?.stack_sugerida) ? analiseData.stack_sugerida : []),
+          ...(Array.isArray(lead.tags_automaticas) ? lead.tags_automaticas : []),
+        ];
+        const refs = getPortfolioReferences(items, {
+          niche: lead.nicho,
+          category: lead.tipo_projeto,
+          solutionType: lead.tipo_projeto,
+          features,
+        }, { limit: 4, minScore: 3 });
+        if (active) setPortfolioRefs(refs);
+      } catch {
+        if (active) setPortfolioRefs([]);
+      } finally {
+        if (active) setPortfolioLoading(false);
+      }
+    };
+    fetchRefs();
+    return () => { active = false; };
+  }, [lead?.id, lead?.nicho, lead?.tipo_projeto, lead?.tags_automaticas, latestAnalise?.id]);
 
   const handleStatusChange = async (status: StatusComercial) => {
     if (!lead) return;
@@ -168,8 +201,7 @@ export default function AdminLeadDetalhe() {
   const temp = tempConfig[lead.temperatura_lead || "morno"] || tempConfig.morno;
   const TempIcon = temp.icon;
   const estrategia = ESTRATEGIAS_COMERCIAIS.find(e => e.value === lead.estrategia_comercial);
-  const latestAnalise = analises[0];
-  const analiseData = (latestAnalise?.output_json as any) || null;
+  // latestAnalise and analiseData already computed above (before hooks)
   const aiAddonSuggestions = Array.isArray(analiseData?.addons_ocultos_sugeridos)
     ? (analiseData.addons_ocultos_sugeridos as string[]).filter(Boolean)
     : [];
@@ -221,34 +253,6 @@ export default function AdminLeadDetalhe() {
     },
   ];
 
-  useEffect(() => {
-    if (!lead) return;
-    let active = true;
-    const fetchRefs = async () => {
-      setPortfolioLoading(true);
-      try {
-        const items = await listPortfolioItems(true);
-        const features = [
-          ...(Array.isArray(analiseData?.modulos_recomendados) ? analiseData.modulos_recomendados : []),
-          ...(Array.isArray(analiseData?.stack_sugerida) ? analiseData.stack_sugerida : []),
-          ...(Array.isArray(lead.tags_automaticas) ? lead.tags_automaticas : []),
-        ];
-        const refs = getPortfolioReferences(items, {
-          niche: lead.nicho,
-          category: lead.tipo_projeto,
-          solutionType: lead.tipo_projeto,
-          features,
-        }, { limit: 4, minScore: 3 });
-        if (active) setPortfolioRefs(refs);
-      } catch {
-        if (active) setPortfolioRefs([]);
-      } finally {
-        if (active) setPortfolioLoading(false);
-      }
-    };
-    fetchRefs();
-    return () => { active = false; };
-  }, [lead?.id, lead?.nicho, lead?.tipo_projeto, lead?.tags_automaticas, latestAnalise?.id]);
 
   const handleRegisterAiAddons = async () => {
     if (!lead || aiAddonSuggestions.length === 0) return;
@@ -483,12 +487,28 @@ export default function AdminLeadDetalhe() {
                     {Array.isArray(analiseData.riscos) && analiseData.riscos.length > 0 && (
                       <AnalysisList title="Riscos" items={analiseData.riscos} />
                     )}
+                    {Array.isArray(analiseData.funcionalidades_complementares) && analiseData.funcionalidades_complementares.length > 0 && (
+                      <AnalysisList title="Funcionalidades Complementares" items={analiseData.funcionalidades_complementares} />
+                    )}
                     {Array.isArray(analiseData.stack_sugerida) && analiseData.stack_sugerida.length > 0 && (
                       <AnalysisList title="Stack Sugerida" items={analiseData.stack_sugerida} />
                     )}
                     {Array.isArray(analiseData.roadmap_resumido) && analiseData.roadmap_resumido.length > 0 && (
                       <AnalysisList title="Roadmap Resumido" items={analiseData.roadmap_resumido} />
                     )}
+
+                    {analiseData.estrutura_comercial && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-muted-foreground">Estrutura Comercial</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {analiseData.estrutura_comercial.faixa_sugerida && <InfoTag label="Faixa Sugerida" value={analiseData.estrutura_comercial.faixa_sugerida} />}
+                          {analiseData.estrutura_comercial.modelo_cobranca && <InfoTag label="Modelo" value={analiseData.estrutura_comercial.modelo_cobranca} />}
+                          {analiseData.estrutura_comercial.potencial_recorrencia && <InfoTag label="Recorrência" value={analiseData.estrutura_comercial.potencial_recorrencia} />}
+                          {analiseData.estrutura_comercial.estrategia_fechamento && <InfoTag label="Estratégia" value={analiseData.estrutura_comercial.estrategia_fechamento} />}
+                        </div>
+                      </div>
+                    )}
+
                     {Array.isArray(analiseData.addons_ocultos_sugeridos) && analiseData.addons_ocultos_sugeridos.length > 0 && (
                       <AnalysisList title="Add-ons Ocultos" items={analiseData.addons_ocultos_sugeridos} />
                     )}
