@@ -207,6 +207,8 @@ export default function Contato() {
     try {
       const created = await salvarOrcamento({
         ...form,
+        tipo_projeto: form.tipo_projeto.join(", "),
+        nicho: form.nicho.join(", "),
         origem_lead: "site",
       });
 
