@@ -312,9 +312,9 @@ export default function AdminLeadDetalhe() {
         }
       />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
-          <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main content */}
+        <div className="lg:col-span-2 space-y-6">
           {/* Contact info */}
           <SectionCard title="Dados de Contato">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -387,12 +387,15 @@ export default function AdminLeadDetalhe() {
           </SectionCard>
 
           {/* AI Analysis */}
-          <SectionCard title="IA Assistiva" action={
-            <Button variant="outline" size="sm" onClick={handleAiClassify} disabled={aiLoading} className="gap-1.5">
-              {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
-              {aiLoading ? "Analisando..." : "Classificar com IA"}
-            </Button>
-          }>
+          <SectionCard
+            title="IA Assistiva"
+            action={
+              <Button variant="outline" size="sm" onClick={handleAiClassify} disabled={aiLoading} className="gap-1.5">
+                {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
+                {aiLoading ? "Analisando..." : "Classificar com IA"}
+              </Button>
+            }
+          >
             {lead.dor_principal && (
               <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 mb-3">
                 <span className="text-xs font-medium text-primary flex items-center gap-1"><Sparkles className="h-3 w-3" /> Dor Principal</span>
@@ -425,12 +428,15 @@ export default function AdminLeadDetalhe() {
             )}
           </SectionCard>
 
-          <SectionCard title="Análise Operacional do Orçamento" action={
-            <Button variant="outline" size="sm" onClick={handleAnalyzeBudget} disabled={analiseRunning} className="gap-1.5">
-              {analiseRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              {analiseRunning ? "Processando..." : "Gerar análise"}
-            </Button>
-          }>
+          <SectionCard
+            title="Análise Operacional do Orçamento"
+            action={
+              <Button variant="outline" size="sm" onClick={handleAnalyzeBudget} disabled={analiseRunning} className="gap-1.5">
+                {analiseRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                {analiseRunning ? "Processando..." : "Gerar análise"}
+              </Button>
+            }
+          >
             {analiseLoading ? (
               <p className="text-sm text-muted-foreground">Carregando análises...</p>
             ) : !latestAnalise ? (

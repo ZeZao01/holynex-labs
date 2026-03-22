@@ -604,184 +604,178 @@ export default function AdminPropostaDetalhe() {
             <Copy className="h-3.5 w-3.5" /> Copiar Link
           </Button>
         )}
-        {(proposta as any).is_public && (proposta as any).public_token && (
-          <Button variant="ghost" size="sm" className="gap-1" asChild>
-            <a href={`/proposta/${(proposta as any).public_token}`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3.5 w-3.5" /> Visualizar
-            </a>
-          </Button>
-        )}
-      </div>
-
-      {/* Financial Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Mínimo</p>
-          <p className="font-display text-lg font-bold text-amber-400">R$ {proposta.valor_minimo.toLocaleString("pt-BR")}</p>
-        </div>
-        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Ideal</p>
-          <p className="font-display text-lg font-bold text-primary">R$ {proposta.valor_ideal.toLocaleString("pt-BR")}</p>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Premium</p>
-          <p className="font-display text-lg font-bold text-emerald-400">R$ {proposta.valor_premium.toLocaleString("pt-BR")}</p>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Complexidade</p>
-          <p className="font-display text-lg font-bold capitalize">{proposta.complexidade}</p>
-        </div>
-      </div>
-
-      <SectionCard title="Status de Aprovação">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className={`${st.bgClass} ${st.color}`}>{st.label}</Badge>
-          <span className="text-xs text-muted-foreground">Atualizado conforme decisão comercial</span>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Conteúdo da Proposta">
-        {proposta.proposta_texto ? (
-          <pre className="text-sm whitespace-pre-wrap text-foreground/80 bg-muted/30 rounded-lg p-3 border border-border/60">
-            {proposta.proposta_texto}
-          </pre>
-        ) : (
-          <p className="text-sm text-muted-foreground">Nenhum conteúdo comercial consolidado.</p>
-        )}
-      </SectionCard>
-
-      {structuredContent && (
-        <SectionCard title="Resumo Estruturado">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            {structuredContent.visao_projeto && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Visão do projeto</Label>
-                <p className="mt-1 text-foreground/80 whitespace-pre-wrap">{structuredContent.visao_projeto}</p>
-              </div>
-            )}
-            {structuredContent.resumo_interno && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Resumo interno</Label>
-                <p className="mt-1 text-foreground/80 whitespace-pre-wrap">{structuredContent.resumo_interno}</p>
-              </div>
-            )}
-            {structuredContent.escopo_principal?.length > 0 && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Escopo principal</Label>
-                <ul className="mt-1 list-disc list-inside text-foreground/80">
-                  {structuredContent.escopo_principal.map((item, idx) => <li key={`escopo-${idx}`}>{item}</li>)}
-                </ul>
-              </div>
-            )}
-            {structuredContent.modulos_recomendados?.length > 0 && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Módulos recomendados</Label>
-                <ul className="mt-1 list-disc list-inside text-foreground/80">
-                  {structuredContent.modulos_recomendados.map((item, idx) => <li key={`modulo-${idx}`}>{item}</li>)}
-                </ul>
-              </div>
-            )}
-            {structuredContent.diferenciais?.length > 0 && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Diferenciais</Label>
-                <ul className="mt-1 list-disc list-inside text-foreground/80">
-                  {structuredContent.diferenciais.map((item, idx) => <li key={`dif-${idx}`}>{item}</li>)}
-                </ul>
-              </div>
-            )}
-            {structuredContent.roadmap_macro?.length > 0 && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Roadmap macro</Label>
-                <ul className="mt-1 list-disc list-inside text-foreground/80">
-                  {structuredContent.roadmap_macro.map((item, idx) => <li key={`roadmap-${idx}`}>{item}</li>)}
-                </ul>
-              </div>
-            )}
-          </div>
-        </SectionCard>
+      {(proposta as any).is_public && (proposta as any).public_token && (
+        <Button variant="ghost" size="sm" className="gap-1" asChild>
+          <a href={`/proposta/${(proposta as any).public_token}`} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-3.5 w-3.5" /> Visualizar
+          </a>
+        </Button>
       )}
-
-      <SectionCard title="Artefatos Operacionais">
-        <div className="space-y-3">
-          <RevealBox>
-            <details className="rounded-lg border border-border/60 bg-muted/10 p-3">
-              <summary className="cursor-pointer text-sm font-medium text-foreground">Pricing Sheet</summary>
-              {pricingSheet ? (
-                <pre className="mt-3 text-xs whitespace-pre-wrap text-muted-foreground">{formatJson(pricingSheet)}</pre>
-              ) : (
-                <p className="mt-2 text-sm text-muted-foreground">Nenhum pricing sheet gerado.</p>
-              )}
-            </details>
-          </RevealBox>
-          <RevealBox delay={0.05}>
-            <details className="rounded-lg border border-border/60 bg-muted/10 p-3">
-              <summary className="cursor-pointer text-sm font-medium text-foreground">Document Spec</summary>
-              {documentSpec ? (
-                <pre className="mt-3 text-xs whitespace-pre-wrap text-muted-foreground">{formatJson(documentSpec)}</pre>
-              ) : (
-                <p className="mt-2 text-sm text-muted-foreground">Nenhum document spec gerado.</p>
-              )}
-            </details>
-          </RevealBox>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Histórico de Geração IA">
-        {!aiMetadata ? (
-          <p className="text-sm text-muted-foreground">Nenhum registro de geração disponível.</p>
-        ) : (
-          <div className="space-y-3 text-sm">
-            <div className="flex flex-wrap gap-2">
-              {aiMetadata.provider_used && <Badge variant="outline">{aiMetadata.provider_used}</Badge>}
-              {aiMetadata.model_used && <Badge variant="outline">{aiMetadata.model_used}</Badge>}
-              {aiMetadata.prompt_version && <Badge variant="outline">{aiMetadata.prompt_version}</Badge>}
-              {typeof aiMetadata.duration_ms === "number" && <Badge variant="outline">{aiMetadata.duration_ms}ms</Badge>}
+    </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Financial Summary */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Mínimo</p>
+              <p className="font-display text-lg font-bold text-amber-400">R$ {proposta.valor_minimo.toLocaleString("pt-BR")}</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {typeof aiMetadata.proposal_schema_valid === "boolean" && (
-                <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                  <Label className="text-xs text-muted-foreground">Schema Proposta</Label>
-                  <p className="mt-1">{aiMetadata.proposal_schema_valid ? "Válido" : "Com alertas"}</p>
-                </div>
-              )}
-              {typeof aiMetadata.structured_schema_valid === "boolean" && (
-                <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                  <Label className="text-xs text-muted-foreground">Schema Estruturado</Label>
-                  <p className="mt-1">{aiMetadata.structured_schema_valid ? "Válido" : "Com alertas"}</p>
-                </div>
-              )}
+            <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Ideal</p>
+              <p className="font-display text-lg font-bold text-primary">R$ {proposta.valor_ideal.toLocaleString("pt-BR")}</p>
             </div>
-            {Array.isArray(aiMetadata.proposal_warnings) && aiMetadata.proposal_warnings.length > 0 && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Warnings da proposta</Label>
-                <ul className="mt-1 list-disc list-inside">
-                  {aiMetadata.proposal_warnings.map((w: string, idx: number) => <li key={`warn-${idx}`}>{w}</li>)}
-                </ul>
-              </div>
-            )}
-            {Array.isArray(aiMetadata.structured_warnings) && aiMetadata.structured_warnings.length > 0 && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Warnings estruturados</Label>
-                <ul className="mt-1 list-disc list-inside">
-                  {aiMetadata.structured_warnings.map((w: string, idx: number) => <li key={`warn-struct-${idx}`}>{w}</li>)}
-                </ul>
-              </div>
-            )}
-            {Array.isArray(aiMetadata.pipeline_steps) && aiMetadata.pipeline_steps.length > 0 && (
-              <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
-                <Label className="text-xs text-muted-foreground">Pipeline</Label>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {aiMetadata.pipeline_steps.map((step: string, idx: number) => (
-                    <Badge key={`step-${idx}`} variant="outline" className="text-[10px]">{step}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Premium</p>
+              <p className="font-display text-lg font-bold text-emerald-400">R$ {proposta.valor_premium.toLocaleString("pt-BR")}</p>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Complexidade</p>
+              <p className="font-display text-lg font-bold capitalize">{proposta.complexidade}</p>
+            </div>
           </div>
-        )}
-      </SectionCard>
 
-      {/* Tiers */}
+          <SectionCard title="Conteúdo da Proposta">
+            {proposta.proposta_texto ? (
+              <pre className="text-sm whitespace-pre-wrap text-foreground/80 bg-muted/30 rounded-lg p-3 border border-border/60">
+                {proposta.proposta_texto}
+              </pre>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhum conteúdo comercial consolidado.</p>
+            )}
+          </SectionCard>
+
+          {structuredContent && (
+            <SectionCard title="Resumo Estruturado">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                {structuredContent.visao_projeto && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Visão do projeto</Label>
+                    <p className="mt-1 text-foreground/80 whitespace-pre-wrap">{structuredContent.visao_projeto}</p>
+                  </div>
+                )}
+                {structuredContent.resumo_interno && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Resumo interno</Label>
+                    <p className="mt-1 text-foreground/80 whitespace-pre-wrap">{structuredContent.resumo_interno}</p>
+                  </div>
+                )}
+                {structuredContent.escopo_principal?.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Escopo principal</Label>
+                    <ul className="mt-1 list-disc list-inside text-foreground/80">
+                      {structuredContent.escopo_principal.map((item, idx) => <li key={`escopo-${idx}`}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {structuredContent.modulos_recomendados?.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Módulos recomendados</Label>
+                    <ul className="mt-1 list-disc list-inside text-foreground/80">
+                      {structuredContent.modulos_recomendados.map((item, idx) => <li key={`modulo-${idx}`}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {structuredContent.diferenciais?.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Diferenciais</Label>
+                    <ul className="mt-1 list-disc list-inside text-foreground/80">
+                      {structuredContent.diferenciais.map((item, idx) => <li key={`dif-${idx}`}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {structuredContent.roadmap_macro?.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Roadmap macro</Label>
+                    <ul className="mt-1 list-disc list-inside text-foreground/80">
+                      {structuredContent.roadmap_macro.map((item, idx) => <li key={`roadmap-${idx}`}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+          )}
+
+          <SectionCard title="Artefatos Operacionais">
+            <div className="space-y-3">
+              <RevealBox>
+                <details className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-foreground">Pricing Sheet</summary>
+                  {pricingSheet ? (
+                    <pre className="mt-3 text-xs whitespace-pre-wrap text-muted-foreground">{formatJson(pricingSheet)}</pre>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted-foreground">Nenhum pricing sheet gerado.</p>
+                  )}
+                </details>
+              </RevealBox>
+              <RevealBox delay={0.05}>
+                <details className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-foreground">Document Spec</summary>
+                  {documentSpec ? (
+                    <pre className="mt-3 text-xs whitespace-pre-wrap text-muted-foreground">{formatJson(documentSpec)}</pre>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted-foreground">Nenhum document spec gerado.</p>
+                  )}
+                </details>
+              </RevealBox>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Histórico de Geração IA">
+            {!aiMetadata ? (
+              <p className="text-sm text-muted-foreground">Nenhum registro de geração disponível.</p>
+            ) : (
+              <div className="space-y-3 text-sm">
+                <div className="flex flex-wrap gap-2">
+                  {aiMetadata.provider_used && <Badge variant="outline">{aiMetadata.provider_used}</Badge>}
+                  {aiMetadata.model_used && <Badge variant="outline">{aiMetadata.model_used}</Badge>}
+                  {aiMetadata.prompt_version && <Badge variant="outline">{aiMetadata.prompt_version}</Badge>}
+                  {typeof aiMetadata.duration_ms === "number" && <Badge variant="outline">{aiMetadata.duration_ms}ms</Badge>}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {typeof aiMetadata.proposal_schema_valid === "boolean" && (
+                    <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                      <Label className="text-xs text-muted-foreground">Schema Proposta</Label>
+                      <p className="mt-1">{aiMetadata.proposal_schema_valid ? "Válido" : "Com alertas"}</p>
+                    </div>
+                  )}
+                  {typeof aiMetadata.structured_schema_valid === "boolean" && (
+                    <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                      <Label className="text-xs text-muted-foreground">Schema Estruturado</Label>
+                      <p className="mt-1">{aiMetadata.structured_schema_valid ? "Válido" : "Com alertas"}</p>
+                    </div>
+                  )}
+                </div>
+                {Array.isArray(aiMetadata.proposal_warnings) && aiMetadata.proposal_warnings.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Warnings da proposta</Label>
+                    <ul className="mt-1 list-disc list-inside">
+                      {aiMetadata.proposal_warnings.map((w: string, idx: number) => <li key={`warn-${idx}`}>{w}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {Array.isArray(aiMetadata.structured_warnings) && aiMetadata.structured_warnings.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Warnings estruturados</Label>
+                    <ul className="mt-1 list-disc list-inside">
+                      {aiMetadata.structured_warnings.map((w: string, idx: number) => <li key={`warn-struct-${idx}`}>{w}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {Array.isArray(aiMetadata.pipeline_steps) && aiMetadata.pipeline_steps.length > 0 && (
+                  <div className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <Label className="text-xs text-muted-foreground">Pipeline</Label>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {aiMetadata.pipeline_steps.map((step: string, idx: number) => (
+                        <Badge key={`step-${idx}`} variant="outline" className="text-[10px]">{step}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </SectionCard>
+
+          {/* Tiers */}
       {hasTiers && !editingTiers && (
         <>
           <SectionCard title="Faixas Comerciais" action={<Button variant="ghost" size="sm" onClick={startEditTiers}><Edit3 className="h-4 w-4" /></Button>}>
@@ -1055,7 +1049,7 @@ export default function AdminPropostaDetalhe() {
           {pj.solucao_proposta && <SectionCard title="Solução Proposta"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.solucao_proposta}</p></SectionCard>}
           {pj.escopo?.length > 0 && <SectionCard title="Escopo"><ul className="space-y-1">{pj.escopo.map((s, i) => <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />{s}</li>)}</ul></SectionCard>}
           {pj.funcionalidades?.length > 0 && <SectionCard title="Funcionalidades"><ul className="space-y-1">{pj.funcionalidades.map((f, i) => <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />{f}</li>)}</ul></SectionCard>}
-          <SectionCard title="Projetos Semelhantes do Portfólio">
+          <SectionCard title="Referências Utilizadas">
             {portfolioLoading ? (
               <p className="text-sm text-muted-foreground">Carregando referências...</p>
             ) : portfolioRefs.length === 0 ? (
@@ -1084,8 +1078,42 @@ export default function AdminPropostaDetalhe() {
         </div>
       )}
 
-      {/* PDF History */}
-      <PdfHistorico propostaId={proposta.id} refreshKey={pdfRefreshKey} />
+          {/* PDF History */}
+          <PdfHistorico propostaId={proposta.id} refreshKey={pdfRefreshKey} />
+        </div>
+
+        <div className="space-y-6">
+          <SectionCard title="Status Operacional">
+            <OperationalStatusPanel items={operationalItems as any} />
+          </SectionCard>
+
+          <SectionCard title="Ações Rápidas">
+            <QuickActionsGrid actions={quickActions} />
+          </SectionCard>
+
+          <SectionCard title="Histórico de Geração e Revisão">
+            {historyItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum histórico disponível.</p>
+            ) : (
+              <RecentActivityList items={historyItems} />
+            )}
+          </SectionCard>
+
+          <SectionCard title="Aprovação Comercial">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {(proposta.status === "aceita" || proposta.status === "recusada") ? (
+                  <CheckCircle2 className={`h-4 w-4 ${proposta.status === "aceita" ? "text-emerald-400" : "text-destructive"}`} />
+                ) : (
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                )}
+                <span className="text-sm font-medium">{st.label}</span>
+              </div>
+              <Badge variant="outline" className={`${st.bgClass} ${st.color}`}>{st.label}</Badge>
+            </div>
+          </SectionCard>
+        </div>
+      </div>
 
       {/* Dialogs */}
       <Dialog open={showRegenDialog} onOpenChange={setShowRegenDialog}>
