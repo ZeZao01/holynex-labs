@@ -483,12 +483,28 @@ export default function AdminLeadDetalhe() {
                     {Array.isArray(analiseData.riscos) && analiseData.riscos.length > 0 && (
                       <AnalysisList title="Riscos" items={analiseData.riscos} />
                     )}
+                    {Array.isArray(analiseData.funcionalidades_complementares) && analiseData.funcionalidades_complementares.length > 0 && (
+                      <AnalysisList title="Funcionalidades Complementares" items={analiseData.funcionalidades_complementares} />
+                    )}
                     {Array.isArray(analiseData.stack_sugerida) && analiseData.stack_sugerida.length > 0 && (
                       <AnalysisList title="Stack Sugerida" items={analiseData.stack_sugerida} />
                     )}
                     {Array.isArray(analiseData.roadmap_resumido) && analiseData.roadmap_resumido.length > 0 && (
                       <AnalysisList title="Roadmap Resumido" items={analiseData.roadmap_resumido} />
                     )}
+
+                    {analiseData.estrutura_comercial && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-muted-foreground">Estrutura Comercial</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {analiseData.estrutura_comercial.faixa_sugerida && <InfoTag label="Faixa Sugerida" value={analiseData.estrutura_comercial.faixa_sugerida} />}
+                          {analiseData.estrutura_comercial.modelo_cobranca && <InfoTag label="Modelo" value={analiseData.estrutura_comercial.modelo_cobranca} />}
+                          {analiseData.estrutura_comercial.potencial_recorrencia && <InfoTag label="Recorrência" value={analiseData.estrutura_comercial.potencial_recorrencia} />}
+                          {analiseData.estrutura_comercial.estrategia_fechamento && <InfoTag label="Estratégia" value={analiseData.estrutura_comercial.estrategia_fechamento} />}
+                        </div>
+                      </div>
+                    )}
+
                     {Array.isArray(analiseData.addons_ocultos_sugeridos) && analiseData.addons_ocultos_sugeridos.length > 0 && (
                       <AnalysisList title="Add-ons Ocultos" items={analiseData.addons_ocultos_sugeridos} />
                     )}
