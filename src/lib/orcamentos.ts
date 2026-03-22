@@ -279,15 +279,16 @@ export async function salvarOrcamento(data: {
 }) {
   const prioridade = classificarPrioridade(data.descricao);
   const resumo_ia = gerarResumo(data.descricao);
-
   const qual = qualificarLead(data);
+  const id = crypto.randomUUID();
 
-  const { data: created, error } = await supabase.from("orcamentos").insert({
+  const payload = {
+    id,
     nome: data.nome,
     email: data.email,
     empresa: data.empresa,
     descricao: data.descricao,
-    status: "pendente",
+    status: "pendente" as const,
     prioridade,
     resumo_ia,
     tipo_projeto: data.tipo_projeto || "",
@@ -312,10 +313,12 @@ export async function salvarOrcamento(data: {
     complexidade_estimada: qual.complexidade,
     temperatura_lead: qual.temperatura,
     estrategia_comercial: qual.estrategia,
-  }).select().single();
+  };
+
+  const { error } = await supabase.from("orcamentos").insert(payload);
 
   if (error) throw error;
-  return created as any;
+  return { id };
 }
 
 export async function getOrcamentos(): Promise<Orcamento[]> {
