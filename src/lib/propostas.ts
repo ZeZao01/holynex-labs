@@ -174,7 +174,7 @@ export interface GerarPropostaResult {
 export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropostaResult> {
   const requestId = crypto.randomUUID();
   await logProposalEvent("proposal_ai_requested", requestId, {
-    prompt_version: "v5.0-genspark-pipeline",
+    prompt_version: "v7.0-full-structured",
   });
 
   const startTime = Date.now();
