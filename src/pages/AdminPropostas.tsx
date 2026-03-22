@@ -73,6 +73,8 @@ export default function AdminPropostas() {
             document_spec: p.document_spec || null,
             stitch_prompt: p.stitch_prompt || null,
             hidden_addons: p.hidden_addons || null,
+            portfolio_refs: p.portfolio_refs || null,
+            pdf_blueprint: p.pdf_blueprint || null,
             ai_metadata: p.ai_metadata || null,
           }
         );

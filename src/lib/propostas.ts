@@ -341,6 +341,8 @@ function parseRow(row: any): Proposta {
     structured_content: structuredContent,
     stitch_prompt: row.stitch_prompt || null,
     hidden_addons: hiddenAddons,
+    portfolio_refs: portfolioRefs,
+    pdf_blueprint: pdfBlueprint,
     ai_metadata: aiMetadata,
     is_public: row.is_public || false,
     public_token: row.public_token || null,

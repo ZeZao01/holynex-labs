@@ -544,6 +544,8 @@ export default function AdminNovaProposta() {
                   pricing_sheet: prev?.pricing_sheet || null,
                   document_spec: prev?.document_spec || null,
                   hidden_addons: prev?.hidden_addons || null,
+                  portfolio_refs: prev?.portfolio_refs || null,
+                  pdf_blueprint: prev?.pdf_blueprint || null,
                   ai_metadata: prev?.ai_metadata || null,
                 }))}
                 rows={10}
