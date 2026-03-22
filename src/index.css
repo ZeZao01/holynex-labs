@@ -1,12 +1,8 @@
-#lovable-badge {
-  display: none !important;
-  z-index: -1000 !important;
-}
-
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
 #lovable-badge {
   display: none !important;
+  z-index: -1000 !important;
 }
 
 @tailwind base;
@@ -319,4 +315,3 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
-

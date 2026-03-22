@@ -7,6 +7,8 @@ import { getPortfolioReferences, type PortfolioReference } from "@/lib/portfolio
 import PageHeader from "@/components/admin/PageHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import StatusBadge from "@/components/admin/StatusBadge";
+import QuickActionsGrid from "@/components/admin/QuickActionsGrid";
+import OperationalStatusPanel from "@/components/admin/OperationalStatusPanel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -168,15 +170,56 @@ export default function AdminLeadDetalhe() {
   const estrategia = ESTRATEGIAS_COMERCIAIS.find(e => e.value === lead.estrategia_comercial);
   const latestAnalise = analises[0];
   const analiseData = (latestAnalise?.output_json as any) || null;
-   const aiAddonSuggestions = Array.isArray(analiseData?.addons_ocultos_sugeridos)
-     ? (analiseData.addons_ocultos_sugeridos as string[]).filter(Boolean)
-     : [];
-   const statusMap: Record<string, { label: string; color: string }> = {
-     em_processamento: { label: "Processando", color: "bg-amber-500/15 text-amber-400" },
-     concluido: { label: "Concluído", color: "bg-emerald-500/15 text-emerald-400" },
-     falhou: { label: "Falhou", color: "bg-destructive/15 text-destructive" },
-   };
+  const aiAddonSuggestions = Array.isArray(analiseData?.addons_ocultos_sugeridos)
+    ? (analiseData.addons_ocultos_sugeridos as string[]).filter(Boolean)
+    : [];
+  const statusMap: Record<string, { label: string; color: string }> = {
+    em_processamento: { label: "Processando", color: "bg-amber-500/15 text-amber-400" },
+    concluido: { label: "Concluído", color: "bg-emerald-500/15 text-emerald-400" },
+    falhou: { label: "Falhou", color: "bg-destructive/15 text-destructive" },
+  };
   const statusInfo = latestAnalise ? statusMap[latestAnalise.status] || { label: latestAnalise.status, color: "bg-muted text-muted-foreground" } : null;
+  const operationalItems = [
+    { label: "Briefing", status: lead.descricao ? "ok" : "pending" },
+    { label: "Contato", status: lead.email ? "ok" : "attention" },
+    { label: "Análise IA", status: latestAnalise ? "ok" : "pending" },
+    { label: "Add-ons", status: addons.length > 0 ? "ok" : "pending" },
+    { label: "Portfólio", status: portfolioRefs.length > 0 ? "ok" : "pending" },
+  ] as const;
+  const quickActions = [
+    {
+      label: "Converter em proposta",
+      icon: <FileBarChart className="h-4 w-4" />,
+      onClick: () => navigate(`/admin/propostas/nova?orcamento=${lead.id}`),
+    },
+    {
+      label: "Copiar email",
+      icon: <Copy className="h-4 w-4" />,
+      onClick: async () => {
+        try {
+          await navigator.clipboard.writeText(lead.email);
+          toast.success("Email copiado");
+        } catch {
+          toast.error("Erro ao copiar email");
+        }
+      },
+    },
+    {
+      label: "Abrir email",
+      icon: <Mail className="h-4 w-4" />,
+      onClick: () => { window.location.href = `mailto:${lead.email}`; },
+    },
+    {
+      label: "Marcar qualificado",
+      icon: <Target className="h-4 w-4" />,
+      onClick: () => handleStatusChange("qualificado"),
+    },
+    {
+      label: "Aguardando contato",
+      icon: <Clock className="h-4 w-4" />,
+      onClick: () => handleStatusChange("aguardando_contato"),
+    },
+  ];
 
   useEffect(() => {
     if (!lead) return;
@@ -363,8 +406,22 @@ export default function AdminLeadDetalhe() {
                 ))}
               </div>
             )}
+            {lead.resumoIA && (
+              <div className="mt-3 flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-foreground/80">{lead.resumoIA}</p>
+              </div>
+            )}
             {!lead.dor_principal && !aiResult && (
               <p className="text-sm text-muted-foreground">Clique em "Classificar com IA" para obter análise automática do lead.</p>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Módulos Sugeridos">
+            {Array.isArray(analiseData?.modulos_recomendados) && analiseData.modulos_recomendados.length > 0 ? (
+              <AnalysisList title="Módulos recomendados" items={analiseData.modulos_recomendados} />
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhuma sugestão de módulo registrada.</p>
             )}
           </SectionCard>
 
@@ -414,9 +471,6 @@ export default function AdminLeadDetalhe() {
                       {analiseData.complexidade && <InfoTag label="Complexidade" value={analiseData.complexidade} />}
                     </div>
 
-                    {Array.isArray(analiseData.modulos_recomendados) && analiseData.modulos_recomendados.length > 0 && (
-                      <AnalysisList title="Módulos Recomendados" items={analiseData.modulos_recomendados} />
-                    )}
                     {Array.isArray(analiseData.oportunidades_adicionais) && analiseData.oportunidades_adicionais.length > 0 && (
                       <AnalysisList title="Oportunidades" items={analiseData.oportunidades_adicionais} />
                     )}
@@ -491,7 +545,7 @@ export default function AdminLeadDetalhe() {
                   <Sparkles className="h-3.5 w-3.5" />
                   {registeringAddons ? "Registrando..." : "Registrar sugeridos"}
                 </Button>
-              ) : undefined
+              ) : null
             }
           >
             {addonsLoading ? (
@@ -559,6 +613,10 @@ export default function AdminLeadDetalhe() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          <SectionCard title="Status Operacional">
+            <OperationalStatusPanel items={operationalItems as any} />
+          </SectionCard>
+
           {/* Qualification */}
           <SectionCard title="Qualificação">
             <div className="space-y-4">
@@ -604,48 +662,8 @@ export default function AdminLeadDetalhe() {
 
           {/* Quick actions */}
           <SectionCard title="Ações Rápidas">
-            <div className="space-y-2">
-              <Button variant="default" size="sm" className="w-full gap-1.5" onClick={() => navigate(`/admin/propostas/nova?orcamento=${lead.id}`)}>
-                <FileBarChart className="h-4 w-4" /> Converter em Proposta
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full gap-1.5"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(lead.email);
-                    toast.success("Email copiado");
-                  } catch {
-                    toast.error("Erro ao copiar email");
-                  }
-                }}
-              >
-                <Copy className="h-4 w-4" /> Copiar Email
-              </Button>
-              <Button variant="outline" size="sm" className="w-full gap-1.5" asChild>
-                <a href={`mailto:${lead.email}`}>
-                  <Mail className="h-4 w-4" /> Abrir Email
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => handleStatusChange("qualificado")}> 
-                <Target className="h-4 w-4" /> Marcar como Qualificado
-              </Button>
-              <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => handleStatusChange("aguardando_contato")}>
-                <Clock className="h-4 w-4" /> Aguardando Contato
-              </Button>
-            </div>
+            <QuickActionsGrid actions={quickActions} />
           </SectionCard>
-
-          {/* Resumo IA */}
-          {lead.resumoIA && (
-            <SectionCard title="Resumo Automático">
-              <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
-                <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-foreground/80">{lead.resumoIA}</p>
-              </div>
-            </SectionCard>
-          )}
         </div>
       </div>
     </div>

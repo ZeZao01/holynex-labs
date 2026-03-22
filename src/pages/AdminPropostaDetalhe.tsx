@@ -14,7 +14,10 @@ import TierCard from "@/components/admin/TierCard";
 import ScopeComparison from "@/components/admin/ScopeComparison";
 import AddonSelector from "@/components/admin/AddonSelector";
 import TierEditor from "@/components/admin/TierEditor";
-import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X, Link2, ExternalLink, Copy, Layers } from "lucide-react";
+import QuickActionsGrid from "@/components/admin/QuickActionsGrid";
+import OperationalStatusPanel from "@/components/admin/OperationalStatusPanel";
+import RecentActivityList, { type ActivityItem } from "@/components/admin/RecentActivityList";
+import { Loader2, Download, Sparkles, RefreshCw, Edit3, Save, X, Link2, ExternalLink, Copy, Layers, Clock, FileText, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -197,6 +200,45 @@ export default function AdminPropostaDetalhe() {
       console.error("PDF export error:", err);
       toast.error(err?.message || "Erro ao exportar PDF. Tente novamente.");
     } finally { setExportingPdf(false); }
+  };
+
+  const handleToggleShare = async () => {
+    if (!proposta) return;
+    setSharingLoading(true);
+    try {
+      const isCurrentlyPublic = (proposta as any).is_public;
+      const token = await togglePropostaPublic(proposta.id, !isCurrentlyPublic);
+      if (token) {
+        const url = `${window.location.origin}/proposta/${token}`;
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copiado! A proposta está pública.");
+      } else {
+        toast.success("Proposta removida do acesso público.");
+      }
+      loadProposta();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao compartilhar");
+    } finally { setSharingLoading(false); }
+  };
+
+  const handleCopyPublicLink = async () => {
+    if (!(proposta as any).public_token) return;
+    try {
+      const url = `${window.location.origin}/proposta/${(proposta as any).public_token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado!");
+    } catch {
+      toast.error("Erro ao copiar link");
+    }
+  };
+
+  const formatJson = (value: any) => {
+    if (!value) return "";
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
   };
 
   type StitchPromptVersion = {
@@ -383,13 +425,83 @@ export default function AdminPropostaDetalhe() {
   const pricingSheet = proposta.pricing_sheet || null;
   const documentSpec = proposta.document_spec || null;
   const aiMetadata = proposta.ai_metadata || null;
-  const formatJson = (value: any) => {
-    try {
-      return JSON.stringify(value, null, 2);
-    } catch {
-      return String(value || "");
-    }
-  };
+  const operationalItems = [
+    { label: "Conteúdo", status: structuredContent ? "ok" : "pending" },
+    { label: "Pricing", status: pricingSheet ? "ok" : "pending" },
+    { label: "Document Spec", status: documentSpec ? "ok" : "pending" },
+    { label: "Stitch Prompt", status: currentStitchPrompt ? "ok" : "pending" },
+    { label: "Add-ons", status: addons.length > 0 ? "ok" : "pending" },
+    { label: "Portfólio", status: portfolioRefs.length > 0 ? "ok" : "pending" },
+  ] as const;
+  const quickActions = [
+    {
+      label: "Regenerar IA",
+      icon: <RefreshCw className="h-4 w-4" />,
+      onClick: () => setShowRegenDialog(true),
+    },
+    {
+      label: "Exportar PDF",
+      icon: <Download className="h-4 w-4" />,
+      onClick: () => handleExportPDF(),
+    },
+    {
+      label: "Editar faixas",
+      icon: <Edit3 className="h-4 w-4" />,
+      onClick: startEditTiers,
+    },
+    {
+      label: (proposta as any).is_public ? "Remover público" : "Compartilhar",
+      icon: <Link2 className="h-4 w-4" />,
+      onClick: handleToggleShare,
+    },
+    (proposta as any).is_public && (proposta as any).public_token ? {
+      label: "Copiar link",
+      icon: <Copy className="h-4 w-4" />,
+      onClick: handleCopyPublicLink,
+    } : null,
+  ].filter(Boolean) as { label: string; icon: JSX.Element; onClick: () => void }[];
+  const historyItems: ActivityItem[] = [];
+  historyItems.push({
+    icon: <Sparkles className="h-3.5 w-3.5" />,
+    text: `Geração da proposta${aiMetadata?.prompt_version ? ` (${aiMetadata.prompt_version})` : ""}`,
+    time: new Date(proposta.criado_em).toLocaleString("pt-BR"),
+  });
+  if (aiMetadata?.provider_used || aiMetadata?.model_used) {
+    historyItems.push({
+      icon: <FileText className="h-3.5 w-3.5" />,
+      text: `Pipeline: ${[aiMetadata?.provider_used, aiMetadata?.model_used].filter(Boolean).join(" / ")}`,
+      time: new Date(proposta.criado_em).toLocaleString("pt-BR"),
+    });
+  }
+  if (aiMetadata?.proposal_schema_valid === false || aiMetadata?.structured_schema_valid === false) {
+    historyItems.push({
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      text: "Avisos detectados na geração da IA",
+      time: new Date(proposta.criado_em).toLocaleString("pt-BR"),
+    });
+  }
+  if (aiMetadata?.stitch_prompt_last_edit) {
+    historyItems.push({
+      icon: <Edit3 className="h-3.5 w-3.5" />,
+      text: `Stitch editado por ${aiMetadata.stitch_prompt_last_editor || "admin"}`,
+      time: new Date(aiMetadata.stitch_prompt_last_edit).toLocaleString("pt-BR"),
+    });
+  }
+  if (aiMetadata?.stitch_prompt_regenerated_at) {
+    historyItems.push({
+      icon: <RefreshCw className="h-3.5 w-3.5" />,
+      text: `Stitch regenerado por ${aiMetadata.stitch_prompt_regenerated_by || "admin"}`,
+      time: new Date(aiMetadata.stitch_prompt_regenerated_at).toLocaleString("pt-BR"),
+    });
+  }
+  if (stitchHistory.length > 0) {
+    const latest = stitchHistory[0];
+    historyItems.push({
+      icon: <Layers className="h-3.5 w-3.5" />,
+      text: `${stitchHistory.length} versão(ões) de stitch prompt`,
+      time: new Date(latest.created_at).toLocaleString("pt-BR"),
+    });
+  }
 
   const handleRegisterHiddenAddons = async () => {
     if (!proposta || hiddenAddonSuggestions.length === 0) return;
@@ -480,32 +592,14 @@ export default function AdminPropostaDetalhe() {
           size="sm"
           className="gap-1"
           disabled={sharingLoading}
-          onClick={async () => {
-            setSharingLoading(true);
-            try {
-              const isCurrentlyPublic = (proposta as any).is_public;
-              const token = await togglePropostaPublic(proposta.id, !isCurrentlyPublic);
-              if (token) {
-                const url = `${window.location.origin}/proposta/${token}`;
-                await navigator.clipboard.writeText(url);
-                toast.success("Link copiado! A proposta está pública.");
-              } else {
-                toast.success("Proposta removida do acesso público.");
-              }
-              loadProposta();
-            } catch (err: any) {
-              toast.error(err.message || "Erro ao compartilhar");
-            } finally { setSharingLoading(false); }
-          }}
+          onClick={handleToggleShare}
         >
           {sharingLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
           {(proposta as any).is_public ? "Pública" : "Compartilhar"}
         </Button>
         {(proposta as any).is_public && (proposta as any).public_token && (
           <Button variant="ghost" size="sm" className="gap-1" onClick={() => {
-            const url = `${window.location.origin}/proposta/${(proposta as any).public_token}`;
-            navigator.clipboard.writeText(url);
-            toast.success("Link copiado!");
+            handleCopyPublicLink();
           }}>
             <Copy className="h-3.5 w-3.5" /> Copiar Link
           </Button>
