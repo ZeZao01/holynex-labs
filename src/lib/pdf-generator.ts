@@ -8,6 +8,8 @@ import agencyLogoUrl from "@/assets/logo-transparent.png";
 import type { Proposta } from "@/lib/propostas";
 import { logProposalEvent } from "@/lib/proposal-events";
 import { loadPdfLogos, type PdfLogos } from "@/lib/pdf-logos";
+import { listPortfolioItems } from "@/lib/portfolio-items";
+import { getPortfolioReferences, type PortfolioReference } from "@/lib/portfolio-similarity";
 import {
   drawBarChart,
   drawDonutChart,
@@ -874,6 +876,45 @@ function pageStrategicBenefits(pdf: jsPDF, p: Proposta, h: H) {
   }
 }
 
+function pagePortfolioReferences(pdf: jsPDF, refs: PortfolioReference[], h: H) {
+  drawBg(pdf, h);
+  let y = pageHeader(pdf, "PORTFÓLIO", "Provas Reais", "Projetos Semelhantes", C.orange);
+
+  const cols = 2;
+  const colGap = 10;
+  const colW = (CW - colGap) / cols;
+  const cardH = 48;
+
+  refs.slice(0, 4).forEach((ref, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = MX + col * (colW + colGap);
+    const cy = y + row * (cardH + 8);
+
+    cardWithBorder(pdf, cx, cy, colW, cardH, C.orange, h, true);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.white);
+    pdf.text(ref.title || "Projeto", cx + 8, cy + 12);
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...C.lightGray);
+    const reason = ref.reason || "Similaridade com o contexto do cliente";
+    const reasonLines = pdf.splitTextToSize(reason, colW - 16);
+    pdf.text(reasonLines.slice(0, 3), cx + 8, cy + 20);
+
+    const tags = [ref.item.category, ref.item.niche, ref.item.solution_type].filter(Boolean).slice(0, 2) as string[];
+    if (tags.length > 0) {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(6.5);
+      pdf.setTextColor(...C.primary);
+      pdf.text(tags.join(" • "), cx + 8, cy + cardH - 8);
+    }
+  });
+}
+
 function pageClosing(pdf: jsPDF, p: Proposta, h: H, logos: PdfLogos, docCode?: string) {
   drawBg(pdf, h);
 
@@ -969,7 +1010,25 @@ export async function generatePropostaPdf(
     const logos = await resolvePdfLogos(proposta.link_referencia || undefined);
 
     const hasTiers = proposta.proposal_tiers && proposta.proposal_tiers.length > 0;
-    const totalPages = hasTiers ? 9 : 8;
+    let portfolioRefs: PortfolioReference[] = [];
+    try {
+      const items = await listPortfolioItems(true);
+      const features = [
+        ...(proposta.proposta_json?.funcionalidades || []),
+        ...(proposta.proposta_json?.funcionalidades_recomendadas || []),
+        ...(proposta.proposta_json?.escopo || []),
+      ];
+      portfolioRefs = getPortfolioReferences(items, {
+        niche: proposta.segmento,
+        category: proposta.tipo_projeto,
+        solutionType: proposta.tipo_projeto,
+        features,
+      }, { limit: 4, minScore: 3 });
+    } catch {
+      portfolioRefs = [];
+    }
+    const hasPortfolioRefs = portfolioRefs.length > 0;
+    const totalPages = (hasTiers ? 9 : 8) + (hasPortfolioRefs ? 1 : 0);
     let pageNum = 0;
 
     if (!logos.agencyLogo) {
@@ -1005,7 +1064,15 @@ export async function generatePropostaPdf(
     pageStrategicBenefits(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 6: Tiers (conditional)
+    // Page 6: Portfolio references (conditional)
+    if (hasPortfolioRefs) {
+      pdf.addPage();
+      pageNum++;
+      pagePortfolioReferences(pdf, portfolioRefs, helpers);
+      drawFooter(pdf, pageNum, totalPages, documentCode);
+    }
+
+    // Page 7: Tiers (conditional)
     if (hasTiers) {
       pdf.addPage();
       pageNum++;
@@ -1013,13 +1080,13 @@ export async function generatePropostaPdf(
       drawFooter(pdf, pageNum, totalPages, documentCode);
     }
 
-    // Page 7: Timeline
+    // Page 8: Timeline
     pdf.addPage();
     pageNum++;
     pageTimeline(pdf, proposta, helpers);
     drawFooter(pdf, pageNum, totalPages, documentCode);
 
-    // Page 8: Risks & Next Steps
+    // Page 9: Risks & Next Steps
     pdf.addPage();
     pageNum++;
     pageRisks(pdf, proposta, helpers);

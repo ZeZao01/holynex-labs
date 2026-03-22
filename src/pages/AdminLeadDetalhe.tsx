@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getOrcamentoById, getOrcamentoAssets, getOrcamentoAnalises, atualizarStatusComercial, atualizarOrcamento, type Orcamento, type OrcamentoAsset, type OrcamentoAnalise, type StatusComercial, STATUS_COMERCIAL_MAP, ESTRATEGIAS_COMERCIAIS } from "@/lib/orcamentos";
+import { listPortfolioItems } from "@/lib/portfolio-items";
+import { getPortfolioReferences, type PortfolioReference } from "@/lib/portfolio-similarity";
 import PageHeader from "@/components/admin/PageHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -42,6 +44,8 @@ export default function AdminLeadDetalhe() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
   const [analises, setAnalises] = useState<OrcamentoAnalise[]>([]);
+  const [portfolioRefs, setPortfolioRefs] = useState<PortfolioReference[]>([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [analiseLoading, setAnaliseLoading] = useState(true);
   const [analiseRunning, setAnaliseRunning] = useState(false);
 
@@ -147,9 +151,9 @@ export default function AdminLeadDetalhe() {
 
   const temp = tempConfig[lead.temperatura_lead || "morno"] || tempConfig.morno;
   const TempIcon = temp.icon;
-   const estrategia = ESTRATEGIAS_COMERCIAIS.find(e => e.value === lead.estrategia_comercial);
-   const latestAnalise = analises[0];
-   const analiseData = (latestAnalise?.output_json as any) || null;
+  const estrategia = ESTRATEGIAS_COMERCIAIS.find(e => e.value === lead.estrategia_comercial);
+  const latestAnalise = analises[0];
+  const analiseData = (latestAnalise?.output_json as any) || null;
    const aiAddonSuggestions = Array.isArray(analiseData?.addons_ocultos_sugeridos)
      ? (analiseData.addons_ocultos_sugeridos as string[]).filter(Boolean)
      : [];
@@ -158,7 +162,36 @@ export default function AdminLeadDetalhe() {
      concluido: { label: "Concluído", color: "bg-emerald-500/15 text-emerald-400" },
      falhou: { label: "Falhou", color: "bg-destructive/15 text-destructive" },
    };
-   const statusInfo = latestAnalise ? statusMap[latestAnalise.status] || { label: latestAnalise.status, color: "bg-muted text-muted-foreground" } : null;
+  const statusInfo = latestAnalise ? statusMap[latestAnalise.status] || { label: latestAnalise.status, color: "bg-muted text-muted-foreground" } : null;
+
+  useEffect(() => {
+    if (!lead) return;
+    let active = true;
+    const fetchRefs = async () => {
+      setPortfolioLoading(true);
+      try {
+        const items = await listPortfolioItems(true);
+        const features = [
+          ...(Array.isArray(analiseData?.modulos_recomendados) ? analiseData.modulos_recomendados : []),
+          ...(Array.isArray(analiseData?.stack_sugerida) ? analiseData.stack_sugerida : []),
+          ...(Array.isArray(lead.tags_automaticas) ? lead.tags_automaticas : []),
+        ];
+        const refs = getPortfolioReferences(items, {
+          niche: lead.nicho || lead.segmento,
+          category: lead.tipo_projeto,
+          solutionType: lead.tipo_projeto,
+          features,
+        }, { limit: 4, minScore: 3 });
+        if (active) setPortfolioRefs(refs);
+      } catch {
+        if (active) setPortfolioRefs([]);
+      } finally {
+        if (active) setPortfolioLoading(false);
+      }
+    };
+    fetchRefs();
+    return () => { active = false; };
+  }, [lead?.id, lead?.nicho, lead?.segmento, lead?.tipo_projeto, lead?.tags_automaticas, latestAnalise?.id]);
 
   const handleRegisterAiAddons = async () => {
     if (!lead || aiAddonSuggestions.length === 0) return;
@@ -222,9 +255,9 @@ export default function AdminLeadDetalhe() {
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main content */}
+          <div className="lg:col-span-2 space-y-6">
           {/* Contact info */}
           <SectionCard title="Informações de Contato">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -236,8 +269,8 @@ export default function AdminLeadDetalhe() {
           </SectionCard>
 
           {/* Project description */}
-          <SectionCard title="Descrição do Projeto">
-            <p className="text-sm text-foreground/80 whitespace-pre-wrap">{lead.descricao}</p>
+            <SectionCard title="Descrição do Projeto">
+              <p className="text-sm text-foreground/80 whitespace-pre-wrap">{lead.descricao}</p>
             {lead.objetivo && (
               <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
                 <span className="text-xs font-medium text-primary">Objetivo:</span>
@@ -537,6 +570,28 @@ export default function AdminLeadDetalhe() {
                 <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-foreground/80">{lead.resumoIA}</p>
               </div>
+            </SectionCard>
+
+            <SectionCard title="Referências Sugeridas do Portfólio">
+              {portfolioLoading ? (
+                <p className="text-sm text-muted-foreground">Carregando referências...</p>
+              ) : portfolioRefs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma referência semelhante encontrada.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {portfolioRefs.map((ref) => (
+                    <div key={ref.id} className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                      <div className="text-sm font-medium text-foreground">{ref.title}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{ref.reason || "Semelhante ao lead"}</div>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {ref.item.category && <Badge variant="outline" className="text-[10px]">{ref.item.category}</Badge>}
+                        {ref.item.niche && <Badge variant="outline" className="text-[10px]">{ref.item.niche}</Badge>}
+                        {ref.item.solution_type && <Badge variant="outline" className="text-[10px]">{ref.item.solution_type}</Badge>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </SectionCard>
           )}
         </div>

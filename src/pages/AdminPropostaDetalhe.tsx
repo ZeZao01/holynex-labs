@@ -5,6 +5,8 @@ import { getProposta, atualizarStatusProposta, atualizarProposta, atualizarPropo
 import { createDefaultTiers, createDefaultAddons, PROPOSAL_STATUS_MAP, type ProposalTier, type ProposalAddon, type CommercialNotes } from "@/lib/proposal-tiers";
 import { uploadPdf } from "@/lib/pdf-storage";
 import { generatePropostaPdf } from "@/lib/pdf-generator";
+import { listPortfolioItems } from "@/lib/portfolio-items";
+import { getPortfolioReferences, type PortfolioReference } from "@/lib/portfolio-similarity";
 import PageHeader from "@/components/admin/PageHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -56,6 +58,8 @@ export default function AdminPropostaDetalhe() {
   const [editPhased, setEditPhased] = useState(false);
   const [savingTiers, setSavingTiers] = useState(false);
   const [sharingLoading, setSharingLoading] = useState(false);
+  const [portfolioRefs, setPortfolioRefs] = useState<PortfolioReference[]>([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
@@ -66,6 +70,35 @@ export default function AdminPropostaDetalhe() {
     if (!proposta) return;
     setStitchDraft(proposta.stitch_prompt || "");
   }, [proposta?.stitch_prompt]);
+
+  useEffect(() => {
+    if (!proposta) return;
+    let active = true;
+    const fetchRefs = async () => {
+      setPortfolioLoading(true);
+      try {
+        const items = await listPortfolioItems(true);
+        const features = [
+          ...(proposta.proposta_json?.funcionalidades || []),
+          ...(proposta.proposta_json?.funcionalidades_recomendadas || []),
+          ...(proposta.proposta_json?.escopo || []),
+        ];
+        const refs = getPortfolioReferences(items, {
+          niche: proposta.segmento,
+          category: proposta.tipo_projeto,
+          solutionType: proposta.tipo_projeto,
+          features,
+        }, { limit: 4, minScore: 3 });
+        if (active) setPortfolioRefs(refs);
+      } catch {
+        if (active) setPortfolioRefs([]);
+      } finally {
+        if (active) setPortfolioLoading(false);
+      }
+    };
+    fetchRefs();
+    return () => { active = false; };
+  }, [proposta?.id]);
 
   const loadProposta = async () => {
     if (!id) return;
@@ -91,6 +124,29 @@ export default function AdminPropostaDetalhe() {
     setShowRegenDialog(false);
     setRegenerating(true);
     try {
+      const portfolioItems = await listPortfolioItems(true).catch(() => []);
+      const features = [
+        ...(proposta.proposta_json?.funcionalidades || []),
+        ...(proposta.proposta_json?.funcionalidades_recomendadas || []),
+        ...(proposta.proposta_json?.escopo || []),
+      ];
+      const similarRefs = getPortfolioReferences(portfolioItems, {
+        niche: proposta.segmento,
+        category: proposta.tipo_projeto,
+        solutionType: proposta.tipo_projeto,
+        features,
+      }, { limit: 4, minScore: 3 });
+      const referenciasPortfolio = similarRefs.map((ref) => ({
+        id: ref.item.id,
+        title: ref.item.title,
+        motivo: ref.reason || "Similaridade com o contexto do cliente",
+        category: ref.item.category,
+        niche: ref.item.niche,
+        solution_type: ref.item.solution_type,
+        system_url: ref.item.system_url || ref.item.public_url,
+        thumbnail_url: ref.item.thumbnail_url || ref.item.cover_image_url,
+      }));
+
       const input: PropostaInput = {
         nome_cliente: proposta.nome_cliente, empresa_cliente: proposta.empresa_cliente,
         segmento: proposta.segmento, email_cliente: proposta.email_cliente,
@@ -99,6 +155,7 @@ export default function AdminPropostaDetalhe() {
         numero_usuarios: "", prazo_desejado: "", orcamento_cliente: "",
         nivel_urgencia: "medio", link_referencia: "", observacoes: orientacoes || "",
         orcamento_id: proposta.orcamento_id || undefined,
+        referencias_portfolio: referenciasPortfolio,
       };
       const aiResult = await gerarPropostaIA(input);
       await atualizarProposta(id, aiResult.proposta, {
@@ -745,6 +802,27 @@ export default function AdminPropostaDetalhe() {
           {pj.solucao_proposta && <SectionCard title="Solução Proposta"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.solucao_proposta}</p></SectionCard>}
           {pj.escopo?.length > 0 && <SectionCard title="Escopo"><ul className="space-y-1">{pj.escopo.map((s, i) => <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />{s}</li>)}</ul></SectionCard>}
           {pj.funcionalidades?.length > 0 && <SectionCard title="Funcionalidades"><ul className="space-y-1">{pj.funcionalidades.map((f, i) => <li key={i} className="text-sm text-muted-foreground flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />{f}</li>)}</ul></SectionCard>}
+          <SectionCard title="Projetos Semelhantes do Portfólio">
+            {portfolioLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando referências...</p>
+            ) : portfolioRefs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sem referências semelhantes encontradas.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {portfolioRefs.map((ref) => (
+                  <div key={ref.id} className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                    <div className="text-sm font-medium text-foreground">{ref.title}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{ref.reason || "Similaridade com a proposta"}</div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {ref.item.category && <Badge variant="outline" className="text-[10px]">{ref.item.category}</Badge>}
+                      {ref.item.niche && <Badge variant="outline" className="text-[10px]">{ref.item.niche}</Badge>}
+                      {ref.item.solution_type && <Badge variant="outline" className="text-[10px]">{ref.item.solution_type}</Badge>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </SectionCard>
           {pj.analise_estrategica && <SectionCard title="Análise Estratégica"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.analise_estrategica}</p></SectionCard>}
           {pj.cronograma && <SectionCard title="Cronograma"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.cronograma}</p></SectionCard>}
           {pj.manutencao && <SectionCard title="Manutenção"><p className="text-sm text-muted-foreground whitespace-pre-line">{pj.manutencao}</p></SectionCard>}

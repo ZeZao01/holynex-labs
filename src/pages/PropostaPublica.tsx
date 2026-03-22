@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { generatePropostaPdf } from "@/lib/pdf-generator";
 import { toast } from "@/components/ui/sonner";
 import logoUrl from "@/assets/logo-transparent.png";
+import { listPortfolioItems } from "@/lib/portfolio-items";
+import { getPortfolioReferences, type PortfolioReference } from "@/lib/portfolio-similarity";
 
 function TierPublicCard({ tier, isRecommended }: { tier: ProposalTier; isRecommended: boolean }) {
   const defaults = TIER_DEFAULTS[tier.type] || TIER_DEFAULTS.ideal;
@@ -62,6 +64,8 @@ export default function PropostaPublica() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [portfolioRefs, setPortfolioRefs] = useState<PortfolioReference[]>([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
 
   useEffect(() => {
     if (!token) { setNotFound(true); setLoading(false); return; }
@@ -73,6 +77,35 @@ export default function PropostaPublica() {
       setLoading(false);
     })();
   }, [token]);
+
+  useEffect(() => {
+    if (!proposta) return;
+    let active = true;
+    const fetchRefs = async () => {
+      setPortfolioLoading(true);
+      try {
+        const items = await listPortfolioItems(true);
+        const features = [
+          ...(proposta.proposta_json?.funcionalidades || []),
+          ...(proposta.proposta_json?.funcionalidades_recomendadas || []),
+          ...(proposta.proposta_json?.escopo || []),
+        ];
+        const refs = getPortfolioReferences(items, {
+          niche: proposta.segmento,
+          category: proposta.tipo_projeto,
+          solutionType: proposta.tipo_projeto,
+          features,
+        }, { limit: 4, minScore: 3 });
+        if (active) setPortfolioRefs(refs);
+      } catch {
+        if (active) setPortfolioRefs([]);
+      } finally {
+        if (active) setPortfolioLoading(false);
+      }
+    };
+    fetchRefs();
+    return () => { active = false; };
+  }, [proposta?.id]);
 
   const handleDownloadPdf = async () => {
     if (!proposta) return;
@@ -241,6 +274,30 @@ export default function PropostaPublica() {
             </section>
           )}
         </div>
+
+        {/* Portfolio References */}
+        {(portfolioLoading || portfolioRefs.length > 0) && (
+          <section className="space-y-4">
+            <h2 className="font-display text-2xl font-bold text-foreground">Projetos Semelhantes</h2>
+            {portfolioLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando referências...</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {portfolioRefs.map((ref) => (
+                  <div key={ref.id} className="rounded-xl border border-border/30 bg-card/30 p-4">
+                    <div className="text-sm font-medium text-foreground">{ref.title}</div>
+                    <p className="text-xs text-muted-foreground mt-1">{ref.reason || "Similaridade com esta proposta"}</p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {ref.item.category && <Badge variant="outline" className="text-[10px]">{ref.item.category}</Badge>}
+                      {ref.item.niche && <Badge variant="outline" className="text-[10px]">{ref.item.niche}</Badge>}
+                      {ref.item.solution_type && <Badge variant="outline" className="text-[10px]">{ref.item.solution_type}</Badge>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Next Steps */}
         {pj?.proximos_passos && pj.proximos_passos.length > 0 && (

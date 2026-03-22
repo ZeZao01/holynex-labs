@@ -18,6 +18,8 @@ import { gerarPropostaIA, salvarProposta, type PropostaInput, type PropostaJSON,
 import { getOrcamentoById, getOrcamentoAssets, getOrcamentoAnalises, type Orcamento, type OrcamentoAsset, type OrcamentoAnalise } from "@/lib/orcamentos";
 import { createDefaultTiers, createDefaultAddons, recommendTier, type ProposalTier, type ProposalAddon, type CommercialNotes, type TierType } from "@/lib/proposal-tiers";
 import { supabase } from "@/integrations/supabase/client";
+import { listPortfolioItems } from "@/lib/portfolio-items";
+import { getPortfolioReferences } from "@/lib/portfolio-similarity";
 
 const tiposProjeto = [
   "Landing Page", "Site institucional", "Sistema interno", "Sistema administrativo",
@@ -166,9 +168,35 @@ export default function AdminNovaProposta() {
         ordem: asset.sort_order ?? index,
       }));
 
-      const referenciasPortfolio = Array.isArray(orcamentoAnalise?.output_json?.referencias_portfolio)
+      const analiseRefs = Array.isArray(orcamentoAnalise?.output_json?.referencias_portfolio)
         ? orcamentoAnalise?.output_json?.referencias_portfolio
         : [];
+
+      const portfolioItems = await listPortfolioItems(true).catch(() => []);
+      const inferredFeatures = [
+        ...(Array.isArray(formData.funcionalidades_desejadas) ? formData.funcionalidades_desejadas : []),
+        ...(Array.isArray(orcamentoAnalise?.output_json?.modulos_recomendados) ? orcamentoAnalise?.output_json?.modulos_recomendados : []),
+      ];
+      const similarRefs = getPortfolioReferences(portfolioItems, {
+        niche: formData.nicho || orcamento?.nicho || formData.segmento,
+        category: formData.tipo_projeto,
+        solutionType: formData.tipo_projeto,
+        features: inferredFeatures,
+      }, { limit: 4, minScore: 3 });
+      const normalizedSimilarRefs = similarRefs.map((ref) => ({
+        id: ref.item.id,
+        title: ref.item.title,
+        motivo: ref.reason || "Similaridade com nicho/tipo/funcionalidades",
+        category: ref.item.category,
+        niche: ref.item.niche,
+        solution_type: ref.item.solution_type,
+        system_url: ref.item.system_url || ref.item.public_url,
+        thumbnail_url: ref.item.thumbnail_url || ref.item.cover_image_url,
+      }));
+      const referenciasPortfolio = [...analiseRefs, ...normalizedSimilarRefs].filter((ref, idx, arr) => {
+        const refId = ref?.id || ref?.title;
+        return arr.findIndex((r) => (r?.id || r?.title) === refId) === idx;
+      });
 
       const addonsSugeridos = addons.map(a => ({
         name: a.name,
