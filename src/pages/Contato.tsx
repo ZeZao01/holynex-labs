@@ -22,8 +22,8 @@ interface FormData {
   empresa: string;
   descricao: string;
   descricao_detalhada: string;
-  tipo_projeto: string;
-  nicho: string;
+  tipo_projeto: string[];
+  nicho: string[];
   objetivo: string;
   dor_principal: string;
   faixa_investimento: string;
@@ -71,6 +71,43 @@ function SelectChips({ options, value, onChange, className }: { options: readonl
   );
 }
 
+function MultiSelectChips({ options, value, onChange, max = 3, className }: { options: readonly string[]; value: string[]; onChange: (v: string[]) => void; max?: number; className?: string }) {
+  const toggle = (opt: string) => {
+    if (value.includes(opt)) {
+      onChange(value.filter((v) => v !== opt));
+    } else if (value.length < max) {
+      onChange([...value, opt]);
+    }
+  };
+  return (
+    <div className={cn("flex flex-wrap gap-2", className)}>
+      {options.map((opt) => {
+        const selected = value.includes(opt);
+        const disabled = !selected && value.length >= max;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            disabled={disabled}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+              selected
+                ? "bg-primary/20 border-primary/50 text-primary"
+                : disabled
+                  ? "bg-muted/20 border-border/30 text-muted-foreground/40 cursor-not-allowed"
+                  : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+            )}
+          >
+            {selected && <Check className="inline h-3 w-3 mr-1" />}
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ToggleChip({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -98,7 +135,7 @@ export default function Contato() {
   const [visualRefs, setVisualRefs] = useState<VisualRef[]>([]);
   const [form, setForm] = useState<FormData>({
     nome: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
-    tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
+    tipo_projeto: [], nicho: [], objetivo: "", dor_principal: "",
     faixa_investimento: "", orcamento_estimado: "", prazo_desejado: "", urgencia: "sem_urgencia",
     numero_usuarios: "", precisa_login: false, precisa_admin: false,
     precisa_area_cliente: false, precisa_integracoes: false,
@@ -170,6 +207,8 @@ export default function Contato() {
     try {
       const created = await salvarOrcamento({
         ...form,
+        tipo_projeto: form.tipo_projeto.join(", "),
+        nicho: form.nicho.join(", "),
         origem_lead: "site",
       });
 
@@ -190,7 +229,7 @@ export default function Contato() {
 
       setForm({
         nome: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
-        tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
+        tipo_projeto: [], nicho: [], objetivo: "", dor_principal: "",
         faixa_investimento: "", orcamento_estimado: "", prazo_desejado: "", urgencia: "sem_urgencia",
         numero_usuarios: "", precisa_login: false, precisa_admin: false,
         precisa_area_cliente: false, precisa_integracoes: false,
@@ -261,12 +300,12 @@ export default function Contato() {
             <div className="space-y-5">
               <h2 className="font-display text-lg font-semibold mb-4">Contexto do Projeto</h2>
               <div>
-                <label className="text-sm font-medium mb-2 block">Tipo de Projeto</label>
-                <SelectChips options={TIPOS_PROJETO} value={form.tipo_projeto} onChange={(v) => set("tipo_projeto", v)} />
+                <label className="text-sm font-medium mb-2 block">Tipo de Projeto <span className="text-muted-foreground font-normal">(até 3)</span></label>
+                <MultiSelectChips options={TIPOS_PROJETO} value={form.tipo_projeto} onChange={(v) => set("tipo_projeto", v)} max={3} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Nicho / Segmento</label>
-                <SelectChips options={NICHES} value={form.nicho} onChange={(v) => set("nicho", v)} />
+                <label className="text-sm font-medium mb-2 block">Nicho / Segmento <span className="text-muted-foreground font-normal">(até 3)</span></label>
+                <MultiSelectChips options={NICHES} value={form.nicho} onChange={(v) => set("nicho", v)} max={3} />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Objetivo principal</label>
@@ -368,8 +407,8 @@ export default function Contato() {
                 <Row label="Email" value={form.email} />
                 {form.empresa && <Row label="Empresa" value={form.empresa} />}
                 <Row label="Descrição" value={form.descricao} />
-                {form.tipo_projeto && <Row label="Tipo" value={form.tipo_projeto} />}
-                {form.nicho && <Row label="Nicho" value={form.nicho} />}
+                {form.tipo_projeto.length > 0 && <Row label="Tipo" value={form.tipo_projeto.join(", ")} />}
+                {form.nicho.length > 0 && <Row label="Nicho" value={form.nicho.join(", ")} />}
                 {form.objetivo && <Row label="Objetivo" value={form.objetivo} />}
                 {form.dor_principal && <Row label="Dor principal" value={form.dor_principal} />}
                 {form.descricao_detalhada && <Row label="Detalhamento" value={form.descricao_detalhada} />}
