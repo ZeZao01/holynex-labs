@@ -194,7 +194,7 @@ export async function getEffectivePermissions(roleNames: string[]) {
     .in("role_name", roleNames);
 
   if (error) throw error;
-  const rows = (data || []) as RolePermissionRow[];
+  const rows = (data || []) as unknown as RolePermissionRow[];
   const matrix: PermissionMatrix = {};
 
   rows.forEach((row) => {
