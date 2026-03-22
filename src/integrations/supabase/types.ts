@@ -1996,12 +1996,70 @@ export type Database = {
           },
         ]
       }
+      user_profiles: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          email: string | null
+          full_name: string | null
+          id: string
+          role_name: string | null
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role_name?: string | null
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_role_assignments: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          id: string
+          is_active: boolean
+          role_name: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          is_active?: boolean
+          role_name?: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          is_active?: boolean
+          role_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role_names: { Args: { _user_id: string }; Returns: string[] }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
