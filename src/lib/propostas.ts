@@ -66,12 +66,54 @@ export interface StructuredContent {
   resumo_interno: string;
 }
 
+export interface PricingSheetTier {
+  price: number;
+  modules: string[];
+  days: number;
+}
+
+export interface PricingSheet {
+  setup_fee: number;
+  monthly_fee: number;
+  tier_starter: PricingSheetTier;
+  tier_mvp: PricingSheetTier;
+  tier_ideal: PricingSheetTier;
+  tier_premium: PricingSheetTier;
+  payment_options: string[];
+  discount_conditions: string;
+}
+
+export interface HiddenAddon {
+  name: string;
+  description: string;
+  category: string;
+  estimated_price: number;
+  trigger_condition: string;
+  priority: string;
+}
+
+export interface PortfolioRef {
+  reason: string;
+  niche_match: string;
+  modules_shared: string[];
+}
+
+export interface PdfBlueprint {
+  cover_title: string;
+  cover_subtitle: string;
+  sections_order: string[];
+  emphasis_sections: string[];
+  tone: string;
+}
+
 export interface ProposalAIArtifacts {
   structured_content: StructuredContent | null;
-  pricing_sheet: any | null;
+  pricing_sheet: PricingSheet | null;
   document_spec: any | null;
   stitch_prompt: string | null;
-  hidden_addons: any[] | null;
+  hidden_addons: HiddenAddon[] | null;
+  portfolio_refs: PortfolioRef[] | null;
+  pdf_blueprint: PdfBlueprint | null;
   ai_metadata: any | null;
 }
 
