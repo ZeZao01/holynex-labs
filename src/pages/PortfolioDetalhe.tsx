@@ -53,12 +53,13 @@ export default function PortfolioDetalhe() {
 
   const typeLabel = ITEM_TYPES.find((t) => t.value === item.item_type)?.label;
   const gallery = item.gallery_images || item.gallery_urls || [];
-  const heroImage = selectedImage || item.cover_image_url || item.thumbnail_url;
+  const heroImage = selectedImage || item.cover_image_url || item.thumbnail_url || gallery[0];
   const fullDescription = item.full_description || item.commercial_description;
   const techStack = item.tech_stack || item.main_modules || [];
   const features = item.features || item.differentials || [];
   const previewMode = item.preview_mode || "image";
-  const canPreview = Boolean(item.allow_public_preview && item.system_url);
+  const systemUrl = item.system_url || item.public_url;
+  const canPreview = Boolean(item.allow_public_preview && systemUrl);
   const subtitle = item.short_description || item.subtitle;
 
   const handlePrimaryCta = () => {
@@ -70,16 +71,16 @@ export default function PortfolioDetalhe() {
   };
 
   const handleOpenSystem = () => {
-    if (!item.system_url) return;
+    if (!systemUrl) return;
     if (item.open_mode === "modal" && canPreview) {
       setPreviewOpen(true);
       return;
     }
     if (item.open_mode === "same_tab") {
-      window.location.href = item.system_url;
+      window.location.href = systemUrl;
       return;
     }
-    window.open(item.system_url, "_blank", "noopener,noreferrer");
+    window.open(systemUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -142,7 +143,7 @@ export default function PortfolioDetalhe() {
                 <Button size="lg" className="gap-2" onClick={handlePrimaryCta}>
                   {item.cta_label || "Quero algo parecido"} <ArrowRight className="h-4 w-4" />
                 </Button>
-                {item.system_url && (
+                {systemUrl && (
                   <Button size="lg" variant="outline" className="gap-2" onClick={handleOpenSystem}>
                     Abrir sistema <ExternalLink className="h-4 w-4" />
                   </Button>
@@ -217,7 +218,7 @@ export default function PortfolioDetalhe() {
             <h3 className="font-display text-lg font-semibold">Preview do Sistema</h3>
             {previewMode === "iframe" ? (
               <div className="rounded-2xl overflow-hidden border border-border aspect-video bg-muted">
-                <iframe src={item.system_url || ""} className="w-full h-full" title={item.title} loading="lazy" />
+                <iframe src={systemUrl || ""} className="w-full h-full" title={item.title} loading="lazy" />
               </div>
             ) : (
               <div className="rounded-2xl overflow-hidden border border-border">
@@ -253,9 +254,9 @@ export default function PortfolioDetalhe() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader><DialogTitle>Preview do Sistema</DialogTitle></DialogHeader>
-          {item?.system_url ? (
+          {systemUrl ? (
             <div className="rounded-xl overflow-hidden border border-border aspect-video bg-muted">
-              <iframe src={item.system_url} className="w-full h-full" title={item.title} loading="lazy" />
+              <iframe src={systemUrl} className="w-full h-full" title={item.title} loading="lazy" />
             </div>
           ) : null}
         </DialogContent>

@@ -207,6 +207,15 @@ export default function PortfolioForm({ item, onSave, onCancel, loading }: Props
     return Object.keys(nextErrors).length === 0;
   }
 
+  function handlePreviewTest() {
+    const systemUrl = String(form.system_url || form.public_url || "").trim();
+    if (!systemUrl) {
+      setErrors((prev) => ({ ...prev, system_url: "Informe a URL do sistema para testar o preview" }));
+      return;
+    }
+    window.open(systemUrl, "_blank", "noopener,noreferrer");
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validateUrls()) return;
@@ -218,6 +227,7 @@ export default function PortfolioForm({ item, onSave, onCancel, loading }: Props
     const sortOrder = form.sort_order ?? form.display_order ?? 0;
     const fullDescription = form.full_description || form.commercial_description || "";
     const systemUrl = form.system_url || form.public_url || "";
+    const resolvedThumbnail = form.thumbnail_url || gallery[0] || form.cover_image_url || "";
 
     onSave({
       ...form,
@@ -237,6 +247,7 @@ export default function PortfolioForm({ item, onSave, onCancel, loading }: Props
       is_active: status === "published",
       system_url: systemUrl,
       public_url: form.public_url || systemUrl,
+      thumbnail_url: resolvedThumbnail || form.thumbnail_url,
     });
   }
 
@@ -374,6 +385,11 @@ export default function PortfolioForm({ item, onSave, onCancel, loading }: Props
             <Label>URL do Sistema</Label>
             <Input type="url" value={form.system_url || ""} onChange={(e) => set("system_url", e.target.value)} />
             {errors.system_url && <p className="text-xs text-destructive mt-1">{errors.system_url}</p>}
+            <div className="mt-2">
+              <Button type="button" size="sm" variant="outline" onClick={handlePreviewTest}>
+                Testar preview
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

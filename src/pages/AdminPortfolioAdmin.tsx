@@ -143,6 +143,9 @@ export default function AdminPortfolioAdmin() {
             <TableBody>
               {filtered.map((item) => {
                 const statusMeta = getStatusMeta(item);
+                const previewUrl = item.system_url || item.public_url;
+                const gallery = item.gallery_images || item.gallery_urls || [];
+                const thumbnail = item.thumbnail_url || item.cover_image_url || gallery[0];
                 return (
                 <TableRow key={item.id}>
                   <TableCell className="text-xs text-muted-foreground">
@@ -153,14 +156,14 @@ export default function AdminPortfolioAdmin() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {item.thumbnail_url ? <img src={item.thumbnail_url} alt="" className="h-10 w-16 rounded object-cover" /> : <div className="h-10 w-16 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">—</div>}
+                    {thumbnail ? <img src={thumbnail} alt="" className="h-10 w-16 rounded object-cover" /> : <div className="h-10 w-16 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">—</div>}
                   </TableCell>
                   <TableCell className="font-medium">{item.title}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{item.slug || "—"}</TableCell>
                   <TableCell><Badge variant="secondary" className="text-xs">{ITEM_TYPES.find((t) => t.value === item.item_type)?.label || item.item_type}</Badge></TableCell>
                   <TableCell className="text-xs">{item.category || "—"}</TableCell>
                   <TableCell className="text-xs">
-                    {item.system_url ? (
+                    {previewUrl ? (
                       <span className={item.allow_public_preview ? "text-emerald-500" : "text-muted-foreground"}>
                         {item.allow_public_preview ? "Público" : "Privado"}
                       </span>

@@ -13,6 +13,8 @@ export default function PortfolioCard({ item }: Props) {
   const typeLabel = ITEM_TYPES.find((t) => t.value === item.item_type)?.label;
   const itemPath = item.slug || item.id;
   const modules = item.tech_stack || item.main_modules || [];
+  const gallery = item.gallery_images || item.gallery_urls || [];
+  const thumbnail = item.thumbnail_url || item.cover_image_url || gallery[0];
 
   return (
     <div
@@ -21,10 +23,10 @@ export default function PortfolioCard({ item }: Props) {
     >
       {/* Thumbnail */}
       <div className="relative h-44 sm:h-52 overflow-hidden bg-muted">
-        {item.thumbnail_url ? (
+        {thumbnail ? (
           <>
             <img
-              src={item.thumbnail_url}
+              src={thumbnail}
               alt={item.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
