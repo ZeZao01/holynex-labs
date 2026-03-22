@@ -225,6 +225,8 @@ export default function AdminNovaProposta() {
         document_spec: aiResult.document_spec,
         stitch_prompt: aiResult.stitch_prompt,
         hidden_addons: aiResult.hidden_addons,
+        portfolio_refs: aiResult.portfolio_refs,
+        pdf_blueprint: aiResult.pdf_blueprint,
         ai_metadata: aiResult.ai_metadata,
       });
       // Store document_spec and pricing_sheet for later use
