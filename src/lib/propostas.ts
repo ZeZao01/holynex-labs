@@ -143,12 +143,14 @@ export interface Proposta {
   proposal_validity: string;
   is_phased: boolean;
   closing_strategy: string;
-  // DocumentSpec fields (Genspark pipeline)
+  // AI artifacts
   document_spec: any | null;
-  pricing_sheet: any | null;
+  pricing_sheet: PricingSheet | null;
   structured_content: StructuredContent | null;
   stitch_prompt: string | null;
-  hidden_addons: any[] | null;
+  hidden_addons: HiddenAddon[] | null;
+  portfolio_refs: PortfolioRef[] | null;
+  pdf_blueprint: PdfBlueprint | null;
   ai_metadata: any | null;
   // Public sharing
   is_public: boolean;
