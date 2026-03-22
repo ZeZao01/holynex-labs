@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const sb = supabase as any;
+
 export interface PortfolioItem {
   id: string;
   delivered_system_id: string | null;
@@ -103,7 +105,7 @@ export const OPEN_MODES = [
 
 // ── CRUD ──
 export async function listPortfolioItems(onlyActive = false) {
-  let query = supabase
+  let query = sb
     .from("portfolio_items")
     .select("*")
     .order("sort_order", { ascending: true, nullsFirst: true })
@@ -119,13 +121,13 @@ export async function listPortfolioItems(onlyActive = false) {
 }
 
 export async function getPortfolioItem(id: string) {
-  const { data, error } = await supabase.from("portfolio_items").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await sb.from("portfolio_items").select("*").eq("id", id).maybeSingle();
   if (error) throw error;
   return data as PortfolioItem | null;
 }
 
 export async function getPortfolioItemBySlug(title: string) {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("portfolio_items")
     .select("*")
     .eq("slug", title)
@@ -137,24 +139,24 @@ export async function getPortfolioItemBySlug(title: string) {
 export async function savePortfolioItem(item: Partial<PortfolioItem>) {
   const payload = { ...item, atualizado_em: new Date().toISOString() };
   const query = item.id
-    ? supabase.from("portfolio_items").update(payload).eq("id", item.id)
-    : supabase.from("portfolio_items").insert([payload as any]);
+    ? sb.from("portfolio_items").update(payload).eq("id", item.id)
+    : sb.from("portfolio_items").insert([payload as any]);
   const { data, error } = await query.select().single();
   if (error) throw error;
   return data as PortfolioItem;
 }
 
 export async function deletePortfolioItem(id: string) {
-  const { error } = await supabase.from("portfolio_items").delete().eq("id", id);
+  const { error } = await sb.from("portfolio_items").delete().eq("id", id);
   if (error) throw error;
 }
 
 export async function addPortfolioEvent(itemId: string, evento: string, descricao?: string) {
-  await supabase.from("portfolio_item_events").insert([{ portfolio_item_id: itemId, evento, descricao: descricao || "" }]);
+  await sb.from("portfolio_item_events").insert([{ portfolio_item_id: itemId, evento, descricao: descricao || "" }]);
 }
 
 export async function getPortfolioEvents(itemId: string) {
-  const { data, error } = await supabase.from("portfolio_item_events").select("*").eq("portfolio_item_id", itemId).order("criado_em", { ascending: false });
+  const { data, error } = await sb.from("portfolio_item_events").select("*").eq("portfolio_item_id", itemId).order("criado_em", { ascending: false });
   if (error) throw error;
   return (data || []) as PortfolioItemEvent[];
 }

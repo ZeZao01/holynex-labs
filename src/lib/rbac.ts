@@ -2,6 +2,8 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { ACTIONS, DEFAULT_PERMISSIONS } from "@/lib/security";
 
+const sb = supabase as any;
+
 export interface UserProfile {
   id: string;
   user_id: string;
@@ -31,7 +33,7 @@ export interface RolePermissionRow {
 export type PermissionMatrix = Record<string, Record<string, boolean>>;
 
 export async function getUserProfiles() {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("user_profiles" as any)
     .select("*")
     .order("criado_em", { ascending: false });
@@ -40,7 +42,7 @@ export async function getUserProfiles() {
 }
 
 export async function getUserRoleAssignments() {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("user_role_assignments" as any)
     .select("*")
     .order("criado_em", { ascending: false });
@@ -49,7 +51,7 @@ export async function getUserRoleAssignments() {
 }
 
 export async function getUserProfileByUserId(userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("user_profiles" as any)
     .select("*")
     .eq("user_id", userId)
@@ -59,7 +61,7 @@ export async function getUserProfileByUserId(userId: string) {
 }
 
 export async function upsertUserRoleAssignment(userId: string, roleName: string) {
-  const { data: existing, error } = await supabase
+  const { data: existing, error } = await sb
     .from("user_role_assignments" as any)
     .select("id, role_name")
     .eq("user_id", userId)
@@ -73,7 +75,7 @@ export async function upsertUserRoleAssignment(userId: string, roleName: string)
   };
 
   if (existing?.id) {
-    const { error: updateError } = await supabase
+    const { error: updateError } = await sb
       .from("user_role_assignments" as any)
       .update(payload)
       .eq("id", existing.id);
@@ -81,7 +83,7 @@ export async function upsertUserRoleAssignment(userId: string, roleName: string)
     return existing.id as string;
   }
 
-  const { data: inserted, error: insertError } = await supabase
+  const { data: inserted, error: insertError } = await sb
     .from("user_role_assignments" as any)
     .insert(payload)
     .select("id")
@@ -104,7 +106,7 @@ function resolveRolesFromMetadata(user?: User | null) {
 
 async function resolveRolesFromAssignments(userId: string) {
   const roleNames = new Set<string>();
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("user_role_assignments" as any)
     .select("*")
     .eq("user_id", userId);
@@ -120,7 +122,7 @@ async function resolveRolesFromAssignments(userId: string) {
   });
 
   if (roleIds.length > 0) {
-    const { data: rolesData } = await supabase
+    const { data: rolesData } = await sb
       .from("roles" as any)
       .select("id, name, role_name")
       .in("id", roleIds);

@@ -71,7 +71,7 @@ export default function AdminPortfolioAdmin() {
   async function handleArchive(item: PortfolioItem) {
     try {
       const nextStatus = item.status === "archived" ? "draft" : "archived";
-      await savePortfolioItem({ id: item.id, status: nextStatus, is_active: nextStatus === "published" });
+      await savePortfolioItem({ id: item.id, status: nextStatus, is_active: false });
       await addPortfolioEvent(item.id, nextStatus === "archived" ? "arquivado" : "restaurado");
       toast({ title: nextStatus === "archived" ? "Arquivado!" : "Restaurado!" }); load();
     } catch { toast({ title: "Erro", variant: "destructive" }); }

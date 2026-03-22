@@ -18,12 +18,14 @@ export interface ProposalEventMeta {
   model_used?: string;
   prompt_version?: string;
   schema_valid?: boolean;
+  structured_schema_valid?: boolean;
   output_size?: number;
   render_status?: string;
   render_error?: string;
   pdf_version?: number;
   template_id?: string;
   warnings?: string[];
+  structured_warnings?: string[];
   duration_ms?: number;
   niche_detected?: string;
   pipeline_steps?: string[];

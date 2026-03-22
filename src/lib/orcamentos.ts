@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const sb = supabase as any;
+
 export type OrcamentoStatus = "pendente" | "recebido" | "rejeitado";
 
 export type StatusComercial =
@@ -468,7 +470,7 @@ export async function uploadOrcamentoAssets(orcamentoId: string, files: File[]) 
       original_name: file.name,
       sort_order: index,
     };
-    const { data: created, error: insertError } = await supabase
+    const { data: created, error: insertError } = await sb
       .from("orcamento_assets")
       .insert(payload)
       .select()
@@ -481,7 +483,7 @@ export async function uploadOrcamentoAssets(orcamentoId: string, files: File[]) 
 }
 
 export async function getOrcamentoAssets(orcamentoId: string): Promise<OrcamentoAsset[]> {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("orcamento_assets")
     .select("*")
     .eq("orcamento_id", orcamentoId)
@@ -492,7 +494,7 @@ export async function getOrcamentoAssets(orcamentoId: string): Promise<Orcamento
 }
 
 export async function getOrcamentoAnalises(orcamentoId: string): Promise<OrcamentoAnalise[]> {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("orcamento_analises")
     .select("*")
     .eq("orcamento_id", orcamentoId)

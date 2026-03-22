@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const sb = supabase as any;
+
 export type SystemSettingKey =
   | "ai_providers"
   | "ai_models"
@@ -142,7 +144,7 @@ export function normalizeAiProviders(input: any): AiProvidersSettings {
 }
 
 export async function getActiveSettings(keys: SystemSettingKey[]) {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("system_settings" as any)
     .select("*")
     .in("key", keys)
@@ -167,7 +169,7 @@ export async function setVersionedSetting(
   value: any,
   isSensitive = false
 ) {
-  const { data: current, error } = await supabase
+  const { data: current, error } = await sb
     .from("system_settings" as any)
     .select("id, version")
     .eq("key", key)
@@ -180,14 +182,14 @@ export async function setVersionedSetting(
 
   const nextVersion = (current?.version || 0) + 1;
   if (current?.id) {
-    const { error: updateError } = await supabase
+    const { error: updateError } = await sb
       .from("system_settings" as any)
       .update({ is_active: false })
       .eq("id", current.id);
     if (updateError) throw updateError;
   }
 
-  const { error: insertError } = await supabase
+  const { error: insertError } = await sb
     .from("system_settings" as any)
     .insert({ key, category, value, version: nextVersion, is_active: true, is_sensitive: isSensitive });
   if (insertError) throw insertError;

@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logAction } from "@/lib/audit-logs";
 
+const sb = supabase as any;
+
 export type AddonSourceContext = "lead" | "proposta" | "sistema";
 export type AddonStatus = "suggested" | "approved_internal" | "available_for_activation" | "activated" | "archived";
 
@@ -61,7 +63,7 @@ function normalizeRow(row: AddonRow): Addon {
 }
 
 export async function getAddons(filters?: { status?: AddonStatus; source_context?: AddonSourceContext }) {
-  let query = supabase.from("addon_extensions" as any).select("*").order("criado_em", { ascending: false });
+  let query = sb.from("addon_extensions" as any).select("*").order("criado_em", { ascending: false });
   if (filters?.status) query = query.eq("status", filters.status);
   if (filters?.source_context) query = query.eq("source_context", filters.source_context);
   const { data, error } = await query;
@@ -70,7 +72,7 @@ export async function getAddons(filters?: { status?: AddonStatus; source_context
 }
 
 export async function getAddonsBySource(source_context: AddonSourceContext, source_id: string) {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("addon_extensions" as any)
     .select("*")
     .eq("source_context", source_context)
@@ -97,7 +99,7 @@ export async function createAddon(payload: Partial<Addon>) {
     module_scope: payload.module_scope || [],
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("addon_extensions" as any)
     .insert(insertPayload)
     .select("*")
@@ -119,7 +121,7 @@ export async function updateAddonStatus(id: string, status: AddonStatus, metadat
     activation_flag: status === "activated",
     atualizado_em: new Date().toISOString(),
   };
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("addon_extensions" as any)
     .update(updates)
     .eq("id", id)

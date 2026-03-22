@@ -234,7 +234,7 @@ export default function AdminLeadDetalhe() {
           ...(Array.isArray(lead.tags_automaticas) ? lead.tags_automaticas : []),
         ];
         const refs = getPortfolioReferences(items, {
-          niche: lead.nicho || lead.segmento,
+          niche: lead.nicho,
           category: lead.tipo_projeto,
           solutionType: lead.tipo_projeto,
           features,
@@ -248,7 +248,7 @@ export default function AdminLeadDetalhe() {
     };
     fetchRefs();
     return () => { active = false; };
-  }, [lead?.id, lead?.nicho, lead?.segmento, lead?.tipo_projeto, lead?.tags_automaticas, latestAnalise?.id]);
+  }, [lead?.id, lead?.nicho, lead?.tipo_projeto, lead?.tags_automaticas, latestAnalise?.id]);
 
   const handleRegisterAiAddons = async () => {
     if (!lead || aiAddonSuggestions.length === 0) return;
