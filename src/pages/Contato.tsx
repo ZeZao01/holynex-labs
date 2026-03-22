@@ -229,7 +229,7 @@ export default function Contato() {
 
       setForm({
         nome: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
-        tipo_projeto: "", nicho: "", objetivo: "", dor_principal: "",
+        tipo_projeto: [], nicho: [], objetivo: "", dor_principal: "",
         faixa_investimento: "", orcamento_estimado: "", prazo_desejado: "", urgencia: "sem_urgencia",
         numero_usuarios: "", precisa_login: false, precisa_admin: false,
         precisa_area_cliente: false, precisa_integracoes: false,
