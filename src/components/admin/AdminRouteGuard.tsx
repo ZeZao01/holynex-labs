@@ -16,10 +16,8 @@ export default function AdminRouteGuard({ module, action, children }: AdminRoute
   const { loading, canView, canCreate, canEdit, canDelete, canExport, canApprove, hasPermission } = useAccessControl();
   const loggedRef = useRef(false);
 
-  if (authLoading || loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
-  if (!user) return <Navigate to="/admin/login" replace />;
-
   const allowed = (() => {
+    if (!user) return false;
     if (!action || action === "visualizar") return canView(module);
     if (action === "criar") return canCreate(module);
     if (action === "editar") return canEdit(module);
@@ -30,6 +28,7 @@ export default function AdminRouteGuard({ module, action, children }: AdminRoute
   })();
 
   useEffect(() => {
+    if (authLoading || loading || !user) return;
     if (!allowed && !loggedRef.current) {
       loggedRef.current = true;
       logSecurityEvent(
@@ -39,7 +38,10 @@ export default function AdminRouteGuard({ module, action, children }: AdminRoute
         { source: "route_guard", entityType: "route", entityId: module, metadata: { module, action } }
       );
     }
-  }, [allowed, module, action]);
+  }, [allowed, module, action, authLoading, loading, user]);
+
+  if (authLoading || loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
+  if (!user) return <Navigate to="/admin/login" replace />;
 
   if (!allowed) return <AccessDenied />;
 
