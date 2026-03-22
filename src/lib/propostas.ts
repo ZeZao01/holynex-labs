@@ -215,6 +215,8 @@ export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropos
       pricing_sheet: data.pricing_sheet || null,
       stitch_prompt: typeof data.stitch_prompt === "string" ? data.stitch_prompt.trim() : null,
       hidden_addons: Array.isArray(data.hidden_addons) ? data.hidden_addons : null,
+      portfolio_refs: Array.isArray(data.portfolio_refs) ? data.portfolio_refs : null,
+      pdf_blueprint: data.pdf_blueprint || null,
       ai_metadata: Object.keys(aiMetadata).length ? aiMetadata : null,
     };
   } catch (err) {
