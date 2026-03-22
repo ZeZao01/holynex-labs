@@ -1,12 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ProposalTier, ProposalAddon, CommercialNotes } from "@/lib/proposal-tiers";
-import { normalizePropostaJSON } from "@/lib/proposal-normalizer";
+import { normalizePropostaJSON, normalizeStructuredContent } from "@/lib/proposal-normalizer";
 import { logProposalEvent } from "@/lib/proposal-events";
 
 export interface PropostaInput {
   nome_cliente: string;
   empresa_cliente: string;
   segmento: string;
+  nicho?: string;
   email_cliente: string;
   tipo_projeto: string;
   descricao_projeto: string;
@@ -21,6 +22,11 @@ export interface PropostaInput {
   link_referencia: string;
   observacoes: string;
   orcamento_id?: string;
+  analise_arquitetural?: any;
+  referencias_visuais?: any[];
+  referencias_portfolio?: any[];
+  modulos_base?: string[];
+  addons_sugeridos?: any[];
 }
 
 export interface PropostaFinanceiro {
@@ -47,6 +53,25 @@ export interface PropostaJSON {
   riscos: string[];
   proximos_passos: string[];
   proposta_comercial: string;
+}
+
+export interface StructuredContent {
+  proposta_comercial: string;
+  visao_projeto: string;
+  escopo_principal: string[];
+  modulos_recomendados: string[];
+  diferenciais: string[];
+  roadmap_macro: string[];
+  resumo_interno: string;
+}
+
+export interface ProposalAIArtifacts {
+  structured_content: StructuredContent | null;
+  pricing_sheet: any | null;
+  document_spec: any | null;
+  stitch_prompt: string | null;
+  hidden_addons: any[] | null;
+  ai_metadata: any | null;
 }
 
 export interface Proposta {
@@ -78,6 +103,10 @@ export interface Proposta {
   // DocumentSpec fields (Genspark pipeline)
   document_spec: any | null;
   pricing_sheet: any | null;
+  structured_content: StructuredContent | null;
+  stitch_prompt: string | null;
+  hidden_addons: any[] | null;
+  ai_metadata: any | null;
   // Public sharing
   is_public: boolean;
   public_token: string | null;
@@ -87,8 +116,12 @@ export interface Proposta {
 
 export interface GerarPropostaResult {
   proposta: PropostaJSON;
+  structured_content: StructuredContent | null;
   document_spec: any | null;
   pricing_sheet: any | null;
+  stitch_prompt: string | null;
+  hidden_addons: any[] | null;
+  ai_metadata: any | null;
 }
 
 export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropostaResult> {
@@ -105,23 +138,37 @@ export async function gerarPropostaIA(input: PropostaInput): Promise<GerarPropos
     if (data?.error) throw new Error(data.error);
 
     const normResult = normalizePropostaJSON(data.proposta);
+    const structuredResult = normalizeStructuredContent(data.structured_content || {});
     const meta = data._meta || {};
+    const aiMetadata = {
+      ...(data.ai_metadata || meta || {}),
+      proposal_schema_valid: normResult.schema_valid,
+      proposal_warnings: normResult.warnings,
+      structured_schema_valid: structuredResult.schema_valid,
+      structured_warnings: structuredResult.warnings,
+    };
 
     await logProposalEvent("proposal_ai_completed", requestId, {
       provider_used: meta.provider_used,
       model_used: meta.model_used,
       prompt_version: meta.prompt_version || "v5.0-genspark-pipeline",
       schema_valid: normResult.schema_valid,
+      structured_schema_valid: structuredResult.schema_valid,
       output_size: normResult.output_size,
       duration_ms: Date.now() - startTime,
       warnings: normResult.warnings,
+      structured_warnings: structuredResult.warnings,
       pipeline_steps: meta.pipeline_steps,
     });
 
     return {
       proposta: normResult.data,
+      structured_content: structuredResult.data,
       document_spec: data.document_spec || null,
       pricing_sheet: data.pricing_sheet || null,
+      stitch_prompt: typeof data.stitch_prompt === "string" ? data.stitch_prompt.trim() : null,
+      hidden_addons: Array.isArray(data.hidden_addons) ? data.hidden_addons : null,
+      ai_metadata: Object.keys(aiMetadata).length ? aiMetadata : null,
     };
   } catch (err) {
     await logProposalEvent("proposal_ai_failed", requestId, {
@@ -142,6 +189,7 @@ export async function salvarProposta(
   validity?: string,
   isPhased?: boolean,
   closingStrategy?: string,
+  artifacts?: ProposalAIArtifacts,
 ): Promise<string> {
   const { data, error } = await supabase
     .from("propostas" as any)
@@ -169,7 +217,7 @@ export async function salvarProposta(
       valor_premium: proposta.financeiro.valor_premium,
       classificacao_margem: proposta.financeiro.classificacao_margem,
       complexidade: proposta.complexidade,
-      status: "gerada",
+      status: "rascunho",
       orcamento_id: input.orcamento_id || null,
       proposal_tiers: tiers ? JSON.stringify(tiers) : "[]",
       proposal_addons: addons ? JSON.stringify(addons) : "[]",
@@ -178,6 +226,12 @@ export async function salvarProposta(
       proposal_validity: validity || "30 dias",
       is_phased: isPhased || false,
       closing_strategy: closingStrategy || "",
+      structured_content: artifacts?.structured_content || null,
+      pricing_sheet: artifacts?.pricing_sheet || null,
+      document_spec: artifacts?.document_spec || null,
+      stitch_prompt: artifacts?.stitch_prompt || null,
+      hidden_addons: artifacts?.hidden_addons || null,
+      ai_metadata: artifacts?.ai_metadata || null,
     } as any)
     .select("id")
     .single();
@@ -190,9 +244,19 @@ function parseRow(row: any): Proposta {
   let tiers: ProposalTier[] = [];
   let addons: ProposalAddon[] = [];
   let notes: CommercialNotes | null = null;
+  let structuredContent: StructuredContent | null = null;
+  let pricingSheet: any | null = null;
+  let documentSpec: any | null = null;
+  let hiddenAddons: any[] | null = null;
+  let aiMetadata: any | null = null;
   try { tiers = typeof row.proposal_tiers === "string" ? JSON.parse(row.proposal_tiers) : (row.proposal_tiers || []); } catch {}
   try { addons = typeof row.proposal_addons === "string" ? JSON.parse(row.proposal_addons) : (row.proposal_addons || []); } catch {}
   try { notes = typeof row.commercial_notes === "string" ? JSON.parse(row.commercial_notes) : (row.commercial_notes || null); } catch {}
+  try { structuredContent = typeof row.structured_content === "string" ? JSON.parse(row.structured_content) : (row.structured_content || null); } catch {}
+  try { pricingSheet = typeof row.pricing_sheet === "string" ? JSON.parse(row.pricing_sheet) : (row.pricing_sheet || null); } catch {}
+  try { documentSpec = typeof row.document_spec === "string" ? JSON.parse(row.document_spec) : (row.document_spec || null); } catch {}
+  try { hiddenAddons = typeof row.hidden_addons === "string" ? JSON.parse(row.hidden_addons) : (row.hidden_addons || null); } catch {}
+  try { aiMetadata = typeof row.ai_metadata === "string" ? JSON.parse(row.ai_metadata) : (row.ai_metadata || null); } catch {}
 
   return {
     id: row.id,
@@ -219,8 +283,12 @@ function parseRow(row: any): Proposta {
     proposal_validity: row.proposal_validity || "30 dias",
     is_phased: row.is_phased || false,
     closing_strategy: row.closing_strategy || "",
-    document_spec: null,
-    pricing_sheet: null,
+    document_spec: documentSpec,
+    pricing_sheet: pricingSheet,
+    structured_content: structuredContent,
+    stitch_prompt: row.stitch_prompt || null,
+    hidden_addons: hiddenAddons,
+    ai_metadata: aiMetadata,
     is_public: row.is_public || false,
     public_token: row.public_token || null,
     link_referencia: row.link_referencia || "",
@@ -262,7 +330,7 @@ export async function removerProposta(id: string) {
   if (error) throw error;
 }
 
-export async function atualizarProposta(id: string, proposta: PropostaJSON) {
+export async function atualizarProposta(id: string, proposta: PropostaJSON, artifacts?: ProposalAIArtifacts) {
   const { error } = await supabase
     .from("propostas" as any)
     .update({
@@ -273,6 +341,12 @@ export async function atualizarProposta(id: string, proposta: PropostaJSON) {
       valor_premium: proposta.financeiro.valor_premium,
       classificacao_margem: proposta.financeiro.classificacao_margem,
       complexidade: proposta.complexidade,
+      structured_content: artifacts?.structured_content || undefined,
+      pricing_sheet: artifacts?.pricing_sheet || undefined,
+      document_spec: artifacts?.document_spec || undefined,
+      stitch_prompt: artifacts?.stitch_prompt || undefined,
+      hidden_addons: artifacts?.hidden_addons || undefined,
+      ai_metadata: artifacts?.ai_metadata || undefined,
       atualizado_em: new Date().toISOString(),
     } as any)
     .eq("id", id);

@@ -14,8 +14,8 @@ import PageHeader from "@/components/admin/PageHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import TierEditor from "@/components/admin/TierEditor";
 import AddonSelector from "@/components/admin/AddonSelector";
-import { gerarPropostaIA, salvarProposta, type PropostaInput, type PropostaJSON } from "@/lib/propostas";
-import { getOrcamentoById } from "@/lib/orcamentos";
+import { gerarPropostaIA, salvarProposta, type PropostaInput, type PropostaJSON, type ProposalAIArtifacts } from "@/lib/propostas";
+import { getOrcamentoById, getOrcamentoAssets, getOrcamentoAnalises, type Orcamento, type OrcamentoAsset, type OrcamentoAnalise } from "@/lib/orcamentos";
 import { createDefaultTiers, createDefaultAddons, recommendTier, type ProposalTier, type ProposalAddon, type CommercialNotes, type TierType } from "@/lib/proposal-tiers";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -37,7 +37,11 @@ export default function AdminNovaProposta() {
   const [generatingTiers, setGeneratingTiers] = useState(false);
   const [quickDesc, setQuickDesc] = useState("");
   const [result, setResult] = useState<PropostaJSON | null>(null);
+  const [aiArtifacts, setAiArtifacts] = useState<ProposalAIArtifacts | null>(null);
   const [step, setStep] = useState<"form" | "tiers" | "review">("form");
+  const [orcamento, setOrcamento] = useState<Orcamento | null>(null);
+  const [orcamentoAssets, setOrcamentoAssets] = useState<OrcamentoAsset[]>([]);
+  const [orcamentoAnalise, setOrcamentoAnalise] = useState<OrcamentoAnalise | null>(null);
 
   // Tiers state
   const [tiers, setTiers] = useState<ProposalTier[]>(createDefaultTiers());
@@ -53,6 +57,7 @@ export default function AdminNovaProposta() {
     numero_usuarios: "", prazo_desejado: "", orcamento_cliente: "",
     nivel_urgencia: "medio", link_referencia: "", observacoes: "",
     orcamento_id: orcamentoId || undefined,
+    nicho: "",
   });
 
   useEffect(() => {
@@ -62,8 +67,15 @@ export default function AdminNovaProposta() {
 
   const loadOrcamento = async (id: string) => {
     try {
-      const orc = await getOrcamentoById(id);
+      const [orc, assetsData, analisesData] = await Promise.all([
+        getOrcamentoById(id),
+        getOrcamentoAssets(id).catch(() => [] as OrcamentoAsset[]),
+        getOrcamentoAnalises(id).catch(() => [] as OrcamentoAnalise[]),
+      ]);
       if (orc) {
+        setOrcamento(orc);
+        setOrcamentoAssets(assetsData || []);
+        setOrcamentoAnalise((analisesData || [])[0] || null);
         setFormData((prev) => ({
           ...prev,
           nome_cliente: orc.nome,
@@ -73,6 +85,7 @@ export default function AdminNovaProposta() {
           orcamento_id: orc.id,
           tipo_projeto: orc.tipo_projeto || prev.tipo_projeto,
           segmento: orc.nicho || prev.segmento,
+          nicho: orc.nicho || prev.nicho || "",
           objetivo_cliente: orc.objetivo || prev.objetivo_cliente,
           orcamento_cliente: orc.faixa_investimento || prev.orcamento_cliente,
           prazo_desejado: orc.prazo_desejado || prev.prazo_desejado,
@@ -103,14 +116,15 @@ export default function AdminNovaProposta() {
       if (error) throw new Error(error.message || "Erro ao preencher");
       if (data?.error) throw new Error(data.error);
       const campos = data.campos;
-      setFormData((prev) => ({
-        ...prev,
-        nome_cliente: campos.nome_cliente || prev.nome_cliente,
-        empresa_cliente: campos.empresa_cliente || prev.empresa_cliente,
-        segmento: campos.segmento || prev.segmento,
-        email_cliente: campos.email_cliente || prev.email_cliente,
-        tipo_projeto: campos.tipo_projeto || prev.tipo_projeto,
-        descricao_projeto: campos.descricao_projeto || prev.descricao_projeto,
+        setFormData((prev) => ({
+          ...prev,
+          nome_cliente: campos.nome_cliente || prev.nome_cliente,
+          empresa_cliente: campos.empresa_cliente || prev.empresa_cliente,
+          segmento: campos.segmento || prev.segmento,
+          nicho: campos.nicho || campos.segmento || prev.nicho || "",
+          email_cliente: campos.email_cliente || prev.email_cliente,
+          tipo_projeto: campos.tipo_projeto || prev.tipo_projeto,
+          descricao_projeto: campos.descricao_projeto || prev.descricao_projeto,
         problema_cliente: campos.problema_cliente || prev.problema_cliente,
         objetivo_cliente: campos.objetivo_cliente || prev.objetivo_cliente,
         funcionalidades_desejadas: campos.funcionalidades_desejadas?.length ? campos.funcionalidades_desejadas : prev.funcionalidades_desejadas,
@@ -136,9 +150,50 @@ export default function AdminNovaProposta() {
     }
     setGenerating(true);
     setResult(null);
+    setAiArtifacts(null);
     try {
-      const aiResult = await gerarPropostaIA(formData);
+      const baseModules: string[] = [];
+      if (orcamento?.precisa_login) baseModules.push("Autenticação e Acesso");
+      if (orcamento?.precisa_admin) baseModules.push("Painel Administrativo");
+      if (orcamento?.precisa_area_cliente) baseModules.push("Área do Cliente");
+      if (orcamento?.precisa_integracoes) baseModules.push("Integrações");
+      if (orcamento?.precisa_app_mobile) baseModules.push("App Mobile / PWA");
+
+      const referenciasVisuais = orcamentoAssets.map((asset, index) => ({
+        url: asset.file_url,
+        tipo: asset.file_type,
+        titulo: asset.original_name,
+        ordem: asset.sort_order ?? index,
+      }));
+
+      const addonsSugeridos = addons.map(a => ({
+        name: a.name,
+        description: a.description,
+        category: a.category,
+        price: a.price,
+        is_optional: a.is_optional,
+      }));
+
+      const aiInput: PropostaInput = {
+        ...formData,
+        nicho: formData.nicho || orcamento?.nicho || formData.segmento,
+        analise_arquitetural: orcamentoAnalise?.output_json || undefined,
+        referencias_visuais: referenciasVisuais,
+        referencias_portfolio: [],
+        modulos_base: baseModules,
+        addons_sugeridos: addonsSugeridos,
+      };
+
+      const aiResult = await gerarPropostaIA(aiInput);
       setResult(aiResult.proposta);
+      setAiArtifacts({
+        structured_content: aiResult.structured_content,
+        pricing_sheet: aiResult.pricing_sheet,
+        document_spec: aiResult.document_spec,
+        stitch_prompt: aiResult.stitch_prompt,
+        hidden_addons: aiResult.hidden_addons,
+        ai_metadata: aiResult.ai_metadata,
+      });
       // Store document_spec and pricing_sheet for later use
       (window as any).__lastDocSpec = aiResult.document_spec;
       (window as any).__lastPricingSheet = aiResult.pricing_sheet;
@@ -183,7 +238,7 @@ export default function AdminNovaProposta() {
     setLoading(true);
     try {
       const recTier = tiers.find(t => t.is_recommended)?.type || "";
-      const id = await salvarProposta(formData, result, tiers, addons, recTier, notes, validity, isPhased, notes.closing_strategy);
+      const id = await salvarProposta(formData, result, tiers, addons, recTier, notes, validity, isPhased, notes.closing_strategy, aiArtifacts || undefined);
       toast.success("Proposta salva!");
       navigate(`/admin/propostas/${id}`);
     } catch (err: any) { toast.error(err.message || "Erro ao salvar"); } finally { setLoading(false); }

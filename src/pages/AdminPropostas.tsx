@@ -66,7 +66,15 @@ export default function AdminPropostas() {
         const id = await salvarProposta(
           input, p.proposta_json, p.proposal_tiers, p.proposal_addons,
           recTier, p.commercial_notes || undefined, p.proposal_validity,
-          p.is_phased, p.closing_strategy
+          p.is_phased, p.closing_strategy,
+          {
+            structured_content: p.structured_content || null,
+            pricing_sheet: p.pricing_sheet || null,
+            document_spec: p.document_spec || null,
+            stitch_prompt: p.stitch_prompt || null,
+            hidden_addons: p.hidden_addons || null,
+            ai_metadata: p.ai_metadata || null,
+          }
         );
         toast.success("Proposta duplicada!");
         navigate(`/admin/propostas/${id}`);
@@ -121,7 +129,7 @@ export default function AdminPropostas() {
     const total = propostas.length;
     const totalValor = propostas.reduce((s, p) => s + p.valor_ideal, 0);
     const aceitas = propostas.filter(p => p.status === "aceita").length;
-    const pipeline = propostas.filter(p => ["gerada", "enviada", "pronta", "em_revisao"].includes(p.status)).reduce((s, p) => s + p.valor_ideal, 0);
+    const pipeline = propostas.filter(p => ["rascunho", "gerada", "enviada", "pronta", "em_revisao"].includes(p.status)).reduce((s, p) => s + p.valor_ideal, 0);
     return { total, totalValor, aceitas, pipeline };
   }, [propostas]);
 

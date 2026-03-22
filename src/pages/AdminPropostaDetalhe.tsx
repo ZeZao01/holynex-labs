@@ -79,7 +79,14 @@ export default function AdminPropostaDetalhe() {
         orcamento_id: proposta.orcamento_id || undefined,
       };
       const aiResult = await gerarPropostaIA(input);
-      await atualizarProposta(id, aiResult.proposta);
+      await atualizarProposta(id, aiResult.proposta, {
+        structured_content: aiResult.structured_content,
+        document_spec: aiResult.document_spec,
+        pricing_sheet: aiResult.pricing_sheet,
+        stitch_prompt: aiResult.stitch_prompt,
+        hidden_addons: aiResult.hidden_addons,
+        ai_metadata: aiResult.ai_metadata,
+      });
       toast.success("Proposta regenerada!");
       setOrientacoes("");
       loadProposta();
@@ -168,7 +175,7 @@ export default function AdminPropostaDetalhe() {
         breadcrumbs={[{ label: "Propostas", href: "/admin/propostas" }, { label: proposta.nome_cliente }]}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
-            {["gerada", "em_revisao", "pronta", "enviada", "aceita", "recusada"].map(s => {
+            {["rascunho", "em_revisao", "pronta", "enviada", "aceita", "recusada"].map(s => {
               const cfg = PROPOSAL_STATUS_MAP[s];
               if (!cfg) return null;
               return (

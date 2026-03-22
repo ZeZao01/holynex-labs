@@ -3,7 +3,7 @@
  * Valida schema, sanitiza caracteres, limita tamanhos e aplica fallbacks.
  */
 
-import type { PropostaJSON, PropostaFinanceiro } from "@/lib/propostas";
+import type { PropostaJSON, PropostaFinanceiro, StructuredContent } from "@/lib/propostas";
 
 // ── Section size limits (characters) ──
 const LIMITS: Record<string, number> = {
@@ -22,6 +22,13 @@ const LIMITS: Record<string, number> = {
 
 const LIST_ITEM_LIMIT = 150;
 const LIST_MAX_ITEMS = 15;
+
+// ── Structured content limits (characters) ──
+const STRUCTURED_LIMITS: Record<string, number> = {
+  proposta_comercial: 5000,
+  visao_projeto: 1200,
+  resumo_interno: 1200,
+};
 
 // ── Sanitization ──
 
@@ -100,6 +107,13 @@ const FALLBACK_FINANCEIRO: PropostaFinanceiro = {
 // ── Normalization result ──
 export interface NormalizationResult {
   data: PropostaJSON;
+  schema_valid: boolean;
+  warnings: string[];
+  output_size: number;
+}
+
+export interface StructuredContentNormalizationResult {
+  data: StructuredContent;
   schema_valid: boolean;
   warnings: string[];
   output_size: number;
@@ -240,4 +254,56 @@ export function extractDocumentoPublico(proposta: PropostaJSON): Omit<PropostaJS
  */
 export function extractNarrativaInterna(proposta: PropostaJSON): PropostaJSON {
   return { ...proposta };
+}
+
+/**
+ * Normaliza o bloco estruturado comercial/operacional da proposta.
+ */
+export function normalizeStructuredContent(raw: any): StructuredContentNormalizationResult {
+  const warnings: string[] = [];
+  let schema_valid = true;
+
+  if (!raw || typeof raw !== "object") {
+    schema_valid = false;
+    warnings.push("structured_content: input is not an object, using fallbacks");
+    raw = {};
+  }
+
+  const proposta_comercial = sanitizeAndLimit(
+    raw.proposta_comercial || "",
+    STRUCTURED_LIMITS.proposta_comercial
+  );
+  if (!raw.proposta_comercial) { warnings.push("structured_content.proposta_comercial: empty"); }
+
+  const visao_projeto = sanitizeAndLimit(
+    raw.visao_projeto || "",
+    STRUCTURED_LIMITS.visao_projeto
+  );
+  if (!raw.visao_projeto) { warnings.push("structured_content.visao_projeto: empty"); }
+
+  const escopo_principal = sanitizeList(raw.escopo_principal || []);
+  const modulos_recomendados = sanitizeList(raw.modulos_recomendados || []);
+  const diferenciais = sanitizeList(raw.diferenciais || []);
+  const roadmap_macro = sanitizeList(raw.roadmap_macro || []);
+
+  const resumo_interno = sanitizeAndLimit(
+    raw.resumo_interno || "",
+    STRUCTURED_LIMITS.resumo_interno
+  );
+  if (!raw.resumo_interno) { warnings.push("structured_content.resumo_interno: empty"); }
+
+  const data: StructuredContent = {
+    proposta_comercial,
+    visao_projeto,
+    escopo_principal,
+    modulos_recomendados,
+    diferenciais,
+    roadmap_macro,
+    resumo_interno,
+  };
+
+  const output_size = JSON.stringify(data).length;
+  if (warnings.length > 0) schema_valid = false;
+
+  return { data, schema_valid, warnings, output_size };
 }
