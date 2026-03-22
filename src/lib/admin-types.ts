@@ -34,7 +34,12 @@ export const MODULE_LIST = [
 export const NICHES = [
   "SaaS", "E-commerce", "Saúde", "Educação", "Imobiliário", "Jurídico",
   "Finanças", "Logística", "Alimentação", "Beleza", "Fitness", "Varejo",
-  "Indústria", "Agro", "Governo", "ONGs", "Outro",
+  "Indústria", "Agro", "Governo", "ONGs", "Turismo", "Hotelaria",
+  "Construção Civil", "Automotivo", "Moda", "Pets", "Energia",
+  "Seguros", "Contabilidade", "Marketing Digital", "Eventos",
+  "Transporte", "Telecomunicações", "Mineração", "Farmacêutico",
+  "Entretenimento", "Esportes", "Consultoria", "RH / Recrutamento",
+  "Serviços Gerais", "Tecnologia", "Startups", "Outro",
 ] as const;
 
 export interface AdminModule {
