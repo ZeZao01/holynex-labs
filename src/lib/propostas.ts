@@ -280,6 +280,8 @@ export async function salvarProposta(
       document_spec: artifacts?.document_spec || null,
       stitch_prompt: artifacts?.stitch_prompt || null,
       hidden_addons: artifacts?.hidden_addons || null,
+      portfolio_refs: artifacts?.portfolio_refs || null,
+      pdf_blueprint: artifacts?.pdf_blueprint || null,
       ai_metadata: artifacts?.ai_metadata || null,
     } as any)
     .select("id")
