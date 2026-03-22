@@ -93,8 +93,10 @@ export const PORTFOLIO_STATUSES = [
 
 export const PREVIEW_MODES = [
   { value: "none", label: "Sem preview" },
-  { value: "iframe", label: "Preview incorporado" },
-  { value: "image", label: "Imagem/galeria" },
+  { value: "thumbnail", label: "Thumbnail" },
+  { value: "iframe", label: "Preview incorporado (iframe)" },
+  { value: "image_mockup", label: "Mockup de tela" },
+  { value: "mixed", label: "Misto (iframe com fallback)" },
 ];
 
 export const OPEN_MODES = [
