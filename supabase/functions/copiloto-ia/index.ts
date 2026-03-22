@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  getAiModelSettings,
+  getAiProviderSettings,
+  getPromptPolicies,
+  resolveAiProviders,
+  resolvePromptPolicy,
+} from "../_shared/system-settings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,63 +61,12 @@ const PROMPT_TEMPLATES: Record<string, { version: string; system: string; buildU
 
 // ── Provider orchestration ────────────────────────────────────────────
 
-interface AIProvider {
-  name: string;
-  url: string;
-  apiKey: string;
-  model: string;
-  headers?: Record<string, string>;
-}
-
-function getProviders(): AIProvider[] {
-  const providers: AIProvider[] = [];
-
-  // Genspark — prioridade máxima
-  const gensparkKey = Deno.env.get("GENSPARK_API_KEY");
-  if (gensparkKey) {
-    providers.push({
-      name: "Genspark",
-      url: "https://api.genspark.ai/v1/chat/completions",
-      apiKey: gensparkKey,
-      model: "genspark-lite",
-    });
-  }
-
-  const groqKey = Deno.env.get("GROQ_API_KEY");
-  if (groqKey) {
-    providers.push({
-      name: "Groq",
-      url: "https://api.groq.com/openai/v1/chat/completions",
-      apiKey: groqKey,
-      model: "llama-3.3-70b-versatile",
-    });
-  }
-
-  const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
-  if (openrouterKey) {
-    providers.push({
-      name: "OpenRouter",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      apiKey: openrouterKey,
-      model: "google/gemini-2.5-flash",
-      headers: { "HTTP-Referer": "https://holynexlabs.com.br", "X-Title": "HolyNex Labs" },
-    });
-  }
-
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (lovableKey) {
-    providers.push({
-      name: "Lovable AI",
-      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
-      apiKey: lovableKey,
-      model: "google/gemini-3-flash-preview",
-    });
-  }
-
-  return providers;
-}
-
-async function callProvider(provider: AIProvider, messages: any[]): Promise<string> {
+async function callProvider(
+  provider: { name: string; url: string; apiKey: string; model: string; headers?: Record<string, string> },
+  messages: any[],
+  temperature: number,
+  maxTokens: number
+): Promise<string> {
   console.log(`[copiloto-ia] Trying: ${provider.name} (${provider.model})`);
   const response = await fetch(provider.url, {
     method: "POST",
@@ -119,7 +75,7 @@ async function callProvider(provider: AIProvider, messages: any[]): Promise<stri
       "Content-Type": "application/json",
       ...(provider.headers || {}),
     },
-    body: JSON.stringify({ model: provider.model, messages, temperature: 0.3, max_tokens: 4000 }),
+    body: JSON.stringify({ model: provider.model, messages, temperature, max_tokens: maxTokens }),
   });
 
   if (!response.ok) {
@@ -160,13 +116,23 @@ serve(async (req) => {
       );
     }
 
-    const providers = getProviders();
+    const [providerSettings, modelSettings, promptPolicies] = await Promise.all([
+      getAiProviderSettings(),
+      getAiModelSettings(),
+      getPromptPolicies(),
+    ]);
+    const providers = resolveAiProviders(providerSettings, modelSettings, "copiloto-ia");
     if (providers.length === 0) {
       return new Response(
         JSON.stringify({ error: "Nenhum provedor de IA configurado." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const policy = resolvePromptPolicy(promptPolicies, "copiloto-ia", {
+      temperature: 0.3,
+      max_tokens: 4000,
+    });
 
     const messages = [
       { role: "system", content: template.system },
@@ -183,7 +149,7 @@ serve(async (req) => {
       if (i > 0) fallbackTriggered = true;
 
       try {
-        const content = await callProvider(provider, messages);
+        const content = await callProvider(provider, messages, policy.temperature, policy.max_tokens);
         const outputData = cleanJson(content);
         const durationMs = Date.now() - startTime;
         providerUsed = provider.name;

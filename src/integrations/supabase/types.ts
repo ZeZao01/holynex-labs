@@ -122,6 +122,42 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          id: string
+          key: string
+          category: string
+          value: Json
+          version: number
+          is_active: boolean
+          is_sensitive: boolean
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          category: string
+          value?: Json
+          version?: number
+          is_active?: boolean
+          is_sensitive?: boolean
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          category?: string
+          value?: Json
+          version?: number
+          is_active?: boolean
+          is_sensitive?: boolean
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
       delivered_system_events: {
         Row: {
           criado_em: string | null

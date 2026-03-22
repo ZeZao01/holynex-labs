@@ -1,4 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  getAiModelSettings,
+  getAiProviderSettings,
+  getPromptPolicies,
+  resolveAiProviders,
+  resolvePromptPolicy,
+} from "../_shared/system-settings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,55 +13,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface AIProvider {
-  name: string;
-  url: string;
-  apiKey: string;
-  model: string;
-  headers?: Record<string, string>;
-}
-
-function getProviders(): AIProvider[] {
-  const providers: AIProvider[] = [];
-
-  const groqKey = Deno.env.get("GROQ_API_KEY");
-  if (groqKey) {
-    providers.push({
-      name: "Groq",
-      url: "https://api.groq.com/openai/v1/chat/completions",
-      apiKey: groqKey,
-      model: "llama-3.3-70b-versatile",
-    });
-  }
-
-  const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
-  if (openrouterKey) {
-    providers.push({
-      name: "OpenRouter",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      apiKey: openrouterKey,
-      model: "google/gemini-2.5-flash",
-      headers: {
-        "HTTP-Referer": "https://holynexlabs.com.br",
-        "X-Title": "HolyNex Labs",
-      },
-    });
-  }
-
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (lovableKey) {
-    providers.push({
-      name: "Lovable AI",
-      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
-      apiKey: lovableKey,
-      model: "google/gemini-2.5-flash",
-    });
-  }
-
-  return providers;
-}
-
-async function callProvider(provider: AIProvider, messages: any[]): Promise<string> {
+async function callProvider(
+  provider: { name: string; url: string; apiKey: string; model: string; headers?: Record<string, string> },
+  messages: any[],
+  temperature: number,
+  maxTokens: number
+): Promise<string> {
   console.log(`Trying provider: ${provider.name}`);
   const response = await fetch(provider.url, {
     method: "POST",
@@ -63,7 +27,7 @@ async function callProvider(provider: AIProvider, messages: any[]): Promise<stri
       "Content-Type": "application/json",
       ...(provider.headers || {}),
     },
-    body: JSON.stringify({ model: provider.model, messages, temperature: 0.3 }),
+    body: JSON.stringify({ model: provider.model, messages, temperature, max_tokens: maxTokens }),
   });
 
   if (!response.ok) {
@@ -139,7 +103,12 @@ REGRAS:
       { role: "user", content: descricao_rapida },
     ];
 
-    const providers = getProviders();
+    const [providerSettings, modelSettings, promptPolicies] = await Promise.all([
+      getAiProviderSettings(),
+      getAiModelSettings(),
+      getPromptPolicies(),
+    ]);
+    const providers = resolveAiProviders(providerSettings, modelSettings, "preencher-formulario");
     if (providers.length === 0) {
       return new Response(
         JSON.stringify({ error: "Nenhum provedor de IA configurado." }),
@@ -147,10 +116,15 @@ REGRAS:
       );
     }
 
+    const policy = resolvePromptPolicy(promptPolicies, "preencher-formulario", {
+      temperature: 0.3,
+      max_tokens: 4000,
+    });
+
     let lastError: Error | null = null;
     for (const provider of providers) {
       try {
-        const content = await callProvider(provider, messages);
+        const content = await callProvider(provider, messages, policy.temperature, policy.max_tokens);
         const parsed = cleanJson(content);
         console.log(`Success with: ${provider.name}`);
         return new Response(

@@ -1,4 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  getAiModelSettings,
+  getAiProviderSettings,
+  getPromptPolicies,
+  resolveAiProviders,
+  resolvePromptPolicy,
+} from "../_shared/system-settings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,9 +18,6 @@ serve(async (req) => {
   try {
     const { lead } = await req.json();
     if (!lead) throw new Error("Lead data required");
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const prompt = `Analise este lead comercial de uma software house e retorne classificação estruturada.
 
@@ -36,77 +40,106 @@ DADOS DO LEAD:
 - Aceita MVP: ${lead.aceita_mvp ? "Sim" : "Não"}
 - Estágio: ${lead.estagio_operacao || "N/A"}`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "Você é um analista comercial de uma software house. Classifique leads usando tool calling.",
-          },
-          { role: "user", content: prompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "classificar_lead",
-              description: "Retorna classificação estruturada do lead",
-              parameters: {
-                type: "object",
-                properties: {
-                  score_qualificacao: { type: "number", description: "Score de 0-100" },
-                  faixa_ticket: { type: "string", enum: ["Micro", "Starter", "Standard", "Premium", "Enterprise"] },
-                  complexidade_estimada: { type: "string", enum: ["baixa", "media", "alta"] },
-                  temperatura_lead: { type: "string", enum: ["frio", "morno", "quente"] },
-                  estrategia_comercial: { type: "string", enum: ["starter", "mvp_enxuto", "faseado", "ideal", "premium", "discovery"] },
-                  dor_principal: { type: "string", description: "Resumo da dor principal do cliente em 1-2 frases" },
-                  tags: { type: "array", items: { type: "string" }, description: "3-6 tags descritivas" },
-                  oportunidades: { type: "string", description: "Oportunidades identificadas" },
-                  riscos: { type: "string", description: "Riscos identificados" },
-                },
-                required: ["score_qualificacao", "faixa_ticket", "complexidade_estimada", "temperatura_lead", "estrategia_comercial", "dor_principal", "tags"],
-                additionalProperties: false,
+    const [providerSettings, modelSettings, promptPolicies] = await Promise.all([
+      getAiProviderSettings(),
+      getAiModelSettings(),
+      getPromptPolicies(),
+    ]);
+    const providers = resolveAiProviders(providerSettings, modelSettings, "classificar-lead");
+    if (providers.length === 0) throw new Error("Nenhum provedor de IA configurado.");
+
+    const policy = resolvePromptPolicy(promptPolicies, "classificar-lead", {
+      temperature: 0.3,
+      max_tokens: 4000,
+    });
+
+    const payload = {
+      messages: [
+        {
+          role: "system",
+          content: "Você é um analista comercial de uma software house. Classifique leads usando tool calling.",
+        },
+        { role: "user", content: prompt },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "classificar_lead",
+            description: "Retorna classificação estruturada do lead",
+            parameters: {
+              type: "object",
+              properties: {
+                score_qualificacao: { type: "number", description: "Score de 0-100" },
+                faixa_ticket: { type: "string", enum: ["Micro", "Starter", "Standard", "Premium", "Enterprise"] },
+                complexidade_estimada: { type: "string", enum: ["baixa", "media", "alta"] },
+                temperatura_lead: { type: "string", enum: ["frio", "morno", "quente"] },
+                estrategia_comercial: { type: "string", enum: ["starter", "mvp_enxuto", "faseado", "ideal", "premium", "discovery"] },
+                dor_principal: { type: "string", description: "Resumo da dor principal do cliente em 1-2 frases" },
+                tags: { type: "array", items: { type: "string" }, description: "3-6 tags descritivas" },
+                oportunidades: { type: "string", description: "Oportunidades identificadas" },
+                riscos: { type: "string", description: "Riscos identificados" },
               },
+              required: ["score_qualificacao", "faixa_ticket", "complexidade_estimada", "temperatura_lead", "estrategia_comercial", "dor_principal", "tags"],
+              additionalProperties: false,
             },
           },
-        ],
-        tool_choice: { type: "function", function: { name: "classificar_lead" } },
-      }),
-    });
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "classificar_lead" } },
+    };
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
+    let lastError: Error | null = null;
 
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again later." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    for (const provider of providers) {
+      try {
+        const response = await fetch(provider.url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${provider.apiKey}`,
+            "Content-Type": "application/json",
+            ...(provider.headers || {}),
+          },
+          body: JSON.stringify({
+            model: provider.model,
+            temperature: policy.temperature,
+            max_tokens: policy.max_tokens,
+            ...payload,
+          }),
         });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
 
-      throw new Error(`AI gateway error: ${response.status}`);
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error("AI gateway error:", response.status, errText);
+          lastError = new Error(`AI gateway error: ${response.status}`);
+          if (response.status === 429) {
+            return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again later." }), {
+              status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          if (response.status === 402) {
+            return new Response(JSON.stringify({ error: "Payment required." }), {
+              status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          continue;
+        }
+
+        const result = await response.json();
+        const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
+        if (!toolCall) throw new Error("No tool call in response");
+
+        const classification = JSON.parse(toolCall.function.arguments);
+
+        return new Response(JSON.stringify(classification), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+      }
     }
 
-    const result = await response.json();
-    const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error("No tool call in response");
-
-    const classification = JSON.parse(toolCall.function.arguments);
-
-    return new Response(JSON.stringify(classification), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    throw new Error(lastError?.message || "Todos os provedores falharam.");
   } catch (e) {
     console.error("classificar-lead error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {

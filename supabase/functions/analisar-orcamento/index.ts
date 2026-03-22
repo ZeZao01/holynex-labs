@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  getAiModelSettings,
+  getAiProviderSettings,
+  getPromptPolicies,
+  resolveAiProviders,
+  resolvePromptPolicy,
+} from "../_shared/system-settings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,68 +16,17 @@ const corsHeaders = {
 
 const PROMPT_VERSION = "v1.0-orcamento";
 
-interface AIProvider {
-  name: string;
-  url: string;
-  apiKey: string;
-  model: string;
-  headers?: Record<string, string>;
-}
-
 interface ProviderUsage {
   prompt_tokens?: number;
   completion_tokens?: number;
   total_tokens?: number;
 }
-
-function getProviders(): AIProvider[] {
-  const providers: AIProvider[] = [];
-
-  const gensparkKey = Deno.env.get("GENSPARK_API_KEY");
-  if (gensparkKey) {
-    providers.push({
-      name: "Genspark",
-      url: "https://api.genspark.ai/v1/chat/completions",
-      apiKey: gensparkKey,
-      model: "genspark-lite",
-    });
-  }
-
-  const groqKey = Deno.env.get("GROQ_API_KEY");
-  if (groqKey) {
-    providers.push({
-      name: "Groq",
-      url: "https://api.groq.com/openai/v1/chat/completions",
-      apiKey: groqKey,
-      model: "llama-3.3-70b-versatile",
-    });
-  }
-
-  const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
-  if (openrouterKey) {
-    providers.push({
-      name: "OpenRouter",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      apiKey: openrouterKey,
-      model: "google/gemini-2.5-flash",
-      headers: { "HTTP-Referer": "https://holynexlabs.com.br", "X-Title": "HolyNex Labs" },
-    });
-  }
-
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (lovableKey) {
-    providers.push({
-      name: "Lovable AI",
-      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
-      apiKey: lovableKey,
-      model: "google/gemini-3-flash-preview",
-    });
-  }
-
-  return providers;
-}
-
-async function callProvider(provider: AIProvider, messages: any[]): Promise<{ content: string; usage?: ProviderUsage }> {
+async function callProvider(
+  provider: { name: string; url: string; apiKey: string; model: string; headers?: Record<string, string> },
+  messages: any[],
+  temperature: number,
+  maxTokens: number
+): Promise<{ content: string; usage?: ProviderUsage }> {
   const response = await fetch(provider.url, {
     method: "POST",
     headers: {
@@ -78,7 +34,7 @@ async function callProvider(provider: AIProvider, messages: any[]): Promise<{ co
       "Content-Type": "application/json",
       ...(provider.headers || {}),
     },
-    body: JSON.stringify({ model: provider.model, messages, temperature: 0.3, max_tokens: 5000 }),
+    body: JSON.stringify({ model: provider.model, messages, temperature, max_tokens: maxTokens }),
   });
 
   if (!response.ok) {
@@ -225,8 +181,18 @@ serve(async (req) => {
     if (createError) throw createError;
     analysisId = createdAnalysis.id;
 
-    const providers = getProviders();
+    const [providerSettings, modelSettings, promptPolicies] = await Promise.all([
+      getAiProviderSettings(),
+      getAiModelSettings(),
+      getPromptPolicies(),
+    ]);
+    const providers = resolveAiProviders(providerSettings, modelSettings, "analisar-orcamento");
     if (providers.length === 0) throw new Error("Nenhum provedor de IA configurado");
+
+    const policy = resolvePromptPolicy(promptPolicies, "analisar-orcamento", {
+      temperature: 0.3,
+      max_tokens: 5000,
+    });
 
     const contextPayload = {
       orcamento: {
@@ -285,7 +251,7 @@ serve(async (req) => {
       const provider = providers[i];
       if (i > 0) fallbackTriggered = true;
       try {
-        const { content, usage } = await callProvider(provider, messages);
+        const { content, usage } = await callProvider(provider, messages, policy.temperature, policy.max_tokens);
         lastRawOutput = content;
         lastUsage = usage;
         const outputData = cleanJson(content);

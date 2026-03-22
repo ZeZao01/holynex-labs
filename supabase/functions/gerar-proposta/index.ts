@@ -1,4 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  getAiModelSettings,
+  getAiProviderSettings,
+  getPromptPolicies,
+  resolveAiProviders,
+  resolvePromptPolicy,
+} from "../_shared/system-settings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,66 +19,12 @@ const PROMPT_VERSION = "v6.0-single-pass";
 // AI PROVIDER CONFIG
 // ═══════════════════════════════════════════════
 
-interface AIProvider {
-  name: string;
-  url: string;
-  apiKey: string;
-  model: string;
-  headers?: Record<string, string>;
-}
-
-function getProviders(): AIProvider[] {
-  const providers: AIProvider[] = [];
-
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (lovableKey) {
-    providers.push({
-      name: "Lovable AI",
-      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
-      apiKey: lovableKey,
-      model: "google/gemini-2.5-flash",
-    });
-  }
-
-  const gensparkKey = Deno.env.get("GENSPARK_API_KEY");
-  if (gensparkKey) {
-    providers.push({
-      name: "Genspark",
-      url: "https://api.genspark.ai/v1/chat/completions",
-      apiKey: gensparkKey,
-      model: "genspark-lite",
-    });
-  }
-
-  const groqKey = Deno.env.get("GROQ_API_KEY");
-  if (groqKey) {
-    providers.push({
-      name: "Groq",
-      url: "https://api.groq.com/openai/v1/chat/completions",
-      apiKey: groqKey,
-      model: "llama-3.3-70b-versatile",
-    });
-  }
-
-  const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
-  if (openrouterKey) {
-    providers.push({
-      name: "OpenRouter",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      apiKey: openrouterKey,
-      model: "google/gemini-2.5-flash",
-      headers: {
-        "HTTP-Referer": "https://holynexlabs.com.br",
-        "X-Title": "HolyNex Labs Proposals",
-      },
-    });
-  }
-
-  return providers;
-}
-
-async function callAI(messages: any[], temp = 0.3): Promise<string> {
-  const providers = getProviders();
+async function callAI(
+  providers: { name: string; url: string; apiKey: string; model: string; headers?: Record<string, string> }[],
+  messages: any[],
+  temperature: number,
+  maxTokens: number
+): Promise<string> {
   if (providers.length === 0) throw new Error("Nenhum provedor de IA configurado.");
 
   for (const provider of providers) {
@@ -89,8 +42,8 @@ async function callAI(messages: any[], temp = 0.3): Promise<string> {
         body: JSON.stringify({
           model: provider.model,
           messages,
-          temperature: temp,
-          max_tokens: 8000,
+          temperature,
+          max_tokens: maxTokens,
         }),
       });
 
@@ -221,7 +174,12 @@ serve(async (req) => {
     const body = await req.json();
     console.log(`[gerar-proposta] Starting single-pass generation for: ${body.nome_cliente || "unknown"}`);
 
-    const providers = getProviders();
+    const [providerSettings, modelSettings, promptPolicies] = await Promise.all([
+      getAiProviderSettings(),
+      getAiModelSettings(),
+      getPromptPolicies(),
+    ]);
+    const providers = resolveAiProviders(providerSettings, modelSettings, "gerar-proposta");
     if (providers.length === 0) {
       return new Response(
         JSON.stringify({ error: "Nenhum provedor de IA configurado." }),
@@ -229,10 +187,15 @@ serve(async (req) => {
       );
     }
 
-    const raw = await callAI([
+    const policy = resolvePromptPolicy(promptPolicies, "gerar-proposta", {
+      temperature: 0.3,
+      max_tokens: 8000,
+    });
+
+    const raw = await callAI(providers, [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: buildUserPrompt(body) },
-    ], 0.3);
+    ], policy.temperature, policy.max_tokens);
 
     const proposta = cleanJson(raw);
     const durationMs = Date.now() - startTime;
