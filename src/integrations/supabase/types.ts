@@ -393,6 +393,7 @@ export type Database = {
           complexidade_estimada: string | null
           criado_em: string
           descricao: string
+          descricao_detalhada: string | null
           dor_principal: string | null
           email: string
           empresa: string | null
@@ -406,6 +407,7 @@ export type Database = {
           numero_usuarios: string | null
           objetivo: string | null
           observacoes_internas: string | null
+          orcamento_estimado: string | null
           origem_lead: string | null
           prazo_desejado: string | null
           precisa_admin: boolean | null
@@ -428,6 +430,7 @@ export type Database = {
           complexidade_estimada?: string | null
           criado_em?: string
           descricao: string
+          descricao_detalhada?: string | null
           dor_principal?: string | null
           email: string
           empresa?: string | null
@@ -441,6 +444,7 @@ export type Database = {
           numero_usuarios?: string | null
           objetivo?: string | null
           observacoes_internas?: string | null
+          orcamento_estimado?: string | null
           origem_lead?: string | null
           prazo_desejado?: string | null
           precisa_admin?: boolean | null
@@ -463,6 +467,7 @@ export type Database = {
           complexidade_estimada?: string | null
           criado_em?: string
           descricao?: string
+          descricao_detalhada?: string | null
           dor_principal?: string | null
           email?: string
           empresa?: string | null
@@ -476,6 +481,7 @@ export type Database = {
           numero_usuarios?: string | null
           objetivo?: string | null
           observacoes_internas?: string | null
+          orcamento_estimado?: string | null
           origem_lead?: string | null
           prazo_desejado?: string | null
           precisa_admin?: boolean | null
@@ -559,6 +565,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "orcamento_analises_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      orcamento_assets: {
+        Row: {
+          created_at: string
+          file_type: string | null
+          file_url: string
+          id: string
+          orcamento_id: string
+          original_name: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          file_type?: string | null
+          file_url: string
+          id?: string
+          orcamento_id: string
+          original_name?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          orcamento_id?: string
+          original_name?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_assets_orcamento_id_fkey"
             columns: ["orcamento_id"]
             isOneToOne: false
             referencedRelation: "orcamentos"
