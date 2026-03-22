@@ -715,6 +715,7 @@ export type Database = {
       }
       portfolio_items: {
         Row: {
+          allow_public_preview: boolean | null
           atualizado_em: string | null
           badges: string[] | null
           category: string | null
@@ -728,6 +729,9 @@ export type Database = {
           delivered_system_id: string | null
           differentials: string[] | null
           display_order: number | null
+          features: string[] | null
+          full_description: string | null
+          gallery_images: string[] | null
           gallery_urls: string[] | null
           highlight_section: string | null
           hover_image_url: string | null
@@ -740,17 +744,25 @@ export type Database = {
           main_modules: string[] | null
           niche: string | null
           objective: string | null
+          open_mode: string | null
+          preview_mode: string | null
           problem_solved: string | null
           public_url: string | null
           short_description: string | null
+          slug: string | null
           solution_type: string | null
+          sort_order: number | null
+          status: string | null
           subtitle: string | null
+          system_url: string | null
           target_audience: string | null
+          tech_stack: string[] | null
           thumbnail_url: string | null
           title: string
           video_url: string | null
         }
         Insert: {
+          allow_public_preview?: boolean | null
           atualizado_em?: string | null
           badges?: string[] | null
           category?: string | null
@@ -764,6 +776,9 @@ export type Database = {
           delivered_system_id?: string | null
           differentials?: string[] | null
           display_order?: number | null
+          features?: string[] | null
+          full_description?: string | null
+          gallery_images?: string[] | null
           gallery_urls?: string[] | null
           highlight_section?: string | null
           hover_image_url?: string | null
@@ -776,17 +791,25 @@ export type Database = {
           main_modules?: string[] | null
           niche?: string | null
           objective?: string | null
+          open_mode?: string | null
+          preview_mode?: string | null
           problem_solved?: string | null
           public_url?: string | null
           short_description?: string | null
+          slug?: string | null
           solution_type?: string | null
+          sort_order?: number | null
+          status?: string | null
           subtitle?: string | null
+          system_url?: string | null
           target_audience?: string | null
+          tech_stack?: string[] | null
           thumbnail_url?: string | null
           title: string
           video_url?: string | null
         }
         Update: {
+          allow_public_preview?: boolean | null
           atualizado_em?: string | null
           badges?: string[] | null
           category?: string | null
@@ -800,6 +823,9 @@ export type Database = {
           delivered_system_id?: string | null
           differentials?: string[] | null
           display_order?: number | null
+          features?: string[] | null
+          full_description?: string | null
+          gallery_images?: string[] | null
           gallery_urls?: string[] | null
           highlight_section?: string | null
           hover_image_url?: string | null
@@ -812,12 +838,19 @@ export type Database = {
           main_modules?: string[] | null
           niche?: string | null
           objective?: string | null
+          open_mode?: string | null
+          preview_mode?: string | null
           problem_solved?: string | null
           public_url?: string | null
           short_description?: string | null
+          slug?: string | null
           solution_type?: string | null
+          sort_order?: number | null
+          status?: string | null
           subtitle?: string | null
+          system_url?: string | null
           target_audience?: string | null
+          tech_stack?: string[] | null
           thumbnail_url?: string | null
           title?: string
           video_url?: string | null
