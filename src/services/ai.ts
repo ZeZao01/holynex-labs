@@ -1,27 +1,31 @@
 /**
  * AI Service — encapsulates AI execution operations.
- * Re-exports from existing libs for backward compatibility.
  */
 
 import { db, unwrap, logDomain } from "@/lib/service-helpers";
 
 const DOMAIN = "ai";
 
-// Re-export
 export {
   type AiUseCase,
   type AiEntityType,
   type AiExecutionStatus,
   type AiExecution,
   getAiExecutions,
-  getAiExecutionsByEntity,
-  updateAiExecution,
-  getAiStats,
+  getExecutionsByEntity,
+  getPendingReviews,
+  reviewExecution,
+  runCopilot,
+  summarizeLead,
+  suggestStrategy,
+  summarizeProposal,
+  summarizeProject,
+  suggestPortfolioCopy,
+  suggestModel,
+  explainFinancials,
+  summarizeMaintenance,
 } from "@/lib/ai-copilot";
 
-/**
- * Count AI executions by status (for dashboard).
- */
 export async function countAiExecutionsByStatus(status: string): Promise<number> {
   logDomain(DOMAIN, "countAiExecutionsByStatus", "info", `status=${status}`);
   const { count, error } = await db
