@@ -3,7 +3,9 @@ import { registerSW } from "virtual:pwa-register";
 import App from "./App.tsx";
 import "./index.css";
 
-// Auto-update service worker
-registerSW({ immediate: true });
+// Register service worker only in production to avoid automatic refresh loops during navigation
+if (import.meta.env.PROD) {
+  registerSW({ immediate: false });
+}
 
 createRoot(document.getElementById("root")!).render(<App />);

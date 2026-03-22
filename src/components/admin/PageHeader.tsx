@@ -7,6 +7,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Link } from "react-router-dom";
 
 interface BreadcrumbItem {
   label: string;
@@ -28,14 +29,18 @@ export default function PageHeader({ title, description, breadcrumbs, actions, c
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/admin/dashboard">Painel</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link to="/admin/dashboard">Painel</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             {breadcrumbs.map((item, i) => (
               <span key={i} className="contents">
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   {item.href ? (
-                    <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                    <BreadcrumbLink asChild>
+                      <Link to={item.href}>{item.label}</Link>
+                    </BreadcrumbLink>
                   ) : (
                     <BreadcrumbPage>{item.label}</BreadcrumbPage>
                   )}

@@ -688,7 +688,7 @@ export default function AdminLeadDetalhe() {
 
           {/* Quick actions */}
           <SectionCard title="Ações Rápidas">
-            <QuickActionsGrid actions={quickActions} />
+            <QuickActionsGrid actions={quickActions} orientation="stack" fullLabels />
           </SectionCard>
         </div>
       </div>

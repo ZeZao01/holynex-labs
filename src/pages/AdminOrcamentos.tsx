@@ -142,7 +142,7 @@ export default function AdminOrcamentos() {
                 <TableHead className="text-xs">Score</TableHead>
                 <TableHead className="text-xs hidden md:table-cell">Temp.</TableHead>
                 <TableHead className="text-xs">Status</TableHead>
-                <TableHead className="text-xs text-right">Ações</TableHead>
+                <TableHead className="text-xs">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -172,16 +172,27 @@ export default function AdminOrcamentos() {
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] ${sc?.color || ""}`}>{sc?.label || "Novo"}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/orcamentos/${orc.id}`)}>
+                    <TableCell>
+                      <div className="flex flex-col items-start gap-1" onClick={e => e.stopPropagation()}>
+                        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1.5" onClick={() => navigate(`/admin/orcamentos/${orc.id}`)}>
                           <Eye className="h-3.5 w-3.5" />
+                          Ver detalhes
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/propostas/nova?orcamento=${orc.id}`)}>
+                        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1.5" onClick={() => navigate(`/admin/propostas/nova?orcamento=${orc.id}`)}>
                           <FileBarChart className="h-3.5 w-3.5" />
+                          Criar proposta
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={async () => { await removerOrcamento(orc.id); refresh(); }}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs gap-1.5 text-destructive hover:text-destructive"
+                          onClick={async () => {
+                            await removerOrcamento(orc.id);
+                            refresh();
+                          }}
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
+                          Excluir lead
                         </Button>
                       </div>
                     </TableCell>
