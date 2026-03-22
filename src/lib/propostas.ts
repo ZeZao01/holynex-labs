@@ -434,6 +434,12 @@ export async function atualizarPropostaArtefatos(
   if (Object.prototype.hasOwnProperty.call(artifacts, "hidden_addons")) {
     payload.hidden_addons = artifacts.hidden_addons;
   }
+  if (Object.prototype.hasOwnProperty.call(artifacts, "portfolio_refs")) {
+    payload.portfolio_refs = artifacts.portfolio_refs;
+  }
+  if (Object.prototype.hasOwnProperty.call(artifacts, "pdf_blueprint")) {
+    payload.pdf_blueprint = artifacts.pdf_blueprint;
+  }
 
   if (typeof aiMetadata !== "undefined") {
     payload.ai_metadata = aiMetadata;
