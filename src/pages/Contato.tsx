@@ -407,8 +407,8 @@ export default function Contato() {
                 <Row label="Email" value={form.email} />
                 {form.empresa && <Row label="Empresa" value={form.empresa} />}
                 <Row label="Descrição" value={form.descricao} />
-                {form.tipo_projeto && <Row label="Tipo" value={form.tipo_projeto} />}
-                {form.nicho && <Row label="Nicho" value={form.nicho} />}
+                {form.tipo_projeto.length > 0 && <Row label="Tipo" value={form.tipo_projeto.join(", ")} />}
+                {form.nicho.length > 0 && <Row label="Nicho" value={form.nicho.join(", ")} />}
                 {form.objetivo && <Row label="Objetivo" value={form.objetivo} />}
                 {form.dor_principal && <Row label="Dor principal" value={form.dor_principal} />}
                 {form.descricao_detalhada && <Row label="Detalhamento" value={form.descricao_detalhada} />}
