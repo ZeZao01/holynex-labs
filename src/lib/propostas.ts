@@ -297,6 +297,8 @@ function parseRow(row: any): Proposta {
   let pricingSheet: any | null = null;
   let documentSpec: any | null = null;
   let hiddenAddons: any[] | null = null;
+  let portfolioRefs: any[] | null = null;
+  let pdfBlueprint: any | null = null;
   let aiMetadata: any | null = null;
   try { tiers = typeof row.proposal_tiers === "string" ? JSON.parse(row.proposal_tiers) : (row.proposal_tiers || []); } catch {}
   try { addons = typeof row.proposal_addons === "string" ? JSON.parse(row.proposal_addons) : (row.proposal_addons || []); } catch {}
@@ -305,6 +307,8 @@ function parseRow(row: any): Proposta {
   try { pricingSheet = typeof row.pricing_sheet === "string" ? JSON.parse(row.pricing_sheet) : (row.pricing_sheet || null); } catch {}
   try { documentSpec = typeof row.document_spec === "string" ? JSON.parse(row.document_spec) : (row.document_spec || null); } catch {}
   try { hiddenAddons = typeof row.hidden_addons === "string" ? JSON.parse(row.hidden_addons) : (row.hidden_addons || null); } catch {}
+  try { portfolioRefs = typeof row.portfolio_refs === "string" ? JSON.parse(row.portfolio_refs) : (row.portfolio_refs || null); } catch {}
+  try { pdfBlueprint = typeof row.pdf_blueprint === "string" ? JSON.parse(row.pdf_blueprint) : (row.pdf_blueprint || null); } catch {}
   try { aiMetadata = typeof row.ai_metadata === "string" ? JSON.parse(row.ai_metadata) : (row.ai_metadata || null); } catch {}
 
   return {
