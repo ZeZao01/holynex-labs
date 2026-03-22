@@ -71,6 +71,43 @@ function SelectChips({ options, value, onChange, className }: { options: readonl
   );
 }
 
+function MultiSelectChips({ options, value, onChange, max = 3, className }: { options: readonly string[]; value: string[]; onChange: (v: string[]) => void; max?: number; className?: string }) {
+  const toggle = (opt: string) => {
+    if (value.includes(opt)) {
+      onChange(value.filter((v) => v !== opt));
+    } else if (value.length < max) {
+      onChange([...value, opt]);
+    }
+  };
+  return (
+    <div className={cn("flex flex-wrap gap-2", className)}>
+      {options.map((opt) => {
+        const selected = value.includes(opt);
+        const disabled = !selected && value.length >= max;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            disabled={disabled}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+              selected
+                ? "bg-primary/20 border-primary/50 text-primary"
+                : disabled
+                  ? "bg-muted/20 border-border/30 text-muted-foreground/40 cursor-not-allowed"
+                  : "bg-muted/30 border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+            )}
+          >
+            {selected && <Check className="inline h-3 w-3 mr-1" />}
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ToggleChip({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
