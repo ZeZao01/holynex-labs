@@ -2,14 +2,23 @@ import { useState, useEffect } from "react";
 import RevealBox from "@/components/RevealBox";
 import PortfolioCard from "@/components/PortfolioCard";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { PortfolioItem, listPortfolioItems, HIGHLIGHT_SECTIONS } from "@/lib/portfolio-items";
 
 export default function Portfolio() {
   const { t } = useLanguage();
   const [items, setItems] = useState<PortfolioItem[]>([]);
-  const [filter, setFilter] = useState("todos");
+  const [categoryFilter, setCategoryFilter] = useState("todos");
+  const [nicheFilter, setNicheFilter] = useState("todos");
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -19,16 +28,48 @@ export default function Portfolio() {
       .catch(() => { setError(true); setLoading(false); });
   }, []);
 
-  const categories = [...new Set(items.map((i) => i.category).filter(Boolean))];
-  const niches = [...new Set(items.map((i) => i.niche).filter(Boolean))];
-  const filterOptions = ["todos", ...categories, ...niches];
+  const categories = [...new Set(items.map((i) => i.category).filter(Boolean))].sort();
+  const niches = [...new Set(items.map((i) => i.niche).filter(Boolean))].sort();
 
-  const filteredItems = filter === "todos" ? items : items.filter((i) => i.category === filter || i.niche === filter);
+  const searchValue = search.trim().toLowerCase();
+  const filteredItems = items.filter((i) => {
+    const matchCategory = categoryFilter === "todos" || i.category === categoryFilter;
+    const matchNiche = nicheFilter === "todos" || i.niche === nicheFilter;
+    const haystack = [
+      i.title,
+      i.short_description,
+      i.full_description,
+      i.category,
+      i.niche,
+      ...(i.features || []),
+      ...(i.tech_stack || []),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const matchSearch = !searchValue || haystack.includes(searchValue);
+    return matchCategory && matchNiche && matchSearch;
+  });
+
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    const featuredDelta = Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured));
+    if (featuredDelta !== 0) return featuredDelta;
+    const aOrder = a.sort_order ?? 9999;
+    const bOrder = b.sort_order ?? 9999;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.title.localeCompare(b.title);
+  });
 
   // Highlight sections
   const highlightedSections = HIGHLIGHT_SECTIONS.filter((s) => items.some((i) => i.highlight_section === s.value && i.is_highlighted));
 
-  const featuredItems = items.filter((i) => i.is_featured);
+  const featuredItems = items.filter((i) => i.is_featured).sort((a, b) => {
+    const aOrder = a.sort_order ?? 9999;
+    const bOrder = b.sort_order ?? 9999;
+    return aOrder - bOrder;
+  });
+
+  const showCurated = categoryFilter === "todos" && nicheFilter === "todos" && searchValue === "";
 
   return (
     <div className="min-h-screen pt-24 sm:pt-28 pb-16 relative z-10">
@@ -57,24 +98,40 @@ export default function Portfolio() {
         ) : (
           <>
             {/* Filters */}
-            {filterOptions.length > 1 && (
-              <RevealBox className="flex flex-wrap justify-center gap-2 mb-10">
-                {filterOptions.map((f) => (
-                  <Button
-                    key={f}
-                    size="sm"
-                    variant={filter === f ? "default" : "outline"}
-                    onClick={() => setFilter(f)}
-                    className="text-xs"
-                  >
-                    {f === "todos" ? "Todos" : f}
-                  </Button>
-                ))}
-              </RevealBox>
-            )}
+            <RevealBox className="mb-10">
+              <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr]">
+                <Input
+                  placeholder="Buscar por nome, categoria ou stack"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as categorias" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas as categorias</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={nicheFilter} onValueChange={setNicheFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os nichos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os nichos</SelectItem>
+                    {niches.map((niche) => (
+                      <SelectItem key={niche} value={niche}>{niche}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </RevealBox>
 
             {/* Featured Section */}
-            {filter === "todos" && featuredItems.length > 0 && (
+            {showCurated && featuredItems.length > 0 && (
               <RevealBox className="mb-12">
                 <h2 className="font-display text-xl sm:text-2xl font-bold mb-6 flex items-center gap-2">
                   <span className="text-primary">⭐</span> Em Destaque
@@ -90,8 +147,10 @@ export default function Portfolio() {
             )}
 
             {/* Highlight Sections */}
-            {filter === "todos" && highlightedSections.map((section) => {
-              const sectionItems = items.filter((i) => i.highlight_section === section.value && i.is_highlighted);
+            {showCurated && highlightedSections.map((section) => {
+              const sectionItems = items
+                .filter((i) => i.highlight_section === section.value && i.is_highlighted)
+                .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
               if (sectionItems.length === 0) return null;
               return (
                 <RevealBox key={section.value} className="mb-12">
@@ -109,16 +168,22 @@ export default function Portfolio() {
 
             {/* All items */}
             <RevealBox>
-              {(filter !== "todos" || (featuredItems.length === 0 && highlightedSections.length === 0)) ? null : (
+              {(showCurated && featuredItems.length > 0) || (showCurated && highlightedSections.length > 0) ? (
                 <h2 className="font-display text-xl sm:text-2xl font-bold mb-6">Todos os Projetos</h2>
+              ) : null}
+              {sortedItems.length === 0 ? (
+                <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+                  Nenhum projeto encontrado com os filtros selecionados.
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {sortedItems.map((item, i) => (
+                    <RevealBox key={item.id} delay={i * 0.06}>
+                      <PortfolioCard item={item} />
+                    </RevealBox>
+                  ))}
+                </div>
               )}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {filteredItems.map((item, i) => (
-                  <RevealBox key={item.id} delay={i * 0.06}>
-                    <PortfolioCard item={item} />
-                  </RevealBox>
-                ))}
-              </div>
             </RevealBox>
 
             {/* CTA Section */}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import RevealBox from "@/components/RevealBox";
+import PortfolioPreview from "@/components/PortfolioPreview";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -57,7 +58,18 @@ export default function PortfolioDetalhe() {
   const fullDescription = item.full_description || item.commercial_description;
   const techStack = item.tech_stack || item.main_modules || [];
   const features = item.features || item.differentials || [];
-  const previewMode = item.preview_mode || "image";
+  const previewModeRaw = item.preview_mode || "image";
+  const previewMode = (previewModeRaw === "image"
+    ? "thumbnail"
+    : previewModeRaw === "iframe"
+      ? "iframe"
+      : previewModeRaw === "mixed"
+        ? "mixed"
+        : previewModeRaw === "image_mockup"
+          ? "image_mockup"
+          : previewModeRaw === "none"
+            ? "none"
+            : "thumbnail") as "thumbnail" | "iframe" | "image_mockup" | "mixed" | "none";
   const systemUrl = item.system_url || item.public_url;
   const canPreview = Boolean(item.allow_public_preview && systemUrl);
   const subtitle = item.short_description || item.subtitle;
@@ -158,6 +170,21 @@ export default function PortfolioDetalhe() {
 
         <Separator className="my-8" />
 
+        {previewMode !== "none" && (
+          <RevealBox delay={0.2} className="mt-2">
+            <h3 className="font-display text-lg font-semibold mb-4">Preview do Sistema</h3>
+            <PortfolioPreview
+              title={item.title}
+              systemUrl={systemUrl}
+              thumbnailUrl={heroImage}
+              gallery={gallery}
+              mode={previewMode}
+              allowPreview={canPreview}
+              onOpenSystem={handleOpenSystem}
+            />
+          </RevealBox>
+        )}
+
         {/* Details grid */}
         <div className="grid md:grid-cols-2 gap-8">
           {item.problem_solved && (
@@ -213,27 +240,6 @@ export default function PortfolioDetalhe() {
           </RevealBox>
         )}
 
-        {canPreview && previewMode !== "none" && (
-          <RevealBox delay={0.32} className="mt-10 space-y-3">
-            <h3 className="font-display text-lg font-semibold">Preview do Sistema</h3>
-            {previewMode === "iframe" ? (
-              <div className="rounded-2xl overflow-hidden border border-border aspect-video bg-muted">
-                <iframe src={systemUrl || ""} className="w-full h-full" title={item.title} loading="lazy" />
-              </div>
-            ) : (
-              <div className="rounded-2xl overflow-hidden border border-border">
-                {heroImage ? (
-                  <img src={heroImage} alt={item.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                    <span className="font-display text-5xl font-bold text-primary/20">{item.title.charAt(0)}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </RevealBox>
-        )}
-
         {/* Final CTA */}
         <RevealBox delay={0.35} className="mt-12">
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-8 text-center space-y-4">
@@ -254,11 +260,15 @@ export default function PortfolioDetalhe() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader><DialogTitle>Preview do Sistema</DialogTitle></DialogHeader>
-          {systemUrl ? (
-            <div className="rounded-xl overflow-hidden border border-border aspect-video bg-muted">
-              <iframe src={systemUrl} className="w-full h-full" title={item.title} loading="lazy" />
-            </div>
-          ) : null}
+          <PortfolioPreview
+            title={item.title}
+            systemUrl={systemUrl}
+            thumbnailUrl={heroImage}
+            gallery={gallery}
+            mode="iframe"
+            allowPreview={canPreview}
+            onOpenSystem={handleOpenSystem}
+          />
         </DialogContent>
       </Dialog>
     </>
