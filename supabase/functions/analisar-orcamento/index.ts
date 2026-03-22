@@ -17,6 +17,12 @@ interface AIProvider {
   headers?: Record<string, string>;
 }
 
+interface ProviderUsage {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+}
+
 function getProviders(): AIProvider[] {
   const providers: AIProvider[] = [];
 
@@ -64,7 +70,7 @@ function getProviders(): AIProvider[] {
   return providers;
 }
 
-async function callProvider(provider: AIProvider, messages: any[]): Promise<string> {
+async function callProvider(provider: AIProvider, messages: any[]): Promise<{ content: string; usage?: ProviderUsage }> {
   const response = await fetch(provider.url, {
     method: "POST",
     headers: {
@@ -83,7 +89,7 @@ async function callProvider(provider: AIProvider, messages: any[]): Promise<stri
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error(`${provider.name}: empty response`);
-  return content;
+  return { content, usage: data.usage };
 }
 
 function cleanJson(content: string): any {
@@ -272,12 +278,16 @@ serve(async (req) => {
     let lastError: Error | null = null;
     let providerUsed = "";
     let modelUsed = "";
+    let lastRawOutput = "";
+    let lastUsage: ProviderUsage | undefined;
 
     for (let i = 0; i < providers.length; i++) {
       const provider = providers[i];
       if (i > 0) fallbackTriggered = true;
       try {
-        const content = await callProvider(provider, messages);
+        const { content, usage } = await callProvider(provider, messages);
+        lastRawOutput = content;
+        lastUsage = usage;
         const outputData = cleanJson(content);
         const durationMs = Date.now() - startTime;
         providerUsed = provider.name;
@@ -288,7 +298,10 @@ serve(async (req) => {
           provider_used: providerUsed,
           model_used: modelUsed,
           output_json: outputData,
+          output_text: content,
           duration_ms: durationMs,
+          tokens_input: usage?.prompt_tokens ?? null,
+          tokens_output: usage?.completion_tokens ?? null,
           fallback_triggered: fallbackTriggered,
           atualizado_em: new Date().toISOString(),
         }).eq("id", analysisId);
@@ -302,12 +315,17 @@ serve(async (req) => {
             prompt_version: PROMPT_VERSION,
             duration_ms: durationMs,
             fallback_triggered: fallbackTriggered,
+            tokens_input: usage?.prompt_tokens ?? null,
+            tokens_output: usage?.completion_tokens ?? null,
           },
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
+        if (err instanceof Error && err.message.includes("empty response")) {
+          lastRawOutput = "";
+        }
         if (err instanceof Error && (err.message.includes("429") || err.message.includes("402"))) {
           break;
         }
@@ -318,6 +336,9 @@ serve(async (req) => {
       status: "falhou",
       error_reason: lastError?.message || "Todos os provedores falharam",
       duration_ms: Date.now() - startTime,
+      output_text: lastRawOutput || null,
+      tokens_input: lastUsage?.prompt_tokens ?? null,
+      tokens_output: lastUsage?.completion_tokens ?? null,
       fallback_triggered: fallbackTriggered,
       atualizado_em: new Date().toISOString(),
     }).eq("id", analysisId);
