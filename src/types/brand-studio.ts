@@ -99,6 +99,52 @@ export interface BrandBriefingExecutionResult extends BrandBriefingAgentRunResul
   brief: BrandBrief;
 }
 
+export type BrandStrategyStatus = "pendente" | "aprovado" | "rejeitado";
+
+export interface BrandStrategyDirection {
+  titulo: string;
+  descricao: string;
+  justificativa_estrategica: string;
+  tom_visual: string;
+  atributos_chave: string[];
+  palavras_chave: string[];
+  aplicacoes: string[];
+  evitar: string[];
+}
+
+export interface BrandStrategyOutputPayload {
+  posicionamento: string;
+  arquetipo: string;
+  atributos: string[];
+  tom_visual: string;
+  direcoes_criativas: BrandStrategyDirection[];
+  evitar: string[];
+  recomendacao_principal: string;
+}
+
+export interface BrandStrategyOutput {
+  id: string;
+  project_id: string;
+  brief_id: string | null;
+  ai_run_id: string | null;
+  status: BrandStrategyStatus;
+  prompt_version: string;
+  provider_used: string | null;
+  model_used: string | null;
+  output_payload: BrandStrategyOutputPayload | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_by: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface BrandStrategyExecutionResult {
+  run: BrandAiRun;
+  output: BrandStrategyOutput;
+  used_fallback: boolean;
+}
+
 export interface BrandTask {
   id: string;
   project_id: string;
