@@ -240,6 +240,75 @@ export interface BrandTypographyExecutionResult {
   used_fallback: boolean;
 }
 
+export type BrandLogoConceptStatus = "pendente" | "aprovado" | "rejeitado";
+export type BrandLogoCriticStatus = "pendente" | "concluido";
+
+export interface BrandLogoConceptItem {
+  titulo: string;
+  racional_estrategico: string;
+  simbolo: string;
+  wordmark: string;
+  prompt_visual: string;
+  negative_guidance: string[];
+}
+
+export interface BrandLogoConceptOutputPayload {
+  conceitos: BrandLogoConceptItem[];
+  recomendacao_principal: string;
+}
+
+export interface BrandLogoCriticOutputPayload {
+  riscos: string[];
+  legibilidade: string;
+  escalabilidade: string;
+  ajustes_recomendados: string[];
+  recomendacao_aprovacao: "aprovar" | "revisar";
+  observacoes?: string[];
+}
+
+export interface BrandLogoConcept {
+  id: string;
+  project_id: string;
+  brief_id: string | null;
+  strategy_id: string | null;
+  palette_id: string | null;
+  typography_id: string | null;
+  ai_run_id: string | null;
+  critic_ai_run_id: string | null;
+  version_id: string | null;
+  version_number: number;
+  status: BrandLogoConceptStatus;
+  prompt_version: string;
+  provider_used: string | null;
+  model_used: string | null;
+  output_payload: BrandLogoConceptOutputPayload | null;
+  selected_concept_index: number | null;
+  selected_concept_title: string | null;
+  critic_status: BrandLogoCriticStatus;
+  critic_prompt_version: string;
+  critic_provider_used: string | null;
+  critic_model_used: string | null;
+  critic_payload: BrandLogoCriticOutputPayload | null;
+  critic_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_by: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface BrandLogoConceptExecutionResult {
+  run: BrandAiRun;
+  output: BrandLogoConcept;
+  used_fallback: boolean;
+}
+
+export interface BrandLogoCriticExecutionResult {
+  run: BrandAiRun;
+  output: BrandLogoConcept;
+  used_fallback: boolean;
+}
+
 export interface BrandTask {
   id: string;
   project_id: string;

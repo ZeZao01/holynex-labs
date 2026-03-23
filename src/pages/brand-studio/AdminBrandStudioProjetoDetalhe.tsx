@@ -42,6 +42,13 @@ import {
   runBrandTypographyAgent,
   updateBrandTypographyStatus,
 } from "@/services/brand-typography";
+import {
+  listBrandLogoConceptsByProject,
+  runBrandLogoConceptAgent,
+  runBrandLogoCriticAgent,
+  updateBrandLogoConceptSelection,
+  updateBrandLogoConceptStatus,
+} from "@/services/brand-logo";
 import { BRAND_PROJECT_STATUS_BADGE } from "@/lib/brand-studio";
 import {
   BRAND_PROJECT_STATUS_LABELS,
@@ -51,6 +58,8 @@ import {
   type BrandColorPaletteOutput,
   type BrandColorToken,
   type BrandDesignAsset,
+  type BrandLogoConcept,
+  type BrandLogoConceptItem,
   type BrandProject,
   type BrandStrategyOutput,
   type BrandTask,
@@ -185,6 +194,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const [strategyOutputs, setStrategyOutputs] = useState<BrandStrategyOutput[]>([]);
   const [colorPalettes, setColorPalettes] = useState<BrandColorPaletteOutput[]>([]);
   const [typographySets, setTypographySets] = useState<BrandTypographySet[]>([]);
+  const [logoConcepts, setLogoConcepts] = useState<BrandLogoConcept[]>([]);
 
   const [form, setForm] = useState<BriefFormState>(emptyFormState);
   const [savingBrief, setSavingBrief] = useState(false);
@@ -192,10 +202,13 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const [runningStrategy, setRunningStrategy] = useState(false);
   const [runningPalette, setRunningPalette] = useState(false);
   const [runningTypography, setRunningTypography] = useState(false);
+  const [runningLogoConcept, setRunningLogoConcept] = useState(false);
+  const [runningLogoCritic, setRunningLogoCritic] = useState(false);
   const [savingLinks, setSavingLinks] = useState(false);
   const [updatingStrategy, setUpdatingStrategy] = useState(false);
   const [updatingPalette, setUpdatingPalette] = useState(false);
   const [updatingTypography, setUpdatingTypography] = useState(false);
+  const [updatingLogoStatus, setUpdatingLogoStatus] = useState(false);
 
   const [urlInput, setUrlInput] = useState("");
   const [noteInput, setNoteInput] = useState("");
@@ -212,6 +225,10 @@ export default function AdminBrandStudioProjetoDetalhe() {
     proposal_id: "",
     project_id: "",
   });
+
+  const [selectedConceptIndex, setSelectedConceptIndex] = useState(0);
+  const [compareConceptA, setCompareConceptA] = useState(0);
+  const [compareConceptB, setCompareConceptB] = useState(1);
 
   const readiness = useMemo(() => {
     const value = Number(activeBrief?.readiness_score || 0);
@@ -231,7 +248,15 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const previousTypography = useMemo(() => typographySets[1] || null, [typographySets]);
   const typographyPayload = latestTypography?.output_payload || null;
 
+  const latestLogoConcept = useMemo(() => logoConcepts[0] || null, [logoConcepts]);
+  const logoPayload = latestLogoConcept?.output_payload || null;
+  const logoItems = (logoPayload?.conceitos || []) as BrandLogoConceptItem[];
+  const selectedConcept = logoItems[selectedConceptIndex] || logoItems[0] || null;
+  const compareLeft = logoItems[compareConceptA] || null;
+  const compareRight = logoItems[compareConceptB] || null;
+
   const canRunVisual = latestStrategy?.status === "aprovado";
+  const canRunLogo = canRunVisual;
 
   const normalizedContextPreview = useMemo(() => {
     if (!activeBrief?.normalized_context) return "";
@@ -302,6 +327,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
         strategyData,
         paletteData,
         typographyData,
+        logoData,
       ] = await Promise.all([
         getBrandProjectById(id),
         getBrandBriefsByProject(id),
@@ -313,6 +339,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
         listBrandStrategyOutputsByProject(id, 5),
         listBrandColorPalettesByProject(id, 5),
         listBrandTypographySetsByProject(id, 5),
+        listBrandLogoConceptsByProject(id, 5),
       ]);
 
       setProject(projectData);
@@ -326,6 +353,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
       setStrategyOutputs(strategyData);
       setColorPalettes(paletteData);
       setTypographySets(typographyData);
+      setLogoConcepts(logoData);
 
       setForm(buildFormState(briefsData[0] || null, projectData?.nome || ""));
       setLinkDraft({
@@ -340,6 +368,17 @@ export default function AdminBrandStudioProjetoDetalhe() {
       setLoading(false);
     }
   }, [id, loadLinkOptions]);
+
+  useEffect(() => {
+    if (!latestLogoConcept?.output_payload?.conceitos?.length) return;
+    const storedIndex = Number(latestLogoConcept.selected_concept_index ?? 0);
+    const safeIndex = Number.isFinite(storedIndex) ? storedIndex : 0;
+    const maxIndex = latestLogoConcept.output_payload.conceitos.length - 1;
+    const clampedIndex = Math.min(Math.max(0, safeIndex), maxIndex);
+    setSelectedConceptIndex(clampedIndex);
+    setCompareConceptA(0);
+    setCompareConceptB(Math.min(1, maxIndex));
+  }, [latestLogoConcept?.id]);
 
   useEffect(() => {
     load();
@@ -699,6 +738,106 @@ export default function AdminBrandStudioProjetoDetalhe() {
       toast.error(err instanceof Error ? err.message : "Falha na execucao do agente tipografico");
     } finally {
       setRunningTypography(false);
+    }
+  };
+
+  const handleRunLogoConceptAgent = async () => {
+    if (!project) return;
+
+    setRunningLogoConcept(true);
+    try {
+      let briefForRun = activeBrief;
+      if (!briefForRun) {
+        briefForRun = await persistBrief();
+      }
+
+      const result = await runBrandLogoConceptAgent({
+        project,
+        brief: briefForRun,
+        references,
+        strategy: latestStrategy,
+        palette: latestPalette,
+        typography: latestTypography,
+      });
+
+      setLogoConcepts((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== result.output.id);
+        return [result.output, ...withoutCurrent];
+      });
+      setAiRuns((prev) => [result.run, ...prev]);
+
+      toast.success(`logo_concept_agent executado${result.used_fallback ? " - fallback local" : ""}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha na execucao do agente de logo");
+    } finally {
+      setRunningLogoConcept(false);
+    }
+  };
+
+  const handleRunLogoCriticAgent = async () => {
+    if (!project || !latestLogoConcept) return;
+
+    setRunningLogoCritic(true);
+    try {
+      let briefForRun = activeBrief;
+      if (!briefForRun) {
+        briefForRun = await persistBrief();
+      }
+
+      const result = await runBrandLogoCriticAgent({
+        project,
+        brief: briefForRun,
+        references,
+        concept: latestLogoConcept,
+        selectedConceptIndex,
+      });
+
+      setLogoConcepts((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== result.output.id);
+        return [result.output, ...withoutCurrent];
+      });
+      setAiRuns((prev) => [result.run, ...prev]);
+
+      toast.success(`logo_critic_agent executado${result.used_fallback ? " - fallback local" : ""}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha na execucao da critica");
+    } finally {
+      setRunningLogoCritic(false);
+    }
+  };
+
+  const handleUpdateLogoStatus = async (status: "aprovado" | "rejeitado") => {
+    if (!latestLogoConcept) return;
+    setUpdatingLogoStatus(true);
+    try {
+      const updated = await updateBrandLogoConceptStatus(latestLogoConcept.id, status);
+      setLogoConcepts((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== updated.id);
+        return [updated, ...withoutCurrent];
+      });
+      toast.success(status === "aprovado" ? "Conceito aprovado" : "Conceito rejeitado");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar status do conceito");
+    } finally {
+      setUpdatingLogoStatus(false);
+    }
+  };
+
+  const handleSelectConcept = async (index: number) => {
+    if (!latestLogoConcept || !logoItems[index]) return;
+    setSelectedConceptIndex(index);
+    try {
+      const updated = await updateBrandLogoConceptSelection({
+        id: latestLogoConcept.id,
+        selected_concept_index: index,
+        selected_concept_title: logoItems[index]?.titulo || null,
+      });
+      setLogoConcepts((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== updated.id);
+        return [updated, ...withoutCurrent];
+      });
+    } catch {
+      // manter selecao local mesmo que falhe no backend
     }
   };
 
@@ -1525,6 +1664,249 @@ export default function AdminBrandStudioProjetoDetalhe() {
             compact
             title="Tipografia nao gerada"
             description="Execute o typography_agent para gerar o conjunto tipografico da marca."
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Logo Lab"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRunLogoConceptAgent}
+              disabled={runningLogoConcept || !canRunLogo}
+            >
+              <Sparkles className="h-3.5 w-3.5 mr-1" />
+              {runningLogoConcept ? "Executando..." : "Gerar conceitos"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRunLogoCriticAgent}
+              disabled={runningLogoCritic || !latestLogoConcept || !selectedConcept || !canRunLogo}
+            >
+              <RefreshCw className="h-3.5 w-3.5 mr-1" />
+              {runningLogoCritic ? "Analisando..." : "Executar logo_critic_agent"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleUpdateLogoStatus("aprovado")}
+              disabled={!latestLogoConcept || updatingLogoStatus || latestLogoConcept.status === "aprovado"}
+            >
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Aprovar
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => handleUpdateLogoStatus("rejeitado")}
+              disabled={!latestLogoConcept || updatingLogoStatus || latestLogoConcept.status === "rejeitado"}
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Rejeitar
+            </Button>
+          </div>
+        }
+      >
+        {latestLogoConcept ? (
+          <div className="space-y-5">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[latestLogoConcept.status]}`}>
+                  {VISUAL_STATUS_LABELS[latestLogoConcept.status]}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Prompt {latestLogoConcept.prompt_version || "brand_logo_concept_v1"} · {latestLogoConcept.provider_used || "-"} · {latestLogoConcept.model_used || "-"}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">Gerado em {fmtDate(latestLogoConcept.criado_em)}</span>
+            </div>
+
+            {!canRunLogo && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                Direcao criativa precisa estar aprovada para gerar e aprovar conceitos de logo.
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium">Conceitos gerados</p>
+              {logoItems.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  {logoItems.map((concept, index) => (
+                    <div
+                      key={`${concept.titulo}-${index}`}
+                      className={`rounded-lg border p-4 space-y-2 ${
+                        selectedConceptIndex === index ? "border-primary/60 bg-primary/5" : "border-border/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{concept.titulo || `Conceito ${index + 1}`}</p>
+                        {logoPayload?.recomendacao_principal === concept.titulo && (
+                          <Badge className="text-[10px]">Recomendado</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{concept.racional_estrategico || "-"}</p>
+                      <div className="text-xs text-muted-foreground">Simbolo</div>
+                      <p className="text-xs">{concept.simbolo || "-"}</p>
+                      <div className="text-xs text-muted-foreground">Wordmark</div>
+                      <p className="text-xs">{concept.wordmark || "-"}</p>
+                      <Button
+                        size="sm"
+                        variant={selectedConceptIndex === index ? "default" : "outline"}
+                        className="w-full"
+                        onClick={() => handleSelectConcept(index)}
+                      >
+                        {selectedConceptIndex === index ? "Selecionado" : "Selecionar para critica"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState compact title="Sem conceitos" description="Execute o logo_concept_agent para gerar conceitos." />
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border/50 p-4 space-y-2">
+                <p className="text-sm font-medium">Prompt visual profissional</p>
+                {selectedConcept ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">{selectedConcept.prompt_visual || "-"}</p>
+                    {selectedConcept.negative_guidance?.length ? (
+                      <div className="text-[11px] text-muted-foreground">
+                        Evitar: {selectedConcept.negative_guidance.join("; ")}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Selecione um conceito para ver o prompt.</p>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border/50 p-4 space-y-2">
+                <p className="text-sm font-medium">Parecer critico</p>
+                {latestLogoConcept.critic_payload ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Recomendacao: {latestLogoConcept.critic_payload.recomendacao_aprovacao === "aprovar" ? "Aprovar" : "Revisar"}
+                    </p>
+                    {latestLogoConcept.critic_payload.riscos?.length ? (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Riscos</p>
+                        <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                          {latestLogoConcept.critic_payload.riscos.map((item, index) => (
+                            <li key={`${item}-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    <div className="text-xs text-muted-foreground">Legibilidade</div>
+                    <p className="text-xs">{latestLogoConcept.critic_payload.legibilidade || "-"}</p>
+                    <div className="text-xs text-muted-foreground">Escalabilidade</div>
+                    <p className="text-xs">{latestLogoConcept.critic_payload.escalabilidade || "-"}</p>
+                    {latestLogoConcept.critic_payload.ajustes_recomendados?.length ? (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Ajustes recomendados</p>
+                        <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                          {latestLogoConcept.critic_payload.ajustes_recomendados.map((item, index) => (
+                            <li key={`${item}-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {latestLogoConcept.critic_payload.observacoes?.length ? (
+                      <div className="text-[11px] text-muted-foreground">
+                        Observacoes: {latestLogoConcept.critic_payload.observacoes.join("; ")}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Execute o logo_critic_agent para gerar o parecer.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border/50 p-4 space-y-3">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+                <p className="text-sm font-medium">Comparacao lado a lado</p>
+                {logoItems.length > 1 && (
+                  <div className="flex flex-wrap gap-2">
+                    <Select value={String(compareConceptA)} onValueChange={(value) => setCompareConceptA(Number(value))}>
+                      <SelectTrigger className="h-8 w-[150px]">
+                        <SelectValue placeholder="Conceito A" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {logoItems.map((concept, index) => (
+                          <SelectItem key={`logo-a-${index}`} value={String(index)}>
+                            {concept.titulo || `Conceito ${index + 1}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={String(compareConceptB)} onValueChange={(value) => setCompareConceptB(Number(value))}>
+                      <SelectTrigger className="h-8 w-[150px]">
+                        <SelectValue placeholder="Conceito B" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {logoItems.map((concept, index) => (
+                          <SelectItem key={`logo-b-${index}`} value={String(index)}>
+                            {concept.titulo || `Conceito ${index + 1}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {compareLeft && compareRight ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {[compareLeft, compareRight].map((concept, index) => (
+                    <div key={`${concept.titulo}-${index}`} className="rounded-md border border-border/40 p-3 space-y-2">
+                      <p className="text-sm font-medium">{concept.titulo || `Conceito ${index + 1}`}</p>
+                      <p className="text-xs text-muted-foreground">{concept.racional_estrategico || "-"}</p>
+                      <p className="text-xs text-muted-foreground">Simbolo: {concept.simbolo || "-"}</p>
+                      <p className="text-xs text-muted-foreground">Wordmark: {concept.wordmark || "-"}</p>
+                      <p className="text-[11px] text-muted-foreground">Prompt: {concept.prompt_visual || "-"}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Gere pelo menos dois conceitos para comparar.</p>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-border/50 p-4 space-y-3">
+              <p className="text-sm font-medium">Historico de versoes</p>
+              {logoConcepts.length > 0 ? (
+                <div className="space-y-2">
+                  {logoConcepts.map((concept) => (
+                    <div key={concept.id} className="rounded-md border border-border/40 p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground">v{concept.version_number || "-"}</p>
+                        <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[concept.status]}`}>
+                          {VISUAL_STATUS_LABELS[concept.status]}
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">Gerado em {fmtDate(concept.criado_em)}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Critica: {concept.critic_status === "concluido" ? "Concluida" : "Pendente"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState compact title="Sem historico" description="Nenhuma versao de conceito registrada." />
+              )}
+            </div>
+          </div>
+        ) : (
+          <EmptyState
+            compact
+            title="Logo nao gerado"
+            description="Execute o logo_concept_agent para iniciar o Logo Lab."
           />
         )}
       </SectionCard>
