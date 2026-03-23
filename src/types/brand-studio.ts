@@ -145,6 +145,101 @@ export interface BrandStrategyExecutionResult {
   used_fallback: boolean;
 }
 
+export type BrandColorPaletteStatus = "pendente" | "aprovado" | "rejeitado";
+
+export interface BrandColorToken {
+  nome: string;
+  hex: string;
+  role?: string;
+  usage?: string;
+}
+
+export interface BrandColorPaletteOutputPayload {
+  paleta_principal: BrandColorToken[];
+  paleta_secundaria: BrandColorToken[];
+  neutros: BrandColorToken[];
+  destaque: BrandColorToken;
+  rationale: string;
+  acessibilidade: {
+    notas: string;
+    contrastes_recomendados: string[];
+    evitar: string[];
+  };
+}
+
+export interface BrandColorPaletteOutput {
+  id: string;
+  project_id: string;
+  brief_id: string | null;
+  strategy_id: string | null;
+  ai_run_id: string | null;
+  version_id: string | null;
+  version_number: number;
+  status: BrandColorPaletteStatus;
+  prompt_version: string;
+  provider_used: string | null;
+  model_used: string | null;
+  output_payload: BrandColorPaletteOutputPayload | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_by: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface BrandColorPaletteExecutionResult {
+  run: BrandAiRun;
+  output: BrandColorPaletteOutput;
+  used_fallback: boolean;
+}
+
+export type BrandTypographyStatus = "pendente" | "aprovado" | "rejeitado";
+
+export interface BrandTypographyFont {
+  nome: string;
+  categoria: string;
+  usos: string[];
+}
+
+export interface BrandTypographyWeight {
+  fonte: string;
+  pesos: string[];
+}
+
+export interface BrandTypographyOutputPayload {
+  fontes_sugeridas: BrandTypographyFont[];
+  pesos: BrandTypographyWeight[];
+  fallback: string[];
+  regras_uso: string[];
+  regras_evitar: string[];
+}
+
+export interface BrandTypographySet {
+  id: string;
+  project_id: string;
+  brief_id: string | null;
+  strategy_id: string | null;
+  ai_run_id: string | null;
+  version_id: string | null;
+  version_number: number;
+  status: BrandTypographyStatus;
+  prompt_version: string;
+  provider_used: string | null;
+  model_used: string | null;
+  output_payload: BrandTypographyOutputPayload | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_by: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface BrandTypographyExecutionResult {
+  run: BrandAiRun;
+  output: BrandTypographySet;
+  used_fallback: boolean;
+}
+
 export interface BrandTask {
   id: string;
   project_id: string;

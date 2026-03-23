@@ -57,6 +57,20 @@ export {
 } from "@/services/brand-strategy";
 
 export {
+  listBrandColorPalettesByProject,
+  getLatestBrandColorPalette,
+  updateBrandColorPaletteStatus,
+  runBrandColorPaletteAgent,
+} from "@/services/brand-palettes";
+
+export {
+  listBrandTypographySetsByProject,
+  getLatestBrandTypographySet,
+  updateBrandTypographyStatus,
+  runBrandTypographyAgent,
+} from "@/services/brand-typography";
+
+export {
   listBrandVersionsByProject,
   listBrandPresentations,
   registerBrandPresentation,

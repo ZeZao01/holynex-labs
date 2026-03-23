@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Link2, Save, Sparkles, Trash2, Upload } from "lucide-react";
+import { Check, Link2, Palette, RefreshCw, Save, Sparkles, Trash2, Type, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,15 +27,34 @@ import {
   runBrandBriefingAgent,
   uploadBrandBriefReferenceImage,
 } from "@/services/brand-briefing";
+import {
+  listBrandStrategyOutputsByProject,
+  runBrandStrategyAgent,
+  updateBrandStrategyStatus,
+} from "@/services/brand-strategy";
+import {
+  listBrandColorPalettesByProject,
+  runBrandColorPaletteAgent,
+  updateBrandColorPaletteStatus,
+} from "@/services/brand-palettes";
+import {
+  listBrandTypographySetsByProject,
+  runBrandTypographyAgent,
+  updateBrandTypographyStatus,
+} from "@/services/brand-typography";
 import { BRAND_PROJECT_STATUS_BADGE } from "@/lib/brand-studio";
 import {
   BRAND_PROJECT_STATUS_LABELS,
   type BrandAiRun,
   type BrandBrief,
   type BrandBriefReference,
+  type BrandColorPaletteOutput,
+  type BrandColorToken,
   type BrandDesignAsset,
   type BrandProject,
+  type BrandStrategyOutput,
   type BrandTask,
+  type BrandTypographySet,
   type BrandVersion,
 } from "@/types/brand-studio";
 
@@ -127,6 +146,30 @@ const fmtDate = (value: string | null | undefined) => {
   });
 };
 
+const STRATEGY_STATUS_LABELS = {
+  pendente: "Pendente",
+  aprovado: "Aprovado",
+  rejeitado: "Rejeitado",
+} as const;
+
+const STRATEGY_STATUS_BADGE = {
+  pendente: "bg-amber-500/15 text-amber-400",
+  aprovado: "bg-emerald-500/15 text-emerald-400",
+  rejeitado: "bg-rose-500/15 text-rose-400",
+} as const;
+
+const VISUAL_STATUS_LABELS = {
+  pendente: "Pendente",
+  aprovado: "Aprovado",
+  rejeitado: "Revisar",
+} as const;
+
+const VISUAL_STATUS_BADGE = {
+  pendente: "bg-amber-500/15 text-amber-400",
+  aprovado: "bg-emerald-500/15 text-emerald-400",
+  rejeitado: "bg-rose-500/15 text-rose-400",
+} as const;
+
 export default function AdminBrandStudioProjetoDetalhe() {
   const { id } = useParams<{ id: string }>();
 
@@ -139,11 +182,20 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const [assets, setAssets] = useState<BrandDesignAsset[]>([]);
   const [references, setReferences] = useState<BrandBriefReference[]>([]);
   const [aiRuns, setAiRuns] = useState<BrandAiRun[]>([]);
+  const [strategyOutputs, setStrategyOutputs] = useState<BrandStrategyOutput[]>([]);
+  const [colorPalettes, setColorPalettes] = useState<BrandColorPaletteOutput[]>([]);
+  const [typographySets, setTypographySets] = useState<BrandTypographySet[]>([]);
 
   const [form, setForm] = useState<BriefFormState>(emptyFormState);
   const [savingBrief, setSavingBrief] = useState(false);
   const [runningAgent, setRunningAgent] = useState(false);
+  const [runningStrategy, setRunningStrategy] = useState(false);
+  const [runningPalette, setRunningPalette] = useState(false);
+  const [runningTypography, setRunningTypography] = useState(false);
   const [savingLinks, setSavingLinks] = useState(false);
+  const [updatingStrategy, setUpdatingStrategy] = useState(false);
+  const [updatingPalette, setUpdatingPalette] = useState(false);
+  const [updatingTypography, setUpdatingTypography] = useState(false);
 
   const [urlInput, setUrlInput] = useState("");
   const [noteInput, setNoteInput] = useState("");
@@ -166,6 +218,20 @@ export default function AdminBrandStudioProjetoDetalhe() {
     if (Number.isNaN(value)) return 0;
     return Math.max(0, Math.min(100, value));
   }, [activeBrief?.readiness_score]);
+
+  const latestStrategy = useMemo(() => strategyOutputs[0] || null, [strategyOutputs]);
+  const strategyPayload = latestStrategy?.output_payload || null;
+  const strategyDirections = strategyPayload?.direcoes_criativas || [];
+
+  const latestPalette = useMemo(() => colorPalettes[0] || null, [colorPalettes]);
+  const previousPalette = useMemo(() => colorPalettes[1] || null, [colorPalettes]);
+  const palettePayload = latestPalette?.output_payload || null;
+
+  const latestTypography = useMemo(() => typographySets[0] || null, [typographySets]);
+  const previousTypography = useMemo(() => typographySets[1] || null, [typographySets]);
+  const typographyPayload = latestTypography?.output_payload || null;
+
+  const canRunVisual = latestStrategy?.status === "aprovado";
 
   const normalizedContextPreview = useMemo(() => {
     if (!activeBrief?.normalized_context) return "";
@@ -225,7 +291,18 @@ export default function AdminBrandStudioProjetoDetalhe() {
     setLoading(true);
 
     try {
-      const [projectData, briefsData, tasksData, versionsData, assetsData, referencesData, aiRunsData] = await Promise.all([
+      const [
+        projectData,
+        briefsData,
+        tasksData,
+        versionsData,
+        assetsData,
+        referencesData,
+        aiRunsData,
+        strategyData,
+        paletteData,
+        typographyData,
+      ] = await Promise.all([
         getBrandProjectById(id),
         getBrandBriefsByProject(id),
         getBrandTasksByProject(id),
@@ -233,6 +310,9 @@ export default function AdminBrandStudioProjetoDetalhe() {
         getBrandAssetsByProject(id),
         listBrandBriefReferencesByProject(id),
         getBrandAiRunsByProject(id, 20),
+        listBrandStrategyOutputsByProject(id, 5),
+        listBrandColorPalettesByProject(id, 5),
+        listBrandTypographySetsByProject(id, 5),
       ]);
 
       setProject(projectData);
@@ -243,6 +323,9 @@ export default function AdminBrandStudioProjetoDetalhe() {
       setAssets(assetsData);
       setReferences(referencesData);
       setAiRuns(aiRunsData);
+      setStrategyOutputs(strategyData);
+      setColorPalettes(paletteData);
+      setTypographySets(typographyData);
 
       setForm(buildFormState(briefsData[0] || null, projectData?.nome || ""));
       setLinkDraft({
@@ -493,6 +576,170 @@ export default function AdminBrandStudioProjetoDetalhe() {
     }
   };
 
+  const handleRunStrategyAgent = async () => {
+    if (!project) return;
+
+    setRunningStrategy(true);
+    try {
+      let briefForRun = activeBrief;
+      if (!briefForRun) {
+        briefForRun = await persistBrief();
+      }
+
+      const result = await runBrandStrategyAgent({
+        project,
+        brief: briefForRun,
+        references,
+      });
+
+      setStrategyOutputs((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== result.output.id);
+        return [result.output, ...withoutCurrent];
+      });
+      setAiRuns((prev) => [result.run, ...prev]);
+
+      toast.success(`brand_strategy_agent executado${result.used_fallback ? " - fallback local" : ""}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha na execucao do agente");
+    } finally {
+      setRunningStrategy(false);
+    }
+  };
+
+  const handleUpdateStrategyStatus = async (status: "aprovado" | "rejeitado") => {
+    if (!latestStrategy) return;
+    setUpdatingStrategy(true);
+    try {
+      const updated = await updateBrandStrategyStatus(latestStrategy.id, status);
+      setStrategyOutputs((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== updated.id);
+        return [updated, ...withoutCurrent];
+      });
+      toast.success(status === "aprovado" ? "Direcao aprovada" : "Direcao rejeitada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar status");
+    } finally {
+      setUpdatingStrategy(false);
+    }
+  };
+
+  const handleRunPaletteAgent = async () => {
+    if (!project) return;
+
+    setRunningPalette(true);
+    try {
+      let briefForRun = activeBrief;
+      if (!briefForRun) {
+        briefForRun = await persistBrief();
+      }
+
+      const result = await runBrandColorPaletteAgent({
+        project,
+        brief: briefForRun,
+        references,
+        strategy: latestStrategy,
+      });
+
+      setColorPalettes((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== result.output.id);
+        return [result.output, ...withoutCurrent];
+      });
+      setAiRuns((prev) => [result.run, ...prev]);
+
+      toast.success(`color_palette_agent executado${result.used_fallback ? " - fallback local" : ""}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha na execucao do agente de paleta");
+    } finally {
+      setRunningPalette(false);
+    }
+  };
+
+  const handleUpdatePaletteStatus = async (status: "aprovado" | "rejeitado") => {
+    if (!latestPalette) return;
+    setUpdatingPalette(true);
+    try {
+      const updated = await updateBrandColorPaletteStatus(latestPalette.id, status);
+      setColorPalettes((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== updated.id);
+        return [updated, ...withoutCurrent];
+      });
+      toast.success(status === "aprovado" ? "Paleta aprovada" : "Paleta marcada para revisao");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar status da paleta");
+    } finally {
+      setUpdatingPalette(false);
+    }
+  };
+
+  const handleRunTypographyAgent = async () => {
+    if (!project) return;
+
+    setRunningTypography(true);
+    try {
+      let briefForRun = activeBrief;
+      if (!briefForRun) {
+        briefForRun = await persistBrief();
+      }
+
+      const result = await runBrandTypographyAgent({
+        project,
+        brief: briefForRun,
+        references,
+        strategy: latestStrategy,
+      });
+
+      setTypographySets((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== result.output.id);
+        return [result.output, ...withoutCurrent];
+      });
+      setAiRuns((prev) => [result.run, ...prev]);
+
+      toast.success(`typography_agent executado${result.used_fallback ? " - fallback local" : ""}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha na execucao do agente tipografico");
+    } finally {
+      setRunningTypography(false);
+    }
+  };
+
+  const handleUpdateTypographyStatus = async (status: "aprovado" | "rejeitado") => {
+    if (!latestTypography) return;
+    setUpdatingTypography(true);
+    try {
+      const updated = await updateBrandTypographyStatus(latestTypography.id, status);
+      setTypographySets((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== updated.id);
+        return [updated, ...withoutCurrent];
+      });
+      toast.success(status === "aprovado" ? "Tipografia aprovada" : "Tipografia marcada para revisao");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar status da tipografia");
+    } finally {
+      setUpdatingTypography(false);
+    }
+  };
+
+  const renderSwatchGrid = (items: BrandColorToken[]) => (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {items.map((item, index) => (
+        <div key={`${item.nome}-${item.hex}-${index}`} className="rounded-md border border-border/40 overflow-hidden">
+          <div className="h-10" style={{ backgroundColor: item.hex }} />
+          <div className="p-2 space-y-0.5">
+            <div className="text-[11px] font-medium">{item.nome}</div>
+            <div className="text-[10px] text-muted-foreground">{item.hex}</div>
+            {item.role ? <div className="text-[10px] text-muted-foreground">{item.role}</div> : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const compactPalettePreview = (payload?: { paleta_principal: BrandColorToken[]; paleta_secundaria: BrandColorToken[]; neutros: BrandColorToken[]; destaque: BrandColorToken }) => {
+    if (!payload) return [] as BrandColorToken[];
+    const merged = [...payload.paleta_principal, ...payload.paleta_secundaria, ...payload.neutros, payload.destaque];
+    return merged.filter(Boolean).slice(0, 8);
+  };
+
   if (!id) {
     return (
       <SectionCard>
@@ -522,7 +769,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
       />
 
       <SectionCard title="Resumo do projeto">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 text-sm">
           <div className="rounded-lg border border-border/50 p-3">
             <div className="text-xs text-muted-foreground mb-1">Status</div>
             <Badge className={`text-[10px] ${BRAND_PROJECT_STATUS_BADGE[project.status]}`}>
@@ -540,6 +787,12 @@ export default function AdminBrandStudioProjetoDetalhe() {
           <div className="rounded-lg border border-border/50 p-3">
             <div className="text-xs text-muted-foreground mb-1">Referencias</div>
             <div className="font-medium">{references.length}</div>
+          </div>
+          <div className="rounded-lg border border-border/50 p-3">
+            <div className="text-xs text-muted-foreground mb-1">Direcao criativa</div>
+            <div className="font-medium">
+              {latestStrategy ? STRATEGY_STATUS_LABELS[latestStrategy.status] : "Nao gerada"}
+            </div>
           </div>
           <div className="rounded-lg border border-border/50 p-3">
             <div className="text-xs text-muted-foreground mb-1">Runs IA</div>
@@ -874,6 +1127,476 @@ export default function AdminBrandStudioProjetoDetalhe() {
           <div className="rounded-lg border border-border/50 p-3 text-xs text-muted-foreground">
             Ultima normalizacao: {fmtDate(activeBrief?.normalized_at)}
             {activeBrief?.gap_summary ? ` - ${activeBrief.gap_summary}` : ""}
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Direcao estrategica e criativa"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleRunStrategyAgent} disabled={runningStrategy}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1" />
+              {runningStrategy ? "Executando..." : "Executar brand_strategy_agent"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleUpdateStrategyStatus("aprovado")}
+              disabled={!latestStrategy || updatingStrategy || latestStrategy.status === "aprovado"}
+            >
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Aprovar
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => handleUpdateStrategyStatus("rejeitado")}
+              disabled={!latestStrategy || updatingStrategy || latestStrategy.status === "rejeitado"}
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Rejeitar
+            </Button>
+          </div>
+        }
+      >
+        {latestStrategy ? (
+          <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={`text-[10px] ${STRATEGY_STATUS_BADGE[latestStrategy.status]}`}>
+                  {STRATEGY_STATUS_LABELS[latestStrategy.status]}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Prompt {latestStrategy.prompt_version || "brand_strategy_v1"} · {latestStrategy.provider_used || "-"} · {latestStrategy.model_used || "-"}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">Gerado em {fmtDate(latestStrategy.criado_em)}</span>
+            </div>
+
+            {latestStrategy.status !== "aprovado" && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                Direcao criativa precisa ser aprovada antes de seguir para paleta, tipografia e logo.
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Posicionamento</p>
+                <p className="text-sm">{strategyPayload?.posicionamento || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Arquetipo</p>
+                <p className="text-sm">{strategyPayload?.arquetipo || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Atributos-chave</p>
+                {strategyPayload?.atributos?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {strategyPayload.atributos.map((item) => (
+                      <Badge key={item} variant="secondary" className="text-[10px]">
+                        {item}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">-</p>
+                )}
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Tom visual</p>
+                <p className="text-sm">{strategyPayload?.tom_visual || "-"}</p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border/50 p-3 space-y-1">
+              <p className="text-xs text-muted-foreground">Recomendacao principal</p>
+              <p className="text-sm font-medium">{strategyPayload?.recomendacao_principal || "-"}</p>
+            </div>
+
+            <div className="rounded-lg border border-border/50 p-3 space-y-2">
+              <p className="text-xs text-muted-foreground">Lista do que evitar</p>
+              {strategyPayload?.evitar?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {strategyPayload.evitar.map((item) => (
+                    <Badge key={item} variant="outline" className="text-[10px]">
+                      {item}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">-</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Direcoes criativas</p>
+              {strategyDirections.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  {strategyDirections.map((direction, index) => (
+                    <div key={`${direction.titulo || "direcao"}-${index}`} className="rounded-lg border border-border/50 p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{direction.titulo || `Direcao ${index + 1}`}</p>
+                        {strategyPayload?.recomendacao_principal === direction.titulo && (
+                          <Badge className="text-[10px]">Recomendado</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{direction.descricao || "-"}</p>
+                      <div className="text-xs text-muted-foreground">Justificativa estrategica</div>
+                      <p className="text-xs">{direction.justificativa_estrategica || "-"}</p>
+                      <div className="text-xs text-muted-foreground">Tom visual</div>
+                      <p className="text-xs">{direction.tom_visual || "-"}</p>
+                      {direction.atributos_chave?.length ? (
+                        <div className="flex flex-wrap gap-1">
+                          {direction.atributos_chave.map((item) => (
+                            <Badge key={item} variant="secondary" className="text-[10px]">
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
+                      {direction.palavras_chave?.length ? (
+                        <p className="text-[11px] text-muted-foreground">Palavras-chave: {direction.palavras_chave.join(", ")}</p>
+                      ) : null}
+                      {direction.aplicacoes?.length ? (
+                        <p className="text-[11px] text-muted-foreground">Aplicacoes: {direction.aplicacoes.join(", ")}</p>
+                      ) : null}
+                      {direction.evitar?.length ? (
+                        <p className="text-[11px] text-muted-foreground">Evitar: {direction.evitar.join(", ")}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState compact title="Sem direcoes" description="Execute o brand_strategy_agent para gerar direcoes criativas." />
+              )}
+            </div>
+          </div>
+        ) : (
+          <EmptyState
+            compact
+            title="Direcao nao gerada"
+            description="Execute o brand_strategy_agent para transformar o briefing em direcao estrategica."
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Paleta de cores"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRunPaletteAgent}
+              disabled={runningPalette || !canRunVisual}
+            >
+              <Palette className="h-3.5 w-3.5 mr-1" />
+              {runningPalette ? "Executando..." : "Executar color_palette_agent"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleUpdatePaletteStatus("aprovado")}
+              disabled={!latestPalette || updatingPalette || latestPalette.status === "aprovado"}
+            >
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Aprovar
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => handleUpdatePaletteStatus("rejeitado")}
+              disabled={!latestPalette || updatingPalette || latestPalette.status === "rejeitado"}
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Revisar
+            </Button>
+          </div>
+        }
+      >
+        {latestPalette ? (
+          <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[latestPalette.status]}`}>
+                  {VISUAL_STATUS_LABELS[latestPalette.status]}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Prompt {latestPalette.prompt_version || "brand_palette_v1"} · {latestPalette.provider_used || "-"} · {latestPalette.model_used || "-"}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">Gerado em {fmtDate(latestPalette.criado_em)}</span>
+            </div>
+
+            {!canRunVisual && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                Direcao criativa precisa estar aprovada para gerar e aprovar a paleta.
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Paleta principal</p>
+                {palettePayload?.paleta_principal?.length ? (
+                  renderSwatchGrid(palettePayload.paleta_principal)
+                ) : (
+                  <p className="text-xs text-muted-foreground">-</p>
+                )}
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Paleta secundaria</p>
+                {palettePayload?.paleta_secundaria?.length ? (
+                  renderSwatchGrid(palettePayload.paleta_secundaria)
+                ) : (
+                  <p className="text-xs text-muted-foreground">-</p>
+                )}
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Neutros</p>
+                {palettePayload?.neutros?.length ? renderSwatchGrid(palettePayload.neutros) : <p className="text-xs text-muted-foreground">-</p>}
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Cor de destaque</p>
+                {palettePayload?.destaque ? renderSwatchGrid([palettePayload.destaque]) : <p className="text-xs text-muted-foreground">-</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Rationale</p>
+                <p className="text-sm">{palettePayload?.rationale || "-"}</p>
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Notas de acessibilidade</p>
+                <p className="text-xs">{palettePayload?.acessibilidade?.notas || "-"}</p>
+                {palettePayload?.acessibilidade?.contrastes_recomendados?.length ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Contrastes recomendados: {palettePayload.acessibilidade.contrastes_recomendados.join("; ")}
+                  </p>
+                ) : null}
+                {palettePayload?.acessibilidade?.evitar?.length ? (
+                  <p className="text-[11px] text-muted-foreground">Evitar: {palettePayload.acessibilidade.evitar.join("; ")}</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <EmptyState
+            compact
+            title="Paleta nao gerada"
+            description="Execute o color_palette_agent para gerar a paleta base da marca."
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Tipografia"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRunTypographyAgent}
+              disabled={runningTypography || !canRunVisual}
+            >
+              <Type className="h-3.5 w-3.5 mr-1" />
+              {runningTypography ? "Executando..." : "Executar typography_agent"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleUpdateTypographyStatus("aprovado")}
+              disabled={!latestTypography || updatingTypography || latestTypography.status === "aprovado"}
+            >
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Aprovar
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => handleUpdateTypographyStatus("rejeitado")}
+              disabled={!latestTypography || updatingTypography || latestTypography.status === "rejeitado"}
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Revisar
+            </Button>
+          </div>
+        }
+      >
+        {latestTypography ? (
+          <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[latestTypography.status]}`}>
+                  {VISUAL_STATUS_LABELS[latestTypography.status]}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Prompt {latestTypography.prompt_version || "brand_typography_v1"} · {latestTypography.provider_used || "-"} · {latestTypography.model_used || "-"}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">Gerado em {fmtDate(latestTypography.criado_em)}</span>
+            </div>
+
+            {!canRunVisual && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                Direcao criativa precisa estar aprovada para gerar e aprovar a tipografia.
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border/50 p-3 space-y-3">
+                <p className="text-xs text-muted-foreground">Fontes sugeridas</p>
+                {typographyPayload?.fontes_sugeridas?.length ? (
+                  <div className="space-y-3">
+                    {typographyPayload.fontes_sugeridas.map((font) => (
+                      <div key={font.nome} className="rounded-md border border-border/40 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">{font.nome}</p>
+                          <Badge variant="outline" className="text-[10px]">
+                            {font.categoria}
+                          </Badge>
+                        </div>
+                        {font.usos?.length ? (
+                          <p className="text-xs text-muted-foreground">Usos: {font.usos.join(", ")}</p>
+                        ) : null}
+                        <div
+                          className="rounded-md border border-border/40 px-3 py-2 text-sm"
+                          style={{
+                            fontFamily: `${font.nome}, ${(typographyPayload.fallback || ["system-ui"]).join(", ")}`,
+                          }}
+                        >
+                          Aa Bb 123456 · Exemplo tipografico
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">-</p>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border/50 p-3 space-y-3">
+                <p className="text-xs text-muted-foreground">Pesos e fallback</p>
+                {typographyPayload?.pesos?.length ? (
+                  <div className="space-y-2">
+                    {typographyPayload.pesos.map((peso) => (
+                      <div key={peso.fonte} className="rounded-md border border-border/40 p-2">
+                        <p className="text-xs font-medium">{peso.fonte}</p>
+                        <p className="text-[11px] text-muted-foreground">{peso.pesos.join(" · ")}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">-</p>
+                )}
+                {typographyPayload?.fallback?.length ? (
+                  <p className="text-[11px] text-muted-foreground">Fallback: {typographyPayload.fallback.join(", ")}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Regras de uso</p>
+                {typographyPayload?.regras_uso?.length ? (
+                  <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                    {typographyPayload.regras_uso.map((item, index) => (
+                      <li key={`${item}-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">-</p>
+                )}
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Regras de evitar</p>
+                {typographyPayload?.regras_evitar?.length ? (
+                  <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                    {typographyPayload.regras_evitar.map((item, index) => (
+                      <li key={`${item}-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">-</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <EmptyState
+            compact
+            title="Tipografia nao gerada"
+            description="Execute o typography_agent para gerar o conjunto tipografico da marca."
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard title="Comparativo de versoes">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-lg border border-border/50 p-3 space-y-3">
+            <p className="text-sm font-medium">Paleta</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-md border border-border/40 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Atual</p>
+                {latestPalette?.output_payload ? (
+                  <div className="flex flex-wrap gap-1">
+                    {compactPalettePreview(latestPalette.output_payload).map((item) => (
+                      <span key={`${item.nome}-${item.hex}`} className="h-6 w-6 rounded border" style={{ backgroundColor: item.hex }} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Sem dados</p>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  v{latestPalette?.version_number || "-"} · {latestPalette ? VISUAL_STATUS_LABELS[latestPalette.status] : "-"}
+                </p>
+              </div>
+              <div className="rounded-md border border-border/40 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Anterior</p>
+                {previousPalette?.output_payload ? (
+                  <div className="flex flex-wrap gap-1">
+                    {compactPalettePreview(previousPalette.output_payload).map((item) => (
+                      <span key={`${item.nome}-${item.hex}`} className="h-6 w-6 rounded border" style={{ backgroundColor: item.hex }} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Sem versao anterior</p>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  v{previousPalette?.version_number || "-"} · {previousPalette ? VISUAL_STATUS_LABELS[previousPalette.status] : "-"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border/50 p-3 space-y-3">
+            <p className="text-sm font-medium">Tipografia</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-md border border-border/40 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Atual</p>
+                {latestTypography?.output_payload?.fontes_sugeridas?.length ? (
+                  <div className="text-xs text-muted-foreground">
+                    {latestTypography.output_payload.fontes_sugeridas.map((font) => font.nome).join(" · ")}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Sem dados</p>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  v{latestTypography?.version_number || "-"} · {latestTypography ? VISUAL_STATUS_LABELS[latestTypography.status] : "-"}
+                </p>
+              </div>
+              <div className="rounded-md border border-border/40 p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Anterior</p>
+                {previousTypography?.output_payload?.fontes_sugeridas?.length ? (
+                  <div className="text-xs text-muted-foreground">
+                    {previousTypography.output_payload.fontes_sugeridas.map((font) => font.nome).join(" · ")}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Sem versao anterior</p>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  v{previousTypography?.version_number || "-"} · {previousTypography ? VISUAL_STATUS_LABELS[previousTypography.status] : "-"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </SectionCard>

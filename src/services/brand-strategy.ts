@@ -127,9 +127,12 @@ export async function updateBrandStrategyStatus(
   status: BrandStrategyStatus
 ): Promise<BrandStrategyOutput> {
   logDomain(DOMAIN, "updateBrandStrategyStatus", "info", `id=${id};status=${status}`);
+  const { data } = await supabase.auth.getUser();
+  const userId = data?.user?.id || null;
   const payload: Record<string, unknown> = { status };
   if (status === "aprovado") {
     payload.approved_at = new Date().toISOString();
+    if (userId) payload.approved_by = userId;
   } else {
     payload.approved_at = null;
     payload.approved_by = null;
