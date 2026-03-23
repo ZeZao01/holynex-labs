@@ -9,6 +9,7 @@ export type BrandProjectStatus =
 export type BrandTaskStatus = "pendente" | "em_execucao" | "em_revisao" | "concluida" | "cancelada";
 export type BrandTaskPriority = "baixa" | "media" | "alta" | "critica";
 export type BrandAssetType = "image" | "video" | "document" | "presentation" | "other";
+export type BrandBriefReferenceType = "image" | "url" | "note";
 
 export interface BrandProject {
   id: string;
@@ -17,6 +18,10 @@ export interface BrandProject {
   status: BrandProjectStatus;
   descricao: string | null;
   owner_user_id: string | null;
+  lead_id: string | null;
+  client_id: string | null;
+  proposal_id: string | null;
+  project_id: string | null;
   started_at: string | null;
   deadline_at: string | null;
   metadata: Record<string, unknown> | null;
@@ -29,6 +34,22 @@ export interface BrandBrief {
   project_id: string;
   titulo: string;
   contexto: string | null;
+  nome_marca: string | null;
+  slogan: string | null;
+  nicho: string | null;
+  publico_alvo_detalhado: string | null;
+  proposta_valor: string | null;
+  concorrentes: string[] | null;
+  estilos_desejados: string[] | null;
+  estilos_evitar: string[] | null;
+  objetivos_identidade: string[] | null;
+  observacoes_adicionais: string | null;
+  referencia_visual_contexto: string | null;
+  readiness_score: number | null;
+  missing_questions: string[] | null;
+  normalized_context: Record<string, unknown> | null;
+  normalized_at: string | null;
+  gap_summary: string | null;
   objetivos: string[] | null;
   publico_alvo: string | null;
   restricoes: string[] | null;
@@ -37,6 +58,41 @@ export interface BrandBrief {
   created_by: string | null;
   criado_em: string;
   atualizado_em: string;
+}
+
+export interface BrandBriefReference {
+  id: string;
+  project_id: string;
+  brief_id: string | null;
+  reference_type: BrandBriefReferenceType;
+  bucket: string | null;
+  storage_path: string | null;
+  public_url: string | null;
+  source_url: string | null;
+  note: string | null;
+  original_name: string | null;
+  mime_type: string | null;
+  size_bytes: number | null;
+  sort_order: number;
+  metadata: Record<string, unknown> | null;
+  created_by: string | null;
+  criado_em: string;
+  atualizado_em: string;
+  signed_url?: string | null;
+}
+
+export interface BrandBriefingNormalizationOutput {
+  normalized_context: Record<string, unknown>;
+  missing_questions: string[];
+  readiness_score: number;
+  gap_summary?: string;
+  status: "pronto" | "incompleto";
+}
+
+export interface BrandBriefingAgentRunResult {
+  run: BrandAiRun;
+  output: BrandBriefingNormalizationOutput;
+  used_fallback: boolean;
 }
 
 export interface BrandTask {

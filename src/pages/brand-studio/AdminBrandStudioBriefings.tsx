@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { NotebookPen } from "lucide-react";
+import { NotebookPen, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import BrandStudioRouteHeader from "@/components/brand-studio/BrandStudioRouteHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import BaseTable from "@/components/admin/BaseTable";
 import EmptyState from "@/components/admin/EmptyState";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { listBrandBriefs } from "@/services/brand-briefs";
 import type { BrandBrief } from "@/types/brand-studio";
 
@@ -12,6 +14,7 @@ const fmtDate = (value: string) =>
   new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function AdminBrandStudioBriefings() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [briefs, setBriefs] = useState<BrandBrief[]>([]);
 
@@ -36,7 +39,9 @@ export default function AdminBrandStudioBriefings() {
         render: (brief: BrandBrief) => (
           <div className="space-y-1">
             <div className="font-medium text-sm">{brief.titulo}</div>
-            <div className="text-xs text-muted-foreground">Projeto: {brief.project_id}</div>
+            <div className="text-xs text-muted-foreground">
+              Marca: {brief.nome_marca || "nao informada"} · Projeto: {brief.project_id}
+            </div>
           </div>
         ),
       },
@@ -47,10 +52,16 @@ export default function AdminBrandStudioBriefings() {
         render: (brief: BrandBrief) => <Badge variant="outline" className="text-[10px]">{brief.status}</Badge>,
       },
       {
-        key: "version",
-        header: "Versao",
-        className: "w-[120px]",
-        render: (brief: BrandBrief) => <span className="text-sm">v{brief.version}</span>,
+        key: "readiness",
+        header: "Readiness",
+        className: "w-[180px]",
+        render: (brief: BrandBrief) => (
+          <div className="flex items-center gap-1.5 text-xs">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span>{brief.readiness_score ?? 0}%</span>
+            <span className="text-muted-foreground">({brief.missing_questions?.length || 0} lacunas)</span>
+          </div>
+        ),
       },
       {
         key: "updated",
@@ -58,8 +69,18 @@ export default function AdminBrandStudioBriefings() {
         className: "w-[170px]",
         render: (brief: BrandBrief) => <span className="text-xs text-muted-foreground">{fmtDate(brief.atualizado_em)}</span>,
       },
+      {
+        key: "actions",
+        header: "Acoes",
+        className: "w-[140px]",
+        render: (brief: BrandBrief) => (
+          <Button size="sm" variant="outline" onClick={() => navigate(`/admin/brand-studio/projetos/${brief.project_id}`)}>
+            Abrir projeto
+          </Button>
+        ),
+      },
     ],
-    [],
+    [navigate],
   );
 
   return (

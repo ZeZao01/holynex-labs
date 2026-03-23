@@ -36,7 +36,9 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
-  const currentLabel = ROUTE_LABELS[location.pathname] || "Painel";
+  const currentLabel =
+    ROUTE_LABELS[location.pathname] ||
+    (location.pathname.startsWith("/admin/brand-studio/projetos/") ? "Brand Studio · Projeto" : "Painel");
 
   return (
     <SidebarProvider>

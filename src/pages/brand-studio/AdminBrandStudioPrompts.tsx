@@ -73,11 +73,26 @@ export default function AdminBrandStudioPrompts() {
         render: (run: BrandAiRun) => <Badge variant="outline" className="text-[10px]">{run.status}</Badge>,
       },
       {
+        key: "project",
+        header: "Projeto",
+        className: "w-[180px]",
+        render: (run: BrandAiRun) => <span className="text-xs text-muted-foreground">{run.project_id}</span>,
+      },
+      {
         key: "provider",
         header: "Motor IA",
         render: (run: BrandAiRun) => (
           <div className="text-xs text-muted-foreground">{run.provider_used || "-"} · {run.model_used || "-"}</div>
         ),
+      },
+      {
+        key: "score",
+        header: "Readiness",
+        className: "w-[120px]",
+        render: (run: BrandAiRun) => {
+          const score = (run.output_payload as { readiness_score?: number } | null)?.readiness_score;
+          return <span className="text-xs">{typeof score === "number" ? `${score}%` : "-"}</span>;
+        },
       },
       {
         key: "duration",

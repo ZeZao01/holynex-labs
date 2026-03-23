@@ -9,9 +9,21 @@ export {
 export {
   listBrandBriefs,
   getBrandBriefsByProject,
+  getLatestBrandBriefByProject,
   saveBrandBrief,
   countBrandBriefs,
 } from "@/services/brand-briefs";
+
+export {
+  computeBrandBriefingNormalization,
+  listBrandBriefReferencesByProject,
+  createBrandBriefReference,
+  deleteBrandBriefReference,
+  deleteBrandBriefReferenceWithStorage,
+  uploadBrandBriefReferenceImage,
+  runBrandBriefingAgent,
+  parseBriefingListInput,
+} from "@/services/brand-briefing";
 
 export {
   listBrandTasks,
