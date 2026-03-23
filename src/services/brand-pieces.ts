@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
+import { logAction } from "@/lib/audit-logs";
 import { createBrandAiRun } from "@/services/brand-agents";
 import type {
   BrandAiRun,
@@ -234,7 +235,13 @@ export async function updateBrandPieceStatus(id: string, status: BrandPieceStatu
   }
 
   const result = await dbAny.from(TABLE).update(payload).eq("id", id).select("*").single();
-  return unwrap(result, DOMAIN, "updateBrandPieceStatus") as BrandPiece;
+  const updated = unwrap(result, DOMAIN, "updateBrandPieceStatus") as BrandPiece;
+  await logAction(status === "aprovado" ? "approve_brand_asset" : "reject_brand_asset", "brand_piece", updated.id, {
+    project_id: updated.project_id,
+    status,
+    piece_type: updated.piece_type,
+  });
+  return updated;
 }
 
 export async function runBusinessCardAgent(payload: {
@@ -356,6 +363,13 @@ export async function runBusinessCardAgent(payload: {
     piece_id: outputRow.id,
     piece_type: "business_card",
     prompt_visual: output.prompt_visual,
+  });
+
+  await logAction("run_brand_agent", "brand_agent", run.id, {
+    project_id: payload.project.id,
+    agent_key: BUSINESS_CARD_AGENT_KEY,
+    used_fallback: usedFallback,
+    prompt_version: BUSINESS_CARD_PROMPT_VERSION,
   });
 
   return {
@@ -484,6 +498,13 @@ export async function runFlyerAgent(payload: {
     piece_id: outputRow.id,
     piece_type: "flyer",
     prompt_visual: output.prompt_visual,
+  });
+
+  await logAction("run_brand_agent", "brand_agent", run.id, {
+    project_id: payload.project.id,
+    agent_key: FLYER_AGENT_KEY,
+    used_fallback: usedFallback,
+    prompt_version: FLYER_PROMPT_VERSION,
   });
 
   return {

@@ -129,7 +129,7 @@ export async function updateAddonStatus(id: string, status: AddonStatus, metadat
     .single();
   if (error) throw error;
 
-  await logAction(status === "activated" ? "activate" : "status_change", "addon", id, {
+  await logAction(status === "activated" ? "activate_brand_addon" : "brand_addon_status_change", "addon", id, {
     status,
     ...metadata,
   });

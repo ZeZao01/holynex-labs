@@ -245,6 +245,8 @@ export default function AdminBrandStudioProjetoDetalhe() {
     canEditBrandProject,
     canRunBrandAgent,
     canApproveBrandAsset,
+    canManageBrandAgents,
+    canViewBrandSensitive,
     guardAction,
   } = useAccessControl();
 
@@ -344,6 +346,8 @@ export default function AdminBrandStudioProjetoDetalhe() {
     latestPalette?.status === "aprovado" &&
     latestTypography?.status === "aprovado" &&
     latestLogoConcept?.status === "aprovado";
+
+  const showPromptDetails = canManageBrandAgents() || canViewBrandSensitive();
 
   const requiredPieceTypes = ["business_card", "flyer"] as const;
   const requiredPieces = useMemo(
@@ -1710,9 +1714,13 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 <Badge className={`text-[10px] ${STRATEGY_STATUS_BADGE[latestStrategy.status]}`}>
                   {STRATEGY_STATUS_LABELS[latestStrategy.status]}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Prompt {latestStrategy.prompt_version || "brand_strategy_v1"} · {latestStrategy.provider_used || "-"} · {latestStrategy.model_used || "-"}
-                </span>
+                {showPromptDetails ? (
+                  <span className="text-xs text-muted-foreground">
+                    Prompt {latestStrategy.prompt_version || "brand_strategy_v1"} · {latestStrategy.provider_used || "-"} · {latestStrategy.model_used || "-"}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Detalhes do prompt restritos</span>
+                )}
               </div>
               <span className="text-xs text-muted-foreground">Gerado em {fmtDate(latestStrategy.criado_em)}</span>
             </div>
@@ -1864,9 +1872,13 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[latestPalette.status]}`}>
                   {VISUAL_STATUS_LABELS[latestPalette.status]}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Prompt {latestPalette.prompt_version || "brand_palette_v1"} · {latestPalette.provider_used || "-"} · {latestPalette.model_used || "-"}
-                </span>
+                {showPromptDetails ? (
+                  <span className="text-xs text-muted-foreground">
+                    Prompt {latestPalette.prompt_version || "brand_palette_v1"} · {latestPalette.provider_used || "-"} · {latestPalette.model_used || "-"}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Detalhes do prompt restritos</span>
+                )}
               </div>
               <span className="text-xs text-muted-foreground">Gerado em {fmtDate(latestPalette.criado_em)}</span>
             </div>
@@ -1972,9 +1984,13 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[latestTypography.status]}`}>
                   {VISUAL_STATUS_LABELS[latestTypography.status]}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Prompt {latestTypography.prompt_version || "brand_typography_v1"} · {latestTypography.provider_used || "-"} · {latestTypography.model_used || "-"}
-                </span>
+                {showPromptDetails ? (
+                  <span className="text-xs text-muted-foreground">
+                    Prompt {latestTypography.prompt_version || "brand_typography_v1"} · {latestTypography.provider_used || "-"} · {latestTypography.model_used || "-"}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Detalhes do prompt restritos</span>
+                )}
               </div>
               <span className="text-xs text-muted-foreground">Gerado em {fmtDate(latestTypography.criado_em)}</span>
             </div>
@@ -2122,9 +2138,13 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[latestLogoConcept.status]}`}>
                   {VISUAL_STATUS_LABELS[latestLogoConcept.status]}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Prompt {latestLogoConcept.prompt_version || "brand_logo_concept_v1"} · {latestLogoConcept.provider_used || "-"} · {latestLogoConcept.model_used || "-"}
-                </span>
+                {showPromptDetails ? (
+                  <span className="text-xs text-muted-foreground">
+                    Prompt {latestLogoConcept.prompt_version || "brand_logo_concept_v1"} · {latestLogoConcept.provider_used || "-"} · {latestLogoConcept.model_used || "-"}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Detalhes do prompt restritos</span>
+                )}
               </div>
               <span className="text-xs text-muted-foreground">Gerado em {fmtDate(latestLogoConcept.criado_em)}</span>
             </div>

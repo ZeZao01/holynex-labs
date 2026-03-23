@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
+import { logAction } from "@/lib/audit-logs";
 import { createBrandAiRun } from "@/services/brand-agents";
 import type {
   BrandAiRun,
@@ -192,7 +193,12 @@ export async function updateBrandColorPaletteStatus(
   }
 
   const result = await dbAny.from(TABLE).update(payload).eq("id", id).select("*").single();
-  return unwrap(result, DOMAIN, "updateBrandColorPaletteStatus") as BrandColorPaletteOutput;
+  const updated = unwrap(result, DOMAIN, "updateBrandColorPaletteStatus") as BrandColorPaletteOutput;
+  await logAction(status === "aprovado" ? "approve_brand_asset" : "reject_brand_asset", "brand_palette", updated.id, {
+    project_id: updated.project_id,
+    status,
+  });
+  return updated;
 }
 
 export async function runBrandColorPaletteAgent(payload: {
@@ -298,6 +304,13 @@ export async function runBrandColorPaletteAgent(payload: {
     .single();
 
   const outputRow = unwrap(saved, DOMAIN, "runBrandColorPaletteAgent.insert") as BrandColorPaletteOutput;
+
+  await logAction("run_brand_agent", "brand_agent", run.id, {
+    project_id: payload.project.id,
+    agent_key: PALETTE_AGENT_KEY,
+    used_fallback: usedFallback,
+    prompt_version: PROMPT_VERSION,
+  });
 
   return {
     run,

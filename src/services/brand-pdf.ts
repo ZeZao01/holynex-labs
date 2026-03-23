@@ -1,4 +1,5 @@
 import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
+import { logAction } from "@/lib/audit-logs";
 import type { BrandVersion } from "@/types/brand-studio";
 
 const DOMAIN = "brand-pdf";
@@ -31,7 +32,13 @@ export async function registerBrandPresentation(versionId: string, presentationU
     .eq("id", versionId)
     .select("*")
     .single();
-  return unwrap(result, DOMAIN, "registerBrandPresentation") as BrandVersion;
+  const updated = unwrap(result, DOMAIN, "registerBrandPresentation") as BrandVersion;
+  await logAction("generate_brand_pdf", "brand_version", updated.id, {
+    project_id: updated.project_id,
+    presentation_url: updated.presentation_url,
+    status: updated.status,
+  });
+  return updated;
 }
 
 export async function countBrandPresentations(): Promise<number> {

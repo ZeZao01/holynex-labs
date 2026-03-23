@@ -103,7 +103,7 @@ export const DEFAULT_PERMISSIONS: Record<string, Record<string, string[]>> = {
   brand_designer: {
     brand_studio: [
       "visualizar", "criar", "editar", "exportar",
-      "gerar_pdf", "baixar_pdf", "gerenciar_provedores_ia", "revisar_blueprint",
+      "gerar_pdf", "baixar_pdf", "revisar_blueprint",
       "view_brand_project", "edit_brand_project", "run_brand_agent", "generate_brand_pdf",
     ],
     dashboard: ["visualizar"],

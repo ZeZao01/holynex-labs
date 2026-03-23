@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { dbAny, logDomain } from "@/lib/service-helpers";
+import { logAction } from "@/lib/audit-logs";
 import { createBrandAiRun } from "@/services/brand-agents";
 import type {
   BrandAiRun,
@@ -263,6 +264,13 @@ export async function runBrandConsistencyQaAgent(payload: {
     tokens_output: null,
     cost_estimated: null,
   })) as BrandAiRun;
+
+  await logAction("run_brand_agent", "brand_agent", run.id, {
+    project_id: payload.project.id,
+    agent_key: QA_AGENT_KEY,
+    used_fallback: usedFallback,
+    prompt_version: PROMPT_VERSION,
+  });
 
   return {
     run,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { ImageIcon } from "lucide-react";
 import BrandStudioRouteHeader from "@/components/brand-studio/BrandStudioRouteHeader";
 import SectionCard from "@/components/admin/SectionCard";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import AccessDenied from "@/components/admin/AccessDenied";
 import { useAccessControl } from "@/hooks/useAccessControl";
 import { logAction } from "@/lib/audit-logs";
+import { toast } from "@/components/ui/sonner";
 import { listBrandAssets } from "@/services/brand-assets";
 import type { BrandDesignAsset } from "@/types/brand-studio";
 
@@ -15,7 +16,7 @@ const fmtDate = (value: string) =>
   new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function AdminBrandStudioAssets() {
-  const { loading: accessLoading, canViewBrandProject, canViewBrandSensitive } = useAccessControl();
+  const { loading: accessLoading, canViewBrandProject, canViewBrandSensitive, guardAction } = useAccessControl();
   const [loading, setLoading] = useState(true);
   const [assets, setAssets] = useState<BrandDesignAsset[]>([]);
 
@@ -45,15 +46,42 @@ export default function AdminBrandStudioAssets() {
     return assets.filter((asset) => !isSensitiveAsset(asset));
   }, [assets, canViewBrandSensitive, isSensitiveAsset]);
 
-  const handleOpenAsset = useCallback((asset: BrandDesignAsset) => {
+  const handleOpenAsset = useCallback(async (
+    event: MouseEvent<HTMLAnchorElement>,
+    asset: BrandDesignAsset
+  ) => {
+    event.preventDefault();
     if (!asset.public_url) return;
-    if (isSensitiveAsset(asset) && !canViewBrandSensitive()) return;
+
+    if (isSensitiveAsset(asset)) {
+      const allowedSensitive = await guardAction("brand_studio", "visualizar_segredo", {
+        description: "Acesso a asset sensivel do Brand Studio",
+        severity: "high",
+        metadata: { source: "brand_studio_assets", asset_id: asset.id, bucket: asset.bucket },
+      });
+      if (!allowedSensitive) {
+        toast.error("Sem permissao para visualizar assets sensiveis");
+        return;
+      }
+    }
+
+    const allowedExport = await guardAction("brand_studio", "exportar", {
+      description: "Exportacao de asset do Brand Studio",
+      severity: "medium",
+      metadata: { source: "brand_studio_assets", asset_id: asset.id, bucket: asset.bucket },
+    });
+    if (!allowedExport) {
+      toast.error("Sem permissao para exportar assets");
+      return;
+    }
+
+    window.open(asset.public_url, "_blank", "noopener,noreferrer");
     void logAction("export_brand_asset", "brand_design_asset", asset.id, {
       project_id: asset.project_id,
       bucket: asset.bucket,
       storage_path: asset.storage_path,
     });
-  }, [canViewBrandSensitive, isSensitiveAsset]);
+  }, [guardAction, isSensitiveAsset]);
 
   const columns = useMemo(
     () => [
@@ -100,7 +128,7 @@ export default function AdminBrandStudioAssets() {
               href={asset.public_url}
               target="_blank"
               rel="noreferrer"
-              onClick={() => handleOpenAsset(asset)}
+               onClick={(event) => void handleOpenAsset(event, asset)}
             >
               Abrir arquivo
             </a>

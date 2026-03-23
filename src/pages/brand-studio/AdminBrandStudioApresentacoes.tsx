@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { Presentation } from "lucide-react";
 import BrandStudioRouteHeader from "@/components/brand-studio/BrandStudioRouteHeader";
 import SectionCard from "@/components/admin/SectionCard";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import AccessDenied from "@/components/admin/AccessDenied";
 import { useAccessControl } from "@/hooks/useAccessControl";
 import { logAction } from "@/lib/audit-logs";
+import { toast } from "@/components/ui/sonner";
 import { listBrandPresentations } from "@/services/brand-pdf";
 import type { BrandVersion } from "@/types/brand-studio";
 
@@ -15,7 +16,13 @@ const fmtDate = (value: string) =>
   new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function AdminBrandStudioApresentacoes() {
-  const { loading: accessLoading, canViewBrandProject, canGenerateBrandPdf, canViewBrandSensitive } = useAccessControl();
+  const {
+    loading: accessLoading,
+    canViewBrandProject,
+    canGenerateBrandPdf,
+    canViewBrandSensitive,
+    guardAction,
+  } = useAccessControl();
   const [loading, setLoading] = useState(true);
   const [presentations, setPresentations] = useState<BrandVersion[]>([]);
 
@@ -36,13 +43,31 @@ export default function AdminBrandStudioApresentacoes() {
 
   const allowOpenPresentation = canGenerateBrandPdf() || canViewBrandSensitive();
 
-  const handleOpenPresentation = useCallback((version: BrandVersion) => {
+  const handleOpenPresentation = useCallback(async (
+    event: MouseEvent<HTMLAnchorElement>,
+    version: BrandVersion
+  ) => {
+    event.preventDefault();
     if (!allowOpenPresentation || !version.presentation_url) return;
+
+    if (!canViewBrandSensitive()) {
+      const allowed = await guardAction("brand_studio", "generate_brand_pdf", {
+        description: "Acesso a apresentacao PDF do Brand Studio",
+        severity: "medium",
+        metadata: { source: "brand_studio_presentations", version_id: version.id },
+      });
+      if (!allowed) {
+        toast.error("Sem permissao para abrir apresentacoes PDF");
+        return;
+      }
+    }
+
+    window.open(version.presentation_url, "_blank", "noopener,noreferrer");
     void logAction("export_brand_asset", "brand_version", version.id, {
       project_id: version.project_id,
       presentation_url: version.presentation_url,
     });
-  }, [allowOpenPresentation]);
+  }, [allowOpenPresentation, canViewBrandSensitive, guardAction]);
 
   const columns = useMemo(
     () => [
@@ -72,7 +97,7 @@ export default function AdminBrandStudioApresentacoes() {
               href={version.presentation_url}
               target="_blank"
               rel="noreferrer"
-              onClick={() => handleOpenPresentation(version)}
+               onClick={(event) => void handleOpenPresentation(event, version)}
             >
               Abrir apresentacao
             </a>
