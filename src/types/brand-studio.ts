@@ -95,6 +95,10 @@ export interface BrandBriefingAgentRunResult {
   used_fallback: boolean;
 }
 
+export interface BrandBriefingExecutionResult extends BrandBriefingAgentRunResult {
+  brief: BrandBrief;
+}
+
 export interface BrandTask {
   id: string;
   project_id: string;

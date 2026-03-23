@@ -28,7 +28,7 @@ function buildBriefingNormalization(
 ): BrandBriefingNormalizationOutput {
   const imageReferences = references
     .filter((ref) => ref.reference_type === "image")
-    .map((ref) => ref.public_url || ref.source_url || "")
+    .map((ref) => ref.signed_url || ref.public_url || ref.source_url || ref.storage_path || "")
     .filter(Boolean);
   const urlReferences = references
     .filter((ref) => ref.reference_type === "url")
@@ -223,6 +223,13 @@ export async function runBrandBriefingAgent(
     if (!error && data) {
       const candidate = (data.output || data) as Partial<BrandBriefingNormalizationOutput>;
       if (candidate.normalized_context && typeof candidate.readiness_score === "number") {
+        providerUsed = typeof data.provider_used === "string" && data.provider_used
+          ? data.provider_used
+          : providerUsed;
+        modelUsed = typeof data.model_used === "string" && data.model_used
+          ? data.model_used
+          : modelUsed;
+
         output = {
           normalized_context: candidate.normalized_context,
           missing_questions: Array.isArray(candidate.missing_questions)
@@ -232,7 +239,7 @@ export async function runBrandBriefingAgent(
           gap_summary: candidate.gap_summary || fallbackOutput.gap_summary,
           status: candidate.status === "pronto" ? "pronto" : "incompleto",
         };
-        usedFallback = false;
+        usedFallback = Boolean(data.used_fallback ?? false);
       }
     }
   } catch (err) {

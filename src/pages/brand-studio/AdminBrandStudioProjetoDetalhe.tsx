@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Link2, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,6 +148,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const [urlInput, setUrlInput] = useState("");
   const [noteInput, setNoteInput] = useState("");
   const [localImagePreviews, setLocalImagePreviews] = useState<LocalImagePreview[]>([]);
+  const localImagePreviewsRef = useRef<LocalImagePreview[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
 
   const [leadOptions, setLeadOptions] = useState<LinkOption[]>([]);
@@ -262,10 +263,14 @@ export default function AdminBrandStudioProjetoDetalhe() {
   }, [load]);
 
   useEffect(() => {
-    return () => {
-      localImagePreviews.forEach((preview) => URL.revokeObjectURL(preview.previewUrl));
-    };
+    localImagePreviewsRef.current = localImagePreviews;
   }, [localImagePreviews]);
+
+  useEffect(() => {
+    return () => {
+      localImagePreviewsRef.current.forEach((preview) => URL.revokeObjectURL(preview.previewUrl));
+    };
+  }, []);
 
   const persistBrief = useCallback(async () => {
     if (!project) throw new Error("Projeto nao carregado");
@@ -476,7 +481,11 @@ export default function AdminBrandStudioProjetoDetalhe() {
       });
       setAiRuns((prev) => [result.run, ...prev]);
 
-      toast.success(`brand_briefing_agent executado (readiness ${result.output.readiness_score}%)`);
+      toast.success(
+        `brand_briefing_agent executado (readiness ${result.output.readiness_score}%)${
+          result.used_fallback ? " - fallback local" : ""
+        }`
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha na execucao do agente");
     } finally {

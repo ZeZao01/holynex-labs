@@ -1,10 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
-import { createBrandAiRun } from "@/services/brand-agents";
+import { runBrandBriefingAgent as executeBrandBriefingAgent } from "@/services/brand-agents";
 import { saveBrandBrief } from "@/services/brand-briefs";
+import { getBrandProjectById } from "@/services/brand-projects";
 import type {
   BrandBrief,
   BrandBriefReference,
+  BrandBriefingExecutionResult,
   BrandBriefingNormalizationOutput,
 } from "@/types/brand-studio";
 
@@ -231,39 +233,32 @@ export async function uploadBrandBriefReferenceImage(payload: {
 export async function runBrandBriefingAgent(payload: {
   brief: BrandBrief;
   references: BrandBriefReference[];
-}) {
-  const startedAt = Date.now();
-  const normalization = computeBrandBriefingNormalization(payload.brief, payload.references);
+}): Promise<BrandBriefingExecutionResult> {
+  const project = await getBrandProjectById(payload.brief.project_id);
+  if (!project) {
+    throw new Error("Projeto de branding nao encontrado para executar o briefing agent");
+  }
+
+  const execution = await executeBrandBriefingAgent(project, payload.brief, payload.references);
 
   const updatedBrief = await saveBrandBrief({
     id: payload.brief.id,
     project_id: payload.brief.project_id,
     titulo: payload.brief.titulo || "Briefing inicial",
-    readiness_score: normalization.readiness_score,
-    missing_questions: normalization.missing_questions,
-    normalized_context: normalization.normalized_context,
+    readiness_score: execution.output.readiness_score,
+    missing_questions: execution.output.missing_questions,
+    normalized_context: execution.output.normalized_context,
     normalized_at: new Date().toISOString(),
-    gap_summary: normalization.gap_summary || null,
-    status: normalization.status === "pronto" ? "normalizado" : "com_lacunas",
+    gap_summary: execution.output.gap_summary || null,
+    status: execution.output.status === "pronto" ? "normalizado" : "com_lacunas",
   });
 
-  const run = await createBrandAiRun({
-    project_id: payload.brief.project_id,
-    status: "concluido",
-    provider_used: "brand_briefing_agent",
-    model_used: "heuristic-v1",
-    input_payload: {
-      brief_id: payload.brief.id,
-      fields_present: requiredChecks
-        .filter((check) => check.isFilled(payload.brief, payload.references))
-        .map((check) => check.key),
-      references_count: payload.references.length,
-    },
-    output_payload: normalization,
-    duration_ms: Date.now() - startedAt,
-  });
-
-  return { brief: updatedBrief, run, output: normalization };
+  return {
+    brief: updatedBrief,
+    run: execution.run,
+    output: execution.output,
+    used_fallback: execution.used_fallback,
+  };
 }
 
 export function parseBriefingListInput(value: string) {

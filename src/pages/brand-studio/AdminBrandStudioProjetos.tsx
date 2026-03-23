@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, FolderKanban } from "lucide-react";
+import { Eye, FolderKanban, Plus } from "lucide-react";
 import BrandStudioRouteHeader from "@/components/brand-studio/BrandStudioRouteHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import BaseTable from "@/components/admin/BaseTable";
 import EmptyState from "@/components/admin/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { listBrandProjects } from "@/services/brand-projects";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/sonner";
+import { createBrandProject, listBrandProjects } from "@/services/brand-projects";
 import type { BrandProject } from "@/types/brand-studio";
 import { BRAND_PROJECT_STATUS_LABELS } from "@/types/brand-studio";
 import { BRAND_PROJECT_STATUS_BADGE } from "@/lib/brand-studio";
@@ -19,19 +21,47 @@ export default function AdminBrandStudioProjetos() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<BrandProject[]>([]);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [creatingProject, setCreatingProject] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await listBrandProjects();
+      setProjects(data);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const data = await listBrandProjects();
-        setProjects(data);
-      } finally {
-        setLoading(false);
-      }
-    };
     load();
-  }, []);
+  }, [load]);
+
+  const handleCreateProject = async () => {
+    const nome = newProjectName.trim();
+    if (!nome) {
+      toast.error("Informe o nome do projeto");
+      return;
+    }
+
+    setCreatingProject(true);
+    try {
+      const created = await createBrandProject({
+        nome,
+        status: "briefing",
+        descricao: "Projeto iniciado via fluxo de briefing estruturado",
+      });
+      setNewProjectName("");
+      await load();
+      toast.success("Projeto criado com sucesso");
+      navigate(`/admin/brand-studio/projetos/${created.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao criar projeto");
+    } finally {
+      setCreatingProject(false);
+    }
+  };
 
   const columns = useMemo(
     () => [
@@ -85,7 +115,23 @@ export default function AdminBrandStudioProjetos() {
         trail={[{ label: "Projetos" }]}
       />
 
-      <SectionCard title="Projetos cadastrados">
+      <SectionCard
+        title="Projetos cadastrados"
+        action={
+          <div className="flex items-center gap-2">
+            <Input
+              value={newProjectName}
+              onChange={(event) => setNewProjectName(event.target.value)}
+              placeholder="Nome do novo projeto"
+              className="h-8 w-56"
+            />
+            <Button size="sm" onClick={handleCreateProject} disabled={creatingProject}>
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              {creatingProject ? "Criando..." : "Novo"}
+            </Button>
+          </div>
+        }
+      >
         <BaseTable columns={columns} data={projects} keyExtractor={(item) => item.id} loading={loading} loadingRows={6} />
         {!loading && projects.length === 0 && (
           <EmptyState
