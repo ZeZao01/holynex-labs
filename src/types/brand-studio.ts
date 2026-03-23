@@ -243,6 +243,16 @@ export interface BrandTypographyExecutionResult {
 export type BrandLogoConceptStatus = "pendente" | "aprovado" | "rejeitado";
 export type BrandLogoCriticStatus = "pendente" | "concluido";
 
+export type BrandPieceType =
+  | "business_card"
+  | "flyer"
+  | "profile_cover"
+  | "email_signature"
+  | "letterhead"
+  | "quick_guide";
+
+export type BrandPieceStatus = "pendente" | "aprovado" | "rejeitado";
+
 export interface BrandLogoConceptItem {
   titulo: string;
   racional_estrategico: string;
@@ -307,6 +317,59 @@ export interface BrandLogoCriticExecutionResult {
   run: BrandAiRun;
   output: BrandLogoConcept;
   used_fallback: boolean;
+}
+
+export interface BrandBusinessCardOutputPayload {
+  formato: string;
+  layout_frente: string;
+  layout_verso: string;
+  hierarquia_conteudo: string[];
+  prompt_visual: string;
+  notas_impressao: string[];
+}
+
+export interface BrandFlyerSection {
+  titulo: string;
+  conteudo: string;
+}
+
+export interface BrandFlyerOutputPayload {
+  formato: string;
+  headline: string;
+  subheadline: string;
+  secoes: BrandFlyerSection[];
+  layout_direction: string;
+  cta: {
+    label: string;
+    action: string;
+  };
+  prompt_visual: string;
+  notas_impressao: string[];
+  notas_digital: string[];
+}
+
+export interface BrandPiece {
+  id: string;
+  project_id: string;
+  brief_id: string | null;
+  strategy_id: string | null;
+  palette_id: string | null;
+  typography_id: string | null;
+  logo_concept_id: string | null;
+  ai_run_id: string | null;
+  version_id: string | null;
+  version_number: number;
+  piece_type: BrandPieceType;
+  status: BrandPieceStatus;
+  prompt_version: string;
+  provider_used: string | null;
+  model_used: string | null;
+  output_payload: Record<string, unknown> | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_by: string | null;
+  criado_em: string;
+  atualizado_em: string;
 }
 
 export interface BrandTask {

@@ -49,17 +49,26 @@ import {
   updateBrandLogoConceptSelection,
   updateBrandLogoConceptStatus,
 } from "@/services/brand-logo";
+import {
+  listBrandPiecesByProject,
+  runBusinessCardAgent,
+  runFlyerAgent,
+  updateBrandPieceStatus,
+} from "@/services/brand-pieces";
 import { BRAND_PROJECT_STATUS_BADGE } from "@/lib/brand-studio";
 import {
   BRAND_PROJECT_STATUS_LABELS,
   type BrandAiRun,
   type BrandBrief,
   type BrandBriefReference,
+  type BrandBusinessCardOutputPayload,
   type BrandColorPaletteOutput,
   type BrandColorToken,
   type BrandDesignAsset,
+  type BrandFlyerOutputPayload,
   type BrandLogoConcept,
   type BrandLogoConceptItem,
+  type BrandPiece,
   type BrandProject,
   type BrandStrategyOutput,
   type BrandTask,
@@ -195,6 +204,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const [colorPalettes, setColorPalettes] = useState<BrandColorPaletteOutput[]>([]);
   const [typographySets, setTypographySets] = useState<BrandTypographySet[]>([]);
   const [logoConcepts, setLogoConcepts] = useState<BrandLogoConcept[]>([]);
+  const [pieces, setPieces] = useState<BrandPiece[]>([]);
 
   const [form, setForm] = useState<BriefFormState>(emptyFormState);
   const [savingBrief, setSavingBrief] = useState(false);
@@ -204,11 +214,14 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const [runningTypography, setRunningTypography] = useState(false);
   const [runningLogoConcept, setRunningLogoConcept] = useState(false);
   const [runningLogoCritic, setRunningLogoCritic] = useState(false);
+  const [runningBusinessCard, setRunningBusinessCard] = useState(false);
+  const [runningFlyer, setRunningFlyer] = useState(false);
   const [savingLinks, setSavingLinks] = useState(false);
   const [updatingStrategy, setUpdatingStrategy] = useState(false);
   const [updatingPalette, setUpdatingPalette] = useState(false);
   const [updatingTypography, setUpdatingTypography] = useState(false);
   const [updatingLogoStatus, setUpdatingLogoStatus] = useState(false);
+  const [updatingPieceStatus, setUpdatingPieceStatus] = useState(false);
 
   const [urlInput, setUrlInput] = useState("");
   const [noteInput, setNoteInput] = useState("");
@@ -255,8 +268,21 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const compareLeft = logoItems[compareConceptA] || null;
   const compareRight = logoItems[compareConceptB] || null;
 
+  const latestBusinessCard = useMemo(
+    () => pieces.find((piece) => piece.piece_type === "business_card") || null,
+    [pieces]
+  );
+  const latestFlyer = useMemo(() => pieces.find((piece) => piece.piece_type === "flyer") || null, [pieces]);
+  const businessCardPayload = latestBusinessCard?.output_payload as BrandBusinessCardOutputPayload | null;
+  const flyerPayload = latestFlyer?.output_payload as BrandFlyerOutputPayload | null;
+
   const canRunVisual = latestStrategy?.status === "aprovado";
   const canRunLogo = canRunVisual;
+  const canRunPieces =
+    latestStrategy?.status === "aprovado" &&
+    latestPalette?.status === "aprovado" &&
+    latestTypography?.status === "aprovado" &&
+    latestLogoConcept?.status === "aprovado";
 
   const normalizedContextPreview = useMemo(() => {
     if (!activeBrief?.normalized_context) return "";
@@ -328,6 +354,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
         paletteData,
         typographyData,
         logoData,
+        piecesData,
       ] = await Promise.all([
         getBrandProjectById(id),
         getBrandBriefsByProject(id),
@@ -340,6 +367,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
         listBrandColorPalettesByProject(id, 5),
         listBrandTypographySetsByProject(id, 5),
         listBrandLogoConceptsByProject(id, 5),
+        listBrandPiecesByProject(id, 5),
       ]);
 
       setProject(projectData);
@@ -354,6 +382,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
       setColorPalettes(paletteData);
       setTypographySets(typographyData);
       setLogoConcepts(logoData);
+      setPieces(piecesData);
 
       setForm(buildFormState(briefsData[0] || null, projectData?.nome || ""));
       setLinkDraft({
@@ -838,6 +867,90 @@ export default function AdminBrandStudioProjetoDetalhe() {
       });
     } catch {
       // manter selecao local mesmo que falhe no backend
+    }
+  };
+
+  const handleRunBusinessCardAgent = async () => {
+    if (!project) return;
+
+    setRunningBusinessCard(true);
+    try {
+      let briefForRun = activeBrief;
+      if (!briefForRun) {
+        briefForRun = await persistBrief();
+      }
+
+      const result = await runBusinessCardAgent({
+        project,
+        brief: briefForRun,
+        references,
+        strategy: latestStrategy,
+        palette: latestPalette,
+        typography: latestTypography,
+        logo: latestLogoConcept,
+      });
+
+      setPieces((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== result.output.id);
+        return [result.output, ...withoutCurrent];
+      });
+      setAiRuns((prev) => [result.run, ...prev]);
+
+      toast.success(`business_card_agent executado${result.used_fallback ? " - fallback local" : ""}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha na execucao do agent de cartao");
+    } finally {
+      setRunningBusinessCard(false);
+    }
+  };
+
+  const handleRunFlyerAgent = async () => {
+    if (!project) return;
+
+    setRunningFlyer(true);
+    try {
+      let briefForRun = activeBrief;
+      if (!briefForRun) {
+        briefForRun = await persistBrief();
+      }
+
+      const result = await runFlyerAgent({
+        project,
+        brief: briefForRun,
+        references,
+        strategy: latestStrategy,
+        palette: latestPalette,
+        typography: latestTypography,
+        logo: latestLogoConcept,
+      });
+
+      setPieces((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== result.output.id);
+        return [result.output, ...withoutCurrent];
+      });
+      setAiRuns((prev) => [result.run, ...prev]);
+
+      toast.success(`flyer_agent executado${result.used_fallback ? " - fallback local" : ""}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha na execucao do agent de flyer");
+    } finally {
+      setRunningFlyer(false);
+    }
+  };
+
+  const handleUpdatePieceStatus = async (pieceId: string, status: "aprovado" | "rejeitado") => {
+    setUpdatingPieceStatus(true);
+    try {
+      const updated = await updateBrandPieceStatus(pieceId, status);
+      setPieces((prev) => {
+        const withoutCurrent = prev.filter((item) => item.id !== updated.id);
+        return [updated, ...withoutCurrent];
+      });
+      toast.success(status === "aprovado" ? "Peca aprovada" : "Peca marcada para revisao");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar status da peca");
+    } finally {
+      setUpdatingPieceStatus(false);
     }
   };
 
@@ -1909,6 +2022,222 @@ export default function AdminBrandStudioProjetoDetalhe() {
             description="Execute o logo_concept_agent para iniciar o Logo Lab."
           />
         )}
+      </SectionCard>
+
+      <SectionCard
+        title="Pecas derivadas da identidade"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleRunBusinessCardAgent} disabled={runningBusinessCard || !canRunPieces}>
+              {runningBusinessCard ? "Executando..." : "Executar business_card_agent"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleRunFlyerAgent} disabled={runningFlyer || !canRunPieces}>
+              {runningFlyer ? "Executando..." : "Executar flyer_agent"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {!canRunPieces && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+              Para gerar pecas, aprove direcao, paleta, tipografia e logo.
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-lg border border-border/50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium">Cartao de visita</p>
+                  <p className="text-[11px] text-muted-foreground">Frente/verso com hierarquia e notas de impressao</p>
+                </div>
+                {latestBusinessCard && (
+                  <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[latestBusinessCard.status]}`}>
+                    {VISUAL_STATUS_LABELS[latestBusinessCard.status]}
+                  </Badge>
+                )}
+              </div>
+
+              {latestBusinessCard ? (
+                <div className="space-y-3">
+                  <p className="text-[11px] text-muted-foreground">Gerado em {fmtDate(latestBusinessCard.criado_em)}</p>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Formato</p>
+                    <p className="text-sm">{businessCardPayload?.formato || "-"}</p>
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Layout frente</p>
+                    <p className="text-xs">{businessCardPayload?.layout_frente || "-"}</p>
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Layout verso</p>
+                    <p className="text-xs">{businessCardPayload?.layout_verso || "-"}</p>
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Hierarquia</p>
+                    {businessCardPayload?.hierarquia_conteudo?.length ? (
+                      <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                        {businessCardPayload.hierarquia_conteudo.map((item, index) => (
+                          <li key={`${item}-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">-</p>
+                    )}
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Prompt visual</p>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{businessCardPayload?.prompt_visual || "-"}</p>
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Notas de impressao</p>
+                    {businessCardPayload?.notas_impressao?.length ? (
+                      <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                        {businessCardPayload.notas_impressao.map((item, index) => (
+                          <li key={`${item}-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">-</p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdatePieceStatus(latestBusinessCard.id, "aprovado")}
+                      disabled={updatingPieceStatus || latestBusinessCard.status === "aprovado"}
+                    >
+                      <Check className="h-3.5 w-3.5 mr-1" /> Aprovar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleUpdatePieceStatus(latestBusinessCard.id, "rejeitado")}
+                      disabled={updatingPieceStatus || latestBusinessCard.status === "rejeitado"}
+                    >
+                      <X className="h-3.5 w-3.5 mr-1" /> Revisar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState compact title="Sem cartao" description="Execute o business_card_agent para gerar o layout." />
+              )}
+            </div>
+
+            <div className="rounded-lg border border-border/50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium">Flyer</p>
+                  <p className="text-[11px] text-muted-foreground">Headline, secoes, CTA e notas de impressao/digital</p>
+                </div>
+                {latestFlyer && (
+                  <Badge className={`text-[10px] ${VISUAL_STATUS_BADGE[latestFlyer.status]}`}>
+                    {VISUAL_STATUS_LABELS[latestFlyer.status]}
+                  </Badge>
+                )}
+              </div>
+
+              {latestFlyer ? (
+                <div className="space-y-3">
+                  <p className="text-[11px] text-muted-foreground">Gerado em {fmtDate(latestFlyer.criado_em)}</p>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Formato</p>
+                    <p className="text-sm">{flyerPayload?.formato || "-"}</p>
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Headline</p>
+                    <p className="text-sm">{flyerPayload?.headline || "-"}</p>
+                    <p className="text-xs text-muted-foreground">Subheadline</p>
+                    <p className="text-xs">{flyerPayload?.subheadline || "-"}</p>
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Secoes</p>
+                    {flyerPayload?.secoes?.length ? (
+                      <div className="space-y-2">
+                        {flyerPayload.secoes.map((secao, index) => (
+                          <div key={`${secao.titulo}-${index}`} className="rounded border border-border/40 p-2">
+                            <p className="text-xs font-medium">{secao.titulo}</p>
+                            <p className="text-xs text-muted-foreground">{secao.conteudo}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">-</p>
+                    )}
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Layout direction</p>
+                    <p className="text-xs">{flyerPayload?.layout_direction || "-"}</p>
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">CTA</p>
+                    <p className="text-xs">{flyerPayload?.cta?.label || "-"}</p>
+                    <p className="text-[11px] text-muted-foreground">{flyerPayload?.cta?.action || "-"}</p>
+                  </div>
+                  <div className="rounded-md border border-border/40 p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Prompt visual</p>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{flyerPayload?.prompt_visual || "-"}</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-md border border-border/40 p-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">Notas de impressao</p>
+                      {flyerPayload?.notas_impressao?.length ? (
+                        <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                          {flyerPayload.notas_impressao.map((item, index) => (
+                            <li key={`${item}-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">-</p>
+                      )}
+                    </div>
+                    <div className="rounded-md border border-border/40 p-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">Notas digitais</p>
+                      {flyerPayload?.notas_digital?.length ? (
+                        <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                          {flyerPayload.notas_digital.map((item, index) => (
+                            <li key={`${item}-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">-</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleUpdatePieceStatus(latestFlyer.id, "aprovado")}
+                      disabled={updatingPieceStatus || latestFlyer.status === "aprovado"}
+                    >
+                      <Check className="h-3.5 w-3.5 mr-1" /> Aprovar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleUpdatePieceStatus(latestFlyer.id, "rejeitado")}
+                      disabled={updatingPieceStatus || latestFlyer.status === "rejeitado"}
+                    >
+                      <X className="h-3.5 w-3.5 mr-1" /> Revisar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState compact title="Sem flyer" description="Execute o flyer_agent para gerar a primeira versao." />
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border/50 p-4 space-y-2">
+            <p className="text-sm font-medium">Aplicacoes futuras (estrutura preparada)</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-muted-foreground">
+              <div className="rounded-md border border-border/40 p-2">Capa de perfil</div>
+              <div className="rounded-md border border-border/40 p-2">Assinatura de e-mail</div>
+              <div className="rounded-md border border-border/40 p-2">Papel timbrado</div>
+              <div className="rounded-md border border-border/40 p-2">Manual rapido</div>
+            </div>
+          </div>
+        </div>
       </SectionCard>
 
       <SectionCard title="Comparativo de versoes">
