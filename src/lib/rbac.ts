@@ -228,7 +228,7 @@ export async function ensureUserSetup(user: User): Promise<void> {
     // Check if role assignment exists
     const { data: assignments } = await sb
       .from("user_role_assignments")
-      .select("id")
+      .select("id, role_name, user_id, is_active")
       .eq("user_id", user.id);
 
     if (!assignments || assignments.length === 0) {
@@ -243,6 +243,17 @@ export async function ensureUserSetup(user: User): Promise<void> {
         role_name: role,
         is_active: true,
       });
+    } else {
+      const activeAssignments = (assignments as UserRoleAssignment[]).filter((row) => row.is_active);
+      const hasOnlyReadOnly = activeAssignments.length > 0 && activeAssignments.every((row) => row.role_name === "somente_leitura");
+      if (hasOnlyReadOnly) {
+        const { count } = await sb
+          .from("user_role_assignments")
+          .select("*", { count: "exact", head: true });
+        if (count === 1) {
+          await upsertUserRoleAssignment(user.id, "super_admin");
+        }
+      }
     }
   } catch (err) {
     console.warn("[RBAC] ensureUserSetup failed (tables may not exist yet):", err);
