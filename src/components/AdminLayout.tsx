@@ -19,6 +19,13 @@ const ROUTE_LABELS: Record<string, string> = {
   "/admin/modelos": "Projetos Modelo",
   "/admin/financeiro": "Financeiro",
   "/admin/ia": "IA Assistiva",
+  "/admin/brand-studio": "Brand Studio AI",
+  "/admin/brand-studio/projetos": "Brand Studio · Projetos",
+  "/admin/brand-studio/briefings": "Brand Studio · Briefings",
+  "/admin/brand-studio/prompts": "Brand Studio · Prompts",
+  "/admin/brand-studio/apresentacoes": "Brand Studio · Apresentacoes",
+  "/admin/brand-studio/assets": "Brand Studio · Assets",
+  "/admin/brand-studio/configuracoes": "Brand Studio · Configuracoes",
   "/admin/seguranca": "Segurança",
   "/admin/configuracoes": "Configurações",
 };

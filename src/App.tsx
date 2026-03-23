@@ -44,6 +44,14 @@ import AdminSeguranca from "./pages/AdminSeguranca";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes";
 import AdminIA from "./pages/AdminIA";
 import AdminAddons from "./pages/AdminAddons";
+import AdminBrandStudio from "./pages/brand-studio/AdminBrandStudio";
+import AdminBrandStudioProjetos from "./pages/brand-studio/AdminBrandStudioProjetos";
+import AdminBrandStudioProjetoDetalhe from "./pages/brand-studio/AdminBrandStudioProjetoDetalhe";
+import AdminBrandStudioBriefings from "./pages/brand-studio/AdminBrandStudioBriefings";
+import AdminBrandStudioPrompts from "./pages/brand-studio/AdminBrandStudioPrompts";
+import AdminBrandStudioApresentacoes from "./pages/brand-studio/AdminBrandStudioApresentacoes";
+import AdminBrandStudioAssets from "./pages/brand-studio/AdminBrandStudioAssets";
+import AdminBrandStudioConfiguracoes from "./pages/brand-studio/AdminBrandStudioConfiguracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +83,14 @@ function AppRoutes() {
           <Route path="/admin/modelos" element={<AdminRouteGuard module="modelos"><AdminModelos /></AdminRouteGuard>} />
           <Route path="/admin/financeiro" element={<AdminRouteGuard module="financeiro"><AdminFinanceiro /></AdminRouteGuard>} />
           <Route path="/admin/ia" element={<AdminRouteGuard module="ia"><AdminIA /></AdminRouteGuard>} />
+          <Route path="/admin/brand-studio" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudio /></AdminRouteGuard>} />
+          <Route path="/admin/brand-studio/projetos" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudioProjetos /></AdminRouteGuard>} />
+          <Route path="/admin/brand-studio/projetos/:id" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudioProjetoDetalhe /></AdminRouteGuard>} />
+          <Route path="/admin/brand-studio/briefings" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudioBriefings /></AdminRouteGuard>} />
+          <Route path="/admin/brand-studio/prompts" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudioPrompts /></AdminRouteGuard>} />
+          <Route path="/admin/brand-studio/apresentacoes" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudioApresentacoes /></AdminRouteGuard>} />
+          <Route path="/admin/brand-studio/assets" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudioAssets /></AdminRouteGuard>} />
+          <Route path="/admin/brand-studio/configuracoes" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudioConfiguracoes /></AdminRouteGuard>} />
           <Route path="/admin/seguranca" element={<AdminRouteGuard module="seguranca"><AdminSeguranca /></AdminRouteGuard>} />
           <Route path="/admin/addons" element={<AdminRouteGuard module="addons"><AdminAddons /></AdminRouteGuard>} />
           <Route path="/admin/configuracoes" element={<AdminRouteGuard module="configuracoes"><AdminConfiguracoes /></AdminRouteGuard>} />

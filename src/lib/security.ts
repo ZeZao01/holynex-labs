@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const ROLES = [
   "super_admin",
   "dev_admin",
+  "brand_admin",
+  "brand_designer",
+  "brand_reviewer",
   "admin_comercial",
   "admin_operacional",
   "admin_tecnico",
@@ -19,6 +22,9 @@ export type RoleName = (typeof ROLES)[number];
 export const ROLE_LABELS: Record<string, string> = {
   super_admin: "Super Admin",
   dev_admin: "Dev Admin",
+  brand_admin: "Brand Admin",
+  brand_designer: "Brand Designer",
+  brand_reviewer: "Brand Reviewer",
   admin_comercial: "Admin Comercial",
   admin_operacional: "Admin Operacional",
   admin_tecnico: "Admin Técnico",
@@ -31,7 +37,7 @@ export const ROLE_LABELS: Record<string, string> = {
 export const MODULES = [
   "dashboard", "leads", "propostas", "projetos", "sistemas",
   "acessos", "modulos", "manutencao", "portfolio", "modelos",
-  "financeiro", "ia", "seguranca", "configuracoes", "addons",
+  "financeiro", "ia", "seguranca", "configuracoes", "addons", "brand_studio",
 ] as const;
 
 export const MODULE_LABELS: Record<string, string> = {
@@ -40,6 +46,7 @@ export const MODULE_LABELS: Record<string, string> = {
   modulos: "Módulos", manutencao: "Manutenção", portfolio: "Portfólio",
   modelos: "Projetos Modelo", financeiro: "Financeiro", ia: "IA Assistiva",
   seguranca: "Segurança", configuracoes: "Configurações", addons: "Add-ons Ocultos",
+  brand_studio: "Brand Studio AI",
 };
 
 export const ACTIONS = [
@@ -69,12 +76,30 @@ export const DEFAULT_PERMISSIONS: Record<string, Record<string, string[]>> = {
     "acessar_financeiro", "acessar_seguranca", "gerenciar_configuracoes",
     "ativar_addon", "gerenciar_provedores_ia", "revisar_blueprint", "acessar_avancado",
   ]])),
+  brand_admin: {
+    brand_studio: [
+      "visualizar", "criar", "editar", "excluir", "exportar",
+      "gerar_pdf", "baixar_pdf", "aprovar", "gerenciar_provedores_ia", "revisar_blueprint",
+    ],
+    dashboard: ["visualizar"],
+  },
+  brand_designer: {
+    brand_studio: [
+      "visualizar", "criar", "editar", "exportar",
+      "gerar_pdf", "baixar_pdf", "gerenciar_provedores_ia", "revisar_blueprint",
+    ],
+    dashboard: ["visualizar"],
+  },
+  brand_reviewer: {
+    brand_studio: ["visualizar", "aprovar", "baixar_pdf", "revisar_blueprint"],
+    dashboard: ["visualizar"],
+  },
   admin_comercial: {
     dashboard: ["visualizar"], leads: ["visualizar", "criar", "editar", "excluir", "exportar"],
     propostas: ["visualizar", "criar", "editar", "excluir", "gerar_pdf", "baixar_pdf", "aprovar"],
     projetos: ["visualizar"], portfolio: ["visualizar", "criar", "editar"],
     modelos: ["visualizar", "criar", "editar"], financeiro: ["visualizar", "acessar_financeiro"],
-    ia: ["visualizar"],
+    ia: ["visualizar"], brand_studio: ["visualizar"],
   },
   admin_operacional: {
     dashboard: ["visualizar"], projetos: ["visualizar", "criar", "editar"],

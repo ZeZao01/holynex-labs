@@ -1,0 +1,39 @@
+import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
+import type { BrandProject } from "@/types/brand-studio";
+
+const DOMAIN = "brand-projects";
+const TABLE = "brand_projects";
+
+export async function listBrandProjects(): Promise<BrandProject[]> {
+  logDomain(DOMAIN, "listBrandProjects", "info", "Listing projects");
+  const result = await dbAny.from(TABLE).select("*").order("atualizado_em", { ascending: false });
+  return (unwrap(result, DOMAIN, "listBrandProjects") || []) as BrandProject[];
+}
+
+export async function getBrandProjectById(id: string): Promise<BrandProject | null> {
+  logDomain(DOMAIN, "getBrandProjectById", "info", `id=${id}`);
+  const result = await dbAny.from(TABLE).select("*").eq("id", id).maybeSingle();
+  return (unwrap(result, DOMAIN, "getBrandProjectById") || null) as BrandProject | null;
+}
+
+export async function createBrandProject(payload: Partial<BrandProject> & { nome: string }) {
+  logDomain(DOMAIN, "createBrandProject", "info", payload.nome);
+  const result = await dbAny.from(TABLE).insert(payload).select("*").single();
+  return unwrap(result, DOMAIN, "createBrandProject") as BrandProject;
+}
+
+export async function updateBrandProject(id: string, patch: Partial<BrandProject>) {
+  logDomain(DOMAIN, "updateBrandProject", "info", `id=${id}`);
+  const result = await dbAny.from(TABLE).update(patch).eq("id", id).select("*").single();
+  return unwrap(result, DOMAIN, "updateBrandProject") as BrandProject;
+}
+
+export async function countBrandProjects(): Promise<number> {
+  logDomain(DOMAIN, "countBrandProjects", "info", "Counting projects");
+  const { count, error } = await dbAny.from(TABLE).select("*", { count: "exact", head: true });
+  if (error) {
+    logDomain(DOMAIN, "countBrandProjects", "error", error.message);
+    return 0;
+  }
+  return count ?? 0;
+}

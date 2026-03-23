@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Sparkles,
   Layers,
+  Palette,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -65,6 +66,7 @@ const comercialItems: SidebarItem[] = [
   { title: "Projetos Modelo", url: "/admin/modelos", icon: LayoutTemplate, module: "modelos" },
   { title: "Financeiro", url: "/admin/financeiro", icon: DollarSign, module: "financeiro" },
   { title: "IA Assistiva", url: "/admin/ia", icon: Sparkles, module: "ia" },
+  { title: "Brand Studio AI", url: "/admin/brand-studio", icon: Palette, module: "brand_studio" },
 ];
 
 const sistemaItems: SidebarItem[] = [

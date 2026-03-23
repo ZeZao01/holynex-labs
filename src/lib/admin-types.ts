@@ -62,6 +62,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   { id: "portfolio", title: "Portfólio Público", description: "Vitrine de projetos", icon: "Globe", route: "/admin/portfolio" },
   { id: "models", title: "Projetos Modelo", description: "Templates e modelos", icon: "LayoutTemplate", route: "/admin/modelos" },
   { id: "finance", title: "Financeiro", description: "Receitas e métricas", icon: "DollarSign", route: "/admin/financeiro" },
+  { id: "brand_studio", title: "Brand Studio AI", description: "Branding, IA, assets e apresentações", icon: "Palette", route: "/admin/brand-studio" },
   { id: "security", title: "Segurança & Auditoria", description: "Logs e permissões", icon: "ShieldCheck", route: "/admin/seguranca" },
   { id: "settings", title: "Configurações", description: "Ajustes do sistema", icon: "Settings", route: "/admin/configuracoes" },
 ];

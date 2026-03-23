@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Users, FileText, FolderKanban, PackageCheck, Wrench, DollarSign,
   Plus, Mail, FilePlus, KeyRound, Globe, Settings, Repeat,
-  Sparkles, Blocks, TrendingUp, BarChart3, Brain, Target,
+  Sparkles, Blocks, TrendingUp, BarChart3, Brain, Target, Palette,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -265,6 +265,7 @@ export default function AdminDashboard() {
     { label: "Novo Acesso", icon: <KeyRound className="h-4 w-4" />, onClick: () => navigate("/admin/acessos") },
     { label: "Nova Solicitação", icon: <Wrench className="h-4 w-4" />, onClick: () => navigate("/admin/manutencao") },
     { label: "Portfólio", icon: <Globe className="h-4 w-4" />, onClick: () => navigate("/admin/portfolio-admin") },
+    { label: "Brand Studio", icon: <Palette className="h-4 w-4" />, onClick: () => navigate("/admin/brand-studio") },
     { label: "Configurações", icon: <Settings className="h-4 w-4" />, onClick: () => navigate("/admin/configuracoes") },
   ];
 

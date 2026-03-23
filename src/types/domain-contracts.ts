@@ -50,6 +50,9 @@ export type OperationalStatus = "em_uso" | "descontinuado" | "arquivado" | "base
 export type RoleName =
   | "super_admin"
   | "dev_admin"
+  | "brand_admin"
+  | "brand_designer"
+  | "brand_reviewer"
   | "admin_comercial"
   | "admin_operacional"
   | "admin_tecnico"
