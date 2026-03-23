@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ImageIcon } from "lucide-react";
 import BrandStudioRouteHeader from "@/components/brand-studio/BrandStudioRouteHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import BaseTable from "@/components/admin/BaseTable";
 import EmptyState from "@/components/admin/EmptyState";
 import { Badge } from "@/components/ui/badge";
+import AccessDenied from "@/components/admin/AccessDenied";
+import { useAccessControl } from "@/hooks/useAccessControl";
+import { logAction } from "@/lib/audit-logs";
 import { listBrandAssets } from "@/services/brand-assets";
 import type { BrandDesignAsset } from "@/types/brand-studio";
 
@@ -12,11 +15,13 @@ const fmtDate = (value: string) =>
   new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function AdminBrandStudioAssets() {
+  const { loading: accessLoading, canViewBrandProject, canViewBrandSensitive } = useAccessControl();
   const [loading, setLoading] = useState(true);
   const [assets, setAssets] = useState<BrandDesignAsset[]>([]);
 
   useEffect(() => {
     const load = async () => {
+      if (!canViewBrandProject()) return;
       setLoading(true);
       try {
         const data = await listBrandAssets();
@@ -25,8 +30,30 @@ export default function AdminBrandStudioAssets() {
         setLoading(false);
       }
     };
+    if (accessLoading) return;
     load();
-  }, []);
+  }, [accessLoading, canViewBrandProject]);
+
+  const isSensitiveAsset = useCallback(
+    (asset: BrandDesignAsset) =>
+      asset.bucket === "brand-final" || asset.bucket === "brand-pdf" || asset.asset_type === "presentation",
+    []
+  );
+
+  const visibleAssets = useMemo(() => {
+    if (canViewBrandSensitive()) return assets;
+    return assets.filter((asset) => !isSensitiveAsset(asset));
+  }, [assets, canViewBrandSensitive, isSensitiveAsset]);
+
+  const handleOpenAsset = useCallback((asset: BrandDesignAsset) => {
+    if (!asset.public_url) return;
+    if (isSensitiveAsset(asset) && !canViewBrandSensitive()) return;
+    void logAction("export_brand_asset", "brand_design_asset", asset.id, {
+      project_id: asset.project_id,
+      bucket: asset.bucket,
+      storage_path: asset.storage_path,
+    });
+  }, [canViewBrandSensitive, isSensitiveAsset]);
 
   const columns = useMemo(
     () => [
@@ -58,9 +85,35 @@ export default function AdminBrandStudioAssets() {
         className: "w-[170px]",
         render: (asset: BrandDesignAsset) => <span className="text-xs text-muted-foreground">{fmtDate(asset.criado_em)}</span>,
       },
+      {
+        key: "download",
+        header: "Arquivo",
+        className: "w-[160px]",
+        render: (asset: BrandDesignAsset) => {
+          if (!asset.public_url) return <span className="text-xs text-muted-foreground">Sem URL</span>;
+          if (isSensitiveAsset(asset) && !canViewBrandSensitive()) {
+            return <span className="text-xs text-muted-foreground">Restrito</span>;
+          }
+          return (
+            <a
+              className="text-xs text-primary underline underline-offset-4"
+              href={asset.public_url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => handleOpenAsset(asset)}
+            >
+              Abrir arquivo
+            </a>
+          );
+        },
+      },
     ],
-    [],
+    [canViewBrandSensitive, handleOpenAsset, isSensitiveAsset],
   );
+
+  if (!accessLoading && !canViewBrandProject()) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="space-y-6">
@@ -71,8 +124,8 @@ export default function AdminBrandStudioAssets() {
       />
 
       <SectionCard title="Repositorio de assets">
-        <BaseTable columns={columns} data={assets} keyExtractor={(item) => item.id} loading={loading} loadingRows={6} />
-        {!loading && assets.length === 0 && (
+        <BaseTable columns={columns} data={visibleAssets} keyExtractor={(item) => item.id} loading={loading} loadingRows={6} />
+        {!loading && visibleAssets.length === 0 && (
           <EmptyState
             compact
             icon={<ImageIcon className="h-8 w-8 text-muted-foreground" />}

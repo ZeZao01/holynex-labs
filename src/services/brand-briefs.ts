@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
+import { logAction } from "@/lib/audit-logs";
 import type {
   BrandBrief,
   BrandBriefReference,
@@ -68,7 +69,13 @@ export async function saveBrandBrief(payload: Partial<BrandBrief> & { project_id
       .eq("id", payload.id)
       .select("*")
       .single();
-    return unwrap(result, DOMAIN, "saveBrandBrief.update") as BrandBrief;
+    const updated = unwrap(result, DOMAIN, "saveBrandBrief.update") as BrandBrief;
+    await logAction("update_briefing", "brand_brief", updated.id, {
+      project_id: updated.project_id,
+      version: updated.version,
+      status: updated.status,
+    });
+    return updated;
   }
 
   const latest = await getLatestBrandBriefByProject(payload.project_id);
@@ -80,7 +87,13 @@ export async function saveBrandBrief(payload: Partial<BrandBrief> & { project_id
     .insert({ ...payload, version })
     .select("*")
     .single();
-  return unwrap(result, DOMAIN, "saveBrandBrief.create") as BrandBrief;
+  const created = unwrap(result, DOMAIN, "saveBrandBrief.create") as BrandBrief;
+  await logAction("create_briefing", "brand_brief", created.id, {
+    project_id: created.project_id,
+    version: created.version,
+    status: created.status,
+  });
+  return created;
 }
 
 export async function saveOrUpdateLatestBrandBrief(
@@ -112,7 +125,13 @@ export async function applyBrandBriefingNormalization(
     .eq("id", briefId)
     .select("*")
     .single();
-  return unwrap(result, DOMAIN, "applyBrandBriefingNormalization") as BrandBrief;
+  const updated = unwrap(result, DOMAIN, "applyBrandBriefingNormalization") as BrandBrief;
+  await logAction("normalize_briefing", "brand_brief", updated.id, {
+    project_id: updated.project_id,
+    readiness_score: updated.readiness_score,
+    status: updated.status,
+  });
+  return updated;
 }
 
 export async function listBrandBriefReferencesByProject(projectId: string): Promise<BrandBriefReference[]> {

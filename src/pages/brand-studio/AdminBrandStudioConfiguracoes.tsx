@@ -4,15 +4,19 @@ import BrandStudioRouteHeader from "@/components/brand-studio/BrandStudioRouteHe
 import SectionCard from "@/components/admin/SectionCard";
 import EmptyState from "@/components/admin/EmptyState";
 import { Badge } from "@/components/ui/badge";
+import AccessDenied from "@/components/admin/AccessDenied";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import { BRAND_STUDIO_BUCKETS, BRAND_STUDIO_ROLES } from "@/lib/brand-studio";
 import { listBrandAgentConfigs } from "@/services/brand-agents";
 
 export default function AdminBrandStudioConfiguracoes() {
+  const { loading: accessLoading, canManageBrandAgents } = useAccessControl();
   const [loading, setLoading] = useState(true);
   const [agentCount, setAgentCount] = useState(0);
 
   useEffect(() => {
     const load = async () => {
+      if (!canManageBrandAgents()) return;
       setLoading(true);
       try {
         const configs = await listBrandAgentConfigs();
@@ -21,8 +25,13 @@ export default function AdminBrandStudioConfiguracoes() {
         setLoading(false);
       }
     };
+    if (accessLoading) return;
     load();
-  }, []);
+  }, [accessLoading, canManageBrandAgents]);
+
+  if (!accessLoading && !canManageBrandAgents()) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="space-y-6">

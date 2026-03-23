@@ -55,6 +55,9 @@ export const ACTIONS = [
   "alterar_permissoes", "acessar_financeiro", "acessar_seguranca",
   "gerenciar_configuracoes", "ativar_addon", "gerenciar_provedores_ia",
   "revisar_blueprint", "acessar_avancado",
+  "view_brand_project", "create_brand_project", "edit_brand_project",
+  "run_brand_agent", "approve_brand_asset", "generate_brand_pdf",
+  "manage_brand_agents", "activate_brand_addon",
 ] as const;
 
 export const ACTION_LABELS: Record<string, string> = {
@@ -65,6 +68,14 @@ export const ACTION_LABELS: Record<string, string> = {
   acessar_seguranca: "Acessar Segurança", gerenciar_configuracoes: "Config. Sistema",
   ativar_addon: "Ativar Add-on", gerenciar_provedores_ia: "Gerenciar IA",
   revisar_blueprint: "Revisar Blueprint", acessar_avancado: "Acesso Avançado",
+  view_brand_project: "Ver Projeto Brand",
+  create_brand_project: "Criar Projeto Brand",
+  edit_brand_project: "Editar Projeto Brand",
+  run_brand_agent: "Executar Agente Brand",
+  approve_brand_asset: "Aprovar Asset Brand",
+  generate_brand_pdf: "Gerar PDF Brand",
+  manage_brand_agents: "Gerenciar Agentes Brand",
+  activate_brand_addon: "Ativar Add-on Brand",
 };
 
 // Default permissions matrix
@@ -75,11 +86,17 @@ export const DEFAULT_PERMISSIONS: Record<string, Record<string, string[]>> = {
     "gerar_pdf", "baixar_pdf", "aprovar", "visualizar_segredo",
     "acessar_financeiro", "acessar_seguranca", "gerenciar_configuracoes",
     "ativar_addon", "gerenciar_provedores_ia", "revisar_blueprint", "acessar_avancado",
+    "view_brand_project", "create_brand_project", "edit_brand_project",
+    "run_brand_agent", "approve_brand_asset", "generate_brand_pdf",
+    "manage_brand_agents", "activate_brand_addon",
   ]])),
   brand_admin: {
     brand_studio: [
       "visualizar", "criar", "editar", "excluir", "exportar",
       "gerar_pdf", "baixar_pdf", "aprovar", "gerenciar_provedores_ia", "revisar_blueprint",
+      "view_brand_project", "create_brand_project", "edit_brand_project",
+      "run_brand_agent", "approve_brand_asset", "generate_brand_pdf",
+      "manage_brand_agents", "activate_brand_addon",
     ],
     dashboard: ["visualizar"],
   },
@@ -87,11 +104,15 @@ export const DEFAULT_PERMISSIONS: Record<string, Record<string, string[]>> = {
     brand_studio: [
       "visualizar", "criar", "editar", "exportar",
       "gerar_pdf", "baixar_pdf", "gerenciar_provedores_ia", "revisar_blueprint",
+      "view_brand_project", "edit_brand_project", "run_brand_agent", "generate_brand_pdf",
     ],
     dashboard: ["visualizar"],
   },
   brand_reviewer: {
-    brand_studio: ["visualizar", "aprovar", "baixar_pdf", "revisar_blueprint"],
+    brand_studio: [
+      "visualizar", "aprovar", "baixar_pdf", "revisar_blueprint",
+      "view_brand_project", "approve_brand_asset", "generate_brand_pdf",
+    ],
     dashboard: ["visualizar"],
   },
   admin_comercial: {
@@ -99,7 +120,7 @@ export const DEFAULT_PERMISSIONS: Record<string, Record<string, string[]>> = {
     propostas: ["visualizar", "criar", "editar", "excluir", "gerar_pdf", "baixar_pdf", "aprovar"],
     projetos: ["visualizar"], portfolio: ["visualizar", "criar", "editar"],
     modelos: ["visualizar", "criar", "editar"], financeiro: ["visualizar", "acessar_financeiro"],
-    ia: ["visualizar"], brand_studio: ["visualizar"],
+    ia: ["visualizar"], brand_studio: ["visualizar", "view_brand_project"],
   },
   admin_operacional: {
     dashboard: ["visualizar"], projetos: ["visualizar", "criar", "editar"],

@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
+import { logAction } from "@/lib/audit-logs";
 import type {
   BrandAgentConfig,
   BrandAiRun,
@@ -350,12 +351,26 @@ export async function upsertBrandAgentConfig(payload: Partial<BrandAgentConfig> 
       .eq("id", payload.id)
       .select("*")
       .single();
-    return unwrap(result, DOMAIN, "upsertBrandAgentConfig.update") as BrandAgentConfig;
+    const updated = unwrap(result, DOMAIN, "upsertBrandAgentConfig.update") as BrandAgentConfig;
+    await logAction("update_brand_prompt", "brand_agent_config", updated.id, {
+      agent_key: updated.agent_key,
+      provider: updated.provider,
+      model: updated.model,
+      is_active: updated.is_active,
+    });
+    return updated;
   }
 
   logDomain(DOMAIN, "upsertBrandAgentConfig", "info", `create=${payload.agent_key}`);
   const result = await dbAny.from("brand_agent_configs").insert(payload).select("*").single();
-  return unwrap(result, DOMAIN, "upsertBrandAgentConfig.create") as BrandAgentConfig;
+  const created = unwrap(result, DOMAIN, "upsertBrandAgentConfig.create") as BrandAgentConfig;
+  await logAction("create_brand_prompt", "brand_agent_config", created.id, {
+    agent_key: created.agent_key,
+    provider: created.provider,
+    model: created.model,
+    is_active: created.is_active,
+  });
+  return created;
 }
 
 export async function listBrandAiRuns(limit = 100): Promise<BrandAiRun[]> {
@@ -479,6 +494,12 @@ export async function runBrandBriefingAgent(
     cost_estimated: null,
   });
 
+  await logAction("run_brand_agent", "brand_agent", run.id, {
+    project_id: project.id,
+    agent_key: BRIEFING_AGENT_KEY,
+    used_fallback: usedFallback,
+  });
+
   return {
     run,
     output,
@@ -574,6 +595,13 @@ export async function runBrandConsistencyQaAgent(payload: {
     tokens_input: null,
     tokens_output: null,
     cost_estimated: null,
+  });
+
+  await logAction("run_brand_agent", "brand_agent", run.id, {
+    project_id: payload.project.id,
+    agent_key: CONSISTENCY_QA_AGENT_KEY,
+    used_fallback: usedFallback,
+    prompt_version: CONSISTENCY_QA_PROMPT_VERSION,
   });
 
   return {

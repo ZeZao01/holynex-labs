@@ -13,8 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import SectionCard from "@/components/admin/SectionCard";
 import EmptyState from "@/components/admin/EmptyState";
+import AccessDenied from "@/components/admin/AccessDenied";
 import OperationalStatusPanel from "@/components/admin/OperationalStatusPanel";
 import BrandStudioRouteHeader from "@/components/brand-studio/BrandStudioRouteHeader";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import { getBrandProjectById, updateBrandProject } from "@/services/brand-projects";
 import { getBrandBriefsByProject, saveBrandBrief } from "@/services/brand-briefs";
 import { getBrandTasksByProject } from "@/services/brand-tasks";
@@ -237,6 +239,14 @@ const QA_STATUS_BADGE = {
 
 export default function AdminBrandStudioProjetoDetalhe() {
   const { id } = useParams<{ id: string }>();
+  const {
+    loading: accessLoading,
+    canViewBrandProject,
+    canEditBrandProject,
+    canRunBrandAgent,
+    canApproveBrandAsset,
+    guardAction,
+  } = useAccessControl();
 
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<BrandProject | null>(null);
@@ -462,7 +472,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
   }, []);
 
   const load = useCallback(async () => {
-    if (!id) return;
+    if (!id || !canViewBrandProject()) return;
     setLoading(true);
 
     try {
@@ -520,7 +530,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
     } finally {
       setLoading(false);
     }
-  }, [id, loadLinkOptions]);
+  }, [id, canViewBrandProject, loadLinkOptions]);
 
   useEffect(() => {
     if (!latestLogoConcept?.output_payload?.conceitos?.length) return;
@@ -556,7 +566,40 @@ export default function AdminBrandStudioProjetoDetalhe() {
     };
   }, []);
 
+  const ensureEditPermission = useCallback(async (description: string) => {
+    const allowed = await guardAction("brand_studio", "edit_brand_project", {
+      description,
+      severity: "medium",
+      metadata: { source: "brand_project_detail" },
+    });
+    if (!allowed) toast.error("Sem permissao para editar o projeto");
+    return allowed;
+  }, [guardAction]);
+
+  const ensureRunPermission = useCallback(async (description: string) => {
+    const allowed = await guardAction("brand_studio", "run_brand_agent", {
+      description,
+      severity: "medium",
+      metadata: { source: "brand_project_detail" },
+    });
+    if (!allowed) toast.error("Sem permissao para executar agentes");
+    return allowed;
+  }, [guardAction]);
+
+  const ensureApprovePermission = useCallback(async (description: string) => {
+    const allowed = await guardAction("brand_studio", "approve_brand_asset", {
+      description,
+      severity: "medium",
+      metadata: { source: "brand_project_detail" },
+    });
+    if (!allowed) toast.error("Sem permissao para aprovar ativos");
+    return allowed;
+  }, [guardAction]);
+
   const persistBrief = useCallback(async () => {
+    if (!(await ensureEditPermission("Salvar briefing de branding"))) {
+      throw new Error("Sem permissao para editar briefing");
+    }
     if (!project) throw new Error("Projeto nao carregado");
 
     const payload: Partial<BrandBrief> & { project_id: string; titulo: string } = {
@@ -587,9 +630,10 @@ export default function AdminBrandStudioProjetoDetalhe() {
     });
 
     return saved;
-  }, [activeBrief?.id, activeBrief?.status, form, project]);
+  }, [activeBrief?.id, activeBrief?.status, form, project, ensureEditPermission]);
 
   const handleSaveBrief = async () => {
+    if (!(await ensureEditPermission("Salvar briefing de branding"))) return;
     setSavingBrief(true);
     try {
       await persistBrief();
@@ -603,6 +647,8 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleSaveLinks = async () => {
     if (!project) return;
+
+    if (!(await ensureEditPermission("Atualizar vinculos operacionais"))) return;
 
     setSavingLinks(true);
     try {
@@ -645,6 +691,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleUploadLocalImages = async () => {
     if (!project || localImagePreviews.length === 0) return;
+    if (!(await ensureEditPermission("Enviar referencias de briefing"))) return;
 
     setUploadingImages(true);
     try {
@@ -675,6 +722,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleCreateUrlReferences = async () => {
     if (!project) return;
+    if (!(await ensureEditPermission("Adicionar URLs de referencia"))) return;
 
     const urls = parseBriefingListInput(urlInput).filter((value) => /^https?:\/\//i.test(value));
     if (!urls.length) {
@@ -705,6 +753,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleCreateNoteReferences = async () => {
     if (!project) return;
+    if (!(await ensureEditPermission("Adicionar notas de referencia"))) return;
 
     const notes = parseBriefingListInput(noteInput);
     if (!notes.length) {
@@ -734,6 +783,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
   };
 
   const handleDeleteReference = async (reference: BrandBriefReference) => {
+    if (!(await ensureEditPermission("Remover referencia de briefing"))) return;
     try {
       await deleteBrandBriefReferenceWithStorage(reference);
       setReferences((prev) => prev.filter((item) => item.id !== reference.id));
@@ -745,6 +795,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunBriefingAgent = async () => {
     if (!project) return;
+    if (!(await ensureRunPermission("Executar brand_briefing_agent"))) return;
 
     setRunningAgent(true);
     try {
@@ -779,6 +830,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunStrategyAgent = async () => {
     if (!project) return;
+    if (!(await ensureRunPermission("Executar brand_strategy_agent"))) return;
 
     setRunningStrategy(true);
     try {
@@ -809,6 +861,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleUpdateStrategyStatus = async (status: "aprovado" | "rejeitado") => {
     if (!latestStrategy) return;
+    if (!(await ensureApprovePermission("Atualizar status de direcao estrategica"))) return;
     setUpdatingStrategy(true);
     try {
       const updated = await updateBrandStrategyStatus(latestStrategy.id, status);
@@ -826,6 +879,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunPaletteAgent = async () => {
     if (!project) return;
+    if (!(await ensureRunPermission("Executar color_palette_agent"))) return;
 
     setRunningPalette(true);
     try {
@@ -857,6 +911,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleUpdatePaletteStatus = async (status: "aprovado" | "rejeitado") => {
     if (!latestPalette) return;
+    if (!(await ensureApprovePermission("Atualizar status de paleta"))) return;
     setUpdatingPalette(true);
     try {
       const updated = await updateBrandColorPaletteStatus(latestPalette.id, status);
@@ -874,6 +929,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunTypographyAgent = async () => {
     if (!project) return;
+    if (!(await ensureRunPermission("Executar typography_agent"))) return;
 
     setRunningTypography(true);
     try {
@@ -905,6 +961,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunLogoConceptAgent = async () => {
     if (!project) return;
+    if (!(await ensureRunPermission("Executar logo_concept_agent"))) return;
 
     setRunningLogoConcept(true);
     try {
@@ -938,6 +995,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunLogoCriticAgent = async () => {
     if (!project || !latestLogoConcept) return;
+    if (!(await ensureRunPermission("Executar logo_critic_agent"))) return;
 
     setRunningLogoCritic(true);
     try {
@@ -970,6 +1028,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleUpdateLogoStatus = async (status: "aprovado" | "rejeitado") => {
     if (!latestLogoConcept) return;
+    if (!(await ensureApprovePermission("Atualizar status do logo"))) return;
     setUpdatingLogoStatus(true);
     try {
       const updated = await updateBrandLogoConceptStatus(latestLogoConcept.id, status);
@@ -987,6 +1046,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleSelectConcept = async (index: number) => {
     if (!latestLogoConcept || !logoItems[index]) return;
+    if (!(await ensureEditPermission("Selecionar conceito de logo"))) return;
     setSelectedConceptIndex(index);
     try {
       const updated = await updateBrandLogoConceptSelection({
@@ -1005,6 +1065,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunBusinessCardAgent = async () => {
     if (!project) return;
+    if (!(await ensureRunPermission("Executar business_card_agent"))) return;
 
     setRunningBusinessCard(true);
     try {
@@ -1039,6 +1100,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunFlyerAgent = async () => {
     if (!project) return;
+    if (!(await ensureRunPermission("Executar flyer_agent"))) return;
 
     setRunningFlyer(true);
     try {
@@ -1072,6 +1134,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
   };
 
   const handleUpdatePieceStatus = async (pieceId: string, status: "aprovado" | "rejeitado") => {
+    if (!(await ensureApprovePermission("Atualizar status de peca"))) return;
     setUpdatingPieceStatus(true);
     try {
       const updated = await updateBrandPieceStatus(pieceId, status);
@@ -1096,6 +1159,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleRunConsistencyQa = async () => {
     if (!project) return;
+    if (!(await ensureRunPermission("Executar brand_consistency_qa_agent"))) return;
     setRunningConsistencyQa(true);
     try {
       let briefForRun = activeBrief;
@@ -1124,6 +1188,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleSaveChecklist = async () => {
     if (!project) return;
+    if (!(await ensureEditPermission("Salvar checklist operacional"))) return;
     setSavingChecklist(true);
     try {
       const nextMetadata = {
@@ -1145,6 +1210,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
 
   const handleUpdateTypographyStatus = async (status: "aprovado" | "rejeitado") => {
     if (!latestTypography) return;
+    if (!(await ensureApprovePermission("Atualizar status de tipografia"))) return;
     setUpdatingTypography(true);
     try {
       const updated = await updateBrandTypographyStatus(latestTypography.id, status);
@@ -1211,6 +1277,10 @@ export default function AdminBrandStudioProjetoDetalhe() {
     );
   }
 
+  if (!accessLoading && !canViewBrandProject()) {
+    return <AccessDenied />;
+  }
+
   if (loading) {
     return <div className="p-6 text-sm text-muted-foreground">Carregando projeto...</div>;
   }
@@ -1267,7 +1337,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
       <SectionCard
         title="Vinculos operacionais"
         action={
-          <Button size="sm" variant="outline" onClick={handleSaveLinks} disabled={savingLinks}>
+          <Button size="sm" variant="outline" onClick={handleSaveLinks} disabled={savingLinks || !canEditBrandProject()}>
             <Link2 className="h-3.5 w-3.5 mr-1" />
             {savingLinks ? "Salvando..." : "Salvar vinculos"}
           </Button>
@@ -1348,7 +1418,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
       <SectionCard
         title="Briefing estruturado"
         action={
-          <Button size="sm" onClick={handleSaveBrief} disabled={savingBrief}>
+          <Button size="sm" onClick={handleSaveBrief} disabled={savingBrief || !canEditBrandProject()}>
             <Save className="h-3.5 w-3.5 mr-1" />
             {savingBrief ? "Salvando..." : "Salvar briefing"}
           </Button>
@@ -1462,8 +1532,13 @@ export default function AdminBrandStudioProjetoDetalhe() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs">Upload de imagens (multiplo)</Label>
-              <Input type="file" accept="image/*" multiple onChange={handleSelectLocalImages} />
-              <Button size="sm" variant="outline" onClick={handleUploadLocalImages} disabled={uploadingImages || !localImagePreviews.length}>
+              <Input type="file" accept="image/*" multiple onChange={handleSelectLocalImages} disabled={!canEditBrandProject()} />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleUploadLocalImages}
+                disabled={uploadingImages || !localImagePreviews.length || !canEditBrandProject()}
+              >
                 <Upload className="h-3.5 w-3.5 mr-1" />
                 {uploadingImages ? "Enviando..." : "Enviar imagens"}
               </Button>
@@ -1472,7 +1547,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
             <div className="space-y-2">
               <Label className="text-xs">URLs de referencia (uma por linha)</Label>
               <Textarea rows={4} value={urlInput} onChange={(event) => setUrlInput(event.target.value)} />
-              <Button size="sm" variant="outline" onClick={handleCreateUrlReferences}>
+              <Button size="sm" variant="outline" onClick={handleCreateUrlReferences} disabled={!canEditBrandProject()}>
                 Adicionar URLs
               </Button>
             </div>
@@ -1481,7 +1556,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
           <div className="space-y-2">
             <Label className="text-xs">Notas de referencia (uma por linha)</Label>
             <Textarea rows={3} value={noteInput} onChange={(event) => setNoteInput(event.target.value)} />
-            <Button size="sm" variant="outline" onClick={handleCreateNoteReferences}>
+            <Button size="sm" variant="outline" onClick={handleCreateNoteReferences} disabled={!canEditBrandProject()}>
               Adicionar notas
             </Button>
           </div>
@@ -1516,7 +1591,13 @@ export default function AdminBrandStudioProjetoDetalhe() {
                         <Badge variant="outline" className="text-[10px]">
                           {reference.reference_type}
                         </Badge>
-                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => handleDeleteReference(reference)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2"
+                          onClick={() => handleDeleteReference(reference)}
+                          disabled={!canEditBrandProject()}
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -1546,7 +1627,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
       <SectionCard
         title="IA de briefing"
         action={
-          <Button size="sm" onClick={handleRunBriefingAgent} disabled={runningAgent}>
+          <Button size="sm" onClick={handleRunBriefingAgent} disabled={runningAgent || !canRunBrandAgent()}>
             <Sparkles className="h-3.5 w-3.5 mr-1" />
             {runningAgent ? "Executando..." : "Executar brand_briefing_agent"}
           </Button>
@@ -1598,14 +1679,14 @@ export default function AdminBrandStudioProjetoDetalhe() {
         title="Direcao estrategica e criativa"
         action={
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={handleRunStrategyAgent} disabled={runningStrategy}>
+            <Button size="sm" variant="outline" onClick={handleRunStrategyAgent} disabled={runningStrategy || !canRunBrandAgent()}>
               <RefreshCw className="h-3.5 w-3.5 mr-1" />
               {runningStrategy ? "Executando..." : "Executar brand_strategy_agent"}
             </Button>
             <Button
               size="sm"
               onClick={() => handleUpdateStrategyStatus("aprovado")}
-              disabled={!latestStrategy || updatingStrategy || latestStrategy.status === "aprovado"}
+              disabled={!latestStrategy || updatingStrategy || latestStrategy.status === "aprovado" || !canApproveBrandAsset()}
             >
               <Check className="h-3.5 w-3.5 mr-1" />
               Aprovar
@@ -1614,7 +1695,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
               size="sm"
               variant="destructive"
               onClick={() => handleUpdateStrategyStatus("rejeitado")}
-              disabled={!latestStrategy || updatingStrategy || latestStrategy.status === "rejeitado"}
+              disabled={!latestStrategy || updatingStrategy || latestStrategy.status === "rejeitado" || !canApproveBrandAsset()}
             >
               <X className="h-3.5 w-3.5 mr-1" />
               Rejeitar
@@ -1751,7 +1832,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
               size="sm"
               variant="outline"
               onClick={handleRunPaletteAgent}
-              disabled={runningPalette || !canRunVisual}
+              disabled={runningPalette || !canRunVisual || !canRunBrandAgent()}
             >
               <Palette className="h-3.5 w-3.5 mr-1" />
               {runningPalette ? "Executando..." : "Executar color_palette_agent"}
@@ -1759,7 +1840,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
             <Button
               size="sm"
               onClick={() => handleUpdatePaletteStatus("aprovado")}
-              disabled={!latestPalette || updatingPalette || latestPalette.status === "aprovado"}
+              disabled={!latestPalette || updatingPalette || latestPalette.status === "aprovado" || !canApproveBrandAsset()}
             >
               <Check className="h-3.5 w-3.5 mr-1" />
               Aprovar
@@ -1768,7 +1849,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
               size="sm"
               variant="destructive"
               onClick={() => handleUpdatePaletteStatus("rejeitado")}
-              disabled={!latestPalette || updatingPalette || latestPalette.status === "rejeitado"}
+              disabled={!latestPalette || updatingPalette || latestPalette.status === "rejeitado" || !canApproveBrandAsset()}
             >
               <X className="h-3.5 w-3.5 mr-1" />
               Revisar
@@ -1859,7 +1940,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
               size="sm"
               variant="outline"
               onClick={handleRunTypographyAgent}
-              disabled={runningTypography || !canRunVisual}
+              disabled={runningTypography || !canRunVisual || !canRunBrandAgent()}
             >
               <Type className="h-3.5 w-3.5 mr-1" />
               {runningTypography ? "Executando..." : "Executar typography_agent"}
@@ -1867,7 +1948,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
             <Button
               size="sm"
               onClick={() => handleUpdateTypographyStatus("aprovado")}
-              disabled={!latestTypography || updatingTypography || latestTypography.status === "aprovado"}
+              disabled={!latestTypography || updatingTypography || latestTypography.status === "aprovado" || !canApproveBrandAsset()}
             >
               <Check className="h-3.5 w-3.5 mr-1" />
               Aprovar
@@ -1876,7 +1957,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
               size="sm"
               variant="destructive"
               onClick={() => handleUpdateTypographyStatus("rejeitado")}
-              disabled={!latestTypography || updatingTypography || latestTypography.status === "rejeitado"}
+              disabled={!latestTypography || updatingTypography || latestTypography.status === "rejeitado" || !canApproveBrandAsset()}
             >
               <X className="h-3.5 w-3.5 mr-1" />
               Revisar
@@ -2000,7 +2081,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
               size="sm"
               variant="outline"
               onClick={handleRunLogoConceptAgent}
-              disabled={runningLogoConcept || !canRunLogo}
+              disabled={runningLogoConcept || !canRunLogo || !canRunBrandAgent()}
             >
               <Sparkles className="h-3.5 w-3.5 mr-1" />
               {runningLogoConcept ? "Executando..." : "Gerar conceitos"}
@@ -2009,7 +2090,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
               size="sm"
               variant="outline"
               onClick={handleRunLogoCriticAgent}
-              disabled={runningLogoCritic || !latestLogoConcept || !selectedConcept || !canRunLogo}
+              disabled={runningLogoCritic || !latestLogoConcept || !selectedConcept || !canRunLogo || !canRunBrandAgent()}
             >
               <RefreshCw className="h-3.5 w-3.5 mr-1" />
               {runningLogoCritic ? "Analisando..." : "Executar logo_critic_agent"}
@@ -2017,7 +2098,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
             <Button
               size="sm"
               onClick={() => handleUpdateLogoStatus("aprovado")}
-              disabled={!latestLogoConcept || updatingLogoStatus || latestLogoConcept.status === "aprovado"}
+              disabled={!latestLogoConcept || updatingLogoStatus || latestLogoConcept.status === "aprovado" || !canApproveBrandAsset()}
             >
               <Check className="h-3.5 w-3.5 mr-1" />
               Aprovar
@@ -2026,7 +2107,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
               size="sm"
               variant="destructive"
               onClick={() => handleUpdateLogoStatus("rejeitado")}
-              disabled={!latestLogoConcept || updatingLogoStatus || latestLogoConcept.status === "rejeitado"}
+              disabled={!latestLogoConcept || updatingLogoStatus || latestLogoConcept.status === "rejeitado" || !canApproveBrandAsset()}
             >
               <X className="h-3.5 w-3.5 mr-1" />
               Rejeitar
@@ -2081,6 +2162,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                         variant={selectedConceptIndex === index ? "default" : "outline"}
                         className="w-full"
                         onClick={() => handleSelectConcept(index)}
+                        disabled={!canEditBrandProject()}
                       >
                         {selectedConceptIndex === index ? "Selecionado" : "Selecionar para critica"}
                       </Button>
@@ -2239,10 +2321,20 @@ export default function AdminBrandStudioProjetoDetalhe() {
         title="Pecas derivadas da identidade"
         action={
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={handleRunBusinessCardAgent} disabled={runningBusinessCard || !canRunPieces}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRunBusinessCardAgent}
+              disabled={runningBusinessCard || !canRunPieces || !canRunBrandAgent()}
+            >
               {runningBusinessCard ? "Executando..." : "Executar business_card_agent"}
             </Button>
-            <Button size="sm" variant="outline" onClick={handleRunFlyerAgent} disabled={runningFlyer || !canRunPieces}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRunFlyerAgent}
+              disabled={runningFlyer || !canRunPieces || !canRunBrandAgent()}
+            >
               {runningFlyer ? "Executando..." : "Executar flyer_agent"}
             </Button>
           </div>
@@ -2316,7 +2408,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                     <Button
                       size="sm"
                       onClick={() => handleUpdatePieceStatus(latestBusinessCard.id, "aprovado")}
-                      disabled={updatingPieceStatus || latestBusinessCard.status === "aprovado"}
+                      disabled={updatingPieceStatus || latestBusinessCard.status === "aprovado" || !canApproveBrandAsset()}
                     >
                       <Check className="h-3.5 w-3.5 mr-1" /> Aprovar
                     </Button>
@@ -2324,7 +2416,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                       size="sm"
                       variant="destructive"
                       onClick={() => handleUpdatePieceStatus(latestBusinessCard.id, "rejeitado")}
-                      disabled={updatingPieceStatus || latestBusinessCard.status === "rejeitado"}
+                      disabled={updatingPieceStatus || latestBusinessCard.status === "rejeitado" || !canApproveBrandAsset()}
                     >
                       <X className="h-3.5 w-3.5 mr-1" /> Revisar
                     </Button>
@@ -2419,7 +2511,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                     <Button
                       size="sm"
                       onClick={() => handleUpdatePieceStatus(latestFlyer.id, "aprovado")}
-                      disabled={updatingPieceStatus || latestFlyer.status === "aprovado"}
+                      disabled={updatingPieceStatus || latestFlyer.status === "aprovado" || !canApproveBrandAsset()}
                     >
                       <Check className="h-3.5 w-3.5 mr-1" /> Aprovar
                     </Button>
@@ -2427,7 +2519,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                       size="sm"
                       variant="destructive"
                       onClick={() => handleUpdatePieceStatus(latestFlyer.id, "rejeitado")}
-                      disabled={updatingPieceStatus || latestFlyer.status === "rejeitado"}
+                      disabled={updatingPieceStatus || latestFlyer.status === "rejeitado" || !canApproveBrandAsset()}
                     >
                       <X className="h-3.5 w-3.5 mr-1" /> Revisar
                     </Button>
@@ -2454,7 +2546,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
       <SectionCard
         title="QA de consistencia (IA)"
         action={
-          <Button size="sm" variant="outline" onClick={handleRunConsistencyQa} disabled={runningConsistencyQa}>
+          <Button size="sm" variant="outline" onClick={handleRunConsistencyQa} disabled={runningConsistencyQa || !canRunBrandAgent()}>
             <ShieldCheck className="h-3.5 w-3.5 mr-1" />
             {runningConsistencyQa ? "Executando..." : "Executar brand_consistency_qa_agent"}
           </Button>
@@ -2555,7 +2647,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
       <SectionCard
         title="Checklist operacional e entrega"
         action={
-          <Button size="sm" variant="outline" onClick={handleSaveChecklist} disabled={savingChecklist}>
+          <Button size="sm" variant="outline" onClick={handleSaveChecklist} disabled={savingChecklist || !canEditBrandProject()}>
             <ClipboardCheck className="h-3.5 w-3.5 mr-1" />
             {savingChecklist ? "Salvando..." : "Salvar checklist"}
           </Button>
@@ -2575,6 +2667,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 <Checkbox
                   checked={checklist.files_ready}
                   onCheckedChange={(value) => updateChecklistValue("files_ready", Boolean(value))}
+                  disabled={!canEditBrandProject()}
                 />
                 <div className="flex-1">
                   <p className="text-sm">Arquivos finais disponiveis</p>
@@ -2589,6 +2682,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 <Checkbox
                   checked={checklist.versions_approved}
                   onCheckedChange={(value) => updateChecklistValue("versions_approved", Boolean(value))}
+                  disabled={!canEditBrandProject()}
                 />
                 <div className="flex-1">
                   <p className="text-sm">Versoes aprovadas</p>
@@ -2603,6 +2697,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 <Checkbox
                   checked={checklist.pdf_generated}
                   onCheckedChange={(value) => updateChecklistValue("pdf_generated", Boolean(value))}
+                  disabled={!canEditBrandProject()}
                 />
                 <div className="flex-1">
                   <p className="text-sm">PDF gerado</p>
@@ -2617,6 +2712,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 <Checkbox
                   checked={checklist.required_pieces_done}
                   onCheckedChange={(value) => updateChecklistValue("required_pieces_done", Boolean(value))}
+                  disabled={!canEditBrandProject()}
                 />
                 <div className="flex-1">
                   <p className="text-sm">Pecas obrigatorias concluidas</p>
@@ -2637,6 +2733,7 @@ export default function AdminBrandStudioProjetoDetalhe() {
                 value={checklist.final_notes}
                 onChange={(event) => updateChecklistValue("final_notes", event.target.value)}
                 placeholder="Observacoes para a entrega final (ex: detalhes do envio, ajustes combinados, etc.)"
+                disabled={!canEditBrandProject()}
               />
             </div>
           </div>

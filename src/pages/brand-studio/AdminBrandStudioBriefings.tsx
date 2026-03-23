@@ -7,6 +7,8 @@ import BaseTable from "@/components/admin/BaseTable";
 import EmptyState from "@/components/admin/EmptyState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import AccessDenied from "@/components/admin/AccessDenied";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import { listBrandBriefs } from "@/services/brand-briefs";
 import type { BrandBrief } from "@/types/brand-studio";
 
@@ -15,6 +17,7 @@ const fmtDate = (value: string) =>
 
 export default function AdminBrandStudioBriefings() {
   const navigate = useNavigate();
+  const { loading: accessLoading, canViewBrandProject } = useAccessControl();
   const [loading, setLoading] = useState(true);
   const [briefs, setBriefs] = useState<BrandBrief[]>([]);
 
@@ -28,8 +31,10 @@ export default function AdminBrandStudioBriefings() {
         setLoading(false);
       }
     };
+    if (accessLoading) return;
+    if (!canViewBrandProject()) return;
     load();
-  }, []);
+  }, [accessLoading, canViewBrandProject]);
 
   const columns = useMemo(
     () => [
@@ -82,6 +87,10 @@ export default function AdminBrandStudioBriefings() {
     ],
     [navigate],
   );
+
+  if (!accessLoading && !canViewBrandProject()) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="space-y-6">

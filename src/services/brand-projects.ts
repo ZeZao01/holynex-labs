@@ -1,4 +1,5 @@
 import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
+import { logAction } from "@/lib/audit-logs";
 import type { BrandProject } from "@/types/brand-studio";
 
 const DOMAIN = "brand-projects";
@@ -19,13 +20,22 @@ export async function getBrandProjectById(id: string): Promise<BrandProject | nu
 export async function createBrandProject(payload: Partial<BrandProject> & { nome: string }) {
   logDomain(DOMAIN, "createBrandProject", "info", payload.nome);
   const result = await dbAny.from(TABLE).insert(payload).select("*").single();
-  return unwrap(result, DOMAIN, "createBrandProject") as BrandProject;
+  const created = unwrap(result, DOMAIN, "createBrandProject") as BrandProject;
+  await logAction("create_brand_project", "brand_project", created.id, {
+    nome: created.nome,
+    status: created.status,
+  });
+  return created;
 }
 
 export async function updateBrandProject(id: string, patch: Partial<BrandProject>) {
   logDomain(DOMAIN, "updateBrandProject", "info", `id=${id}`);
   const result = await dbAny.from(TABLE).update(patch).eq("id", id).select("*").single();
-  return unwrap(result, DOMAIN, "updateBrandProject") as BrandProject;
+  const updated = unwrap(result, DOMAIN, "updateBrandProject") as BrandProject;
+  await logAction("edit_brand_project", "brand_project", updated.id, {
+    patch,
+  });
+  return updated;
 }
 
 export async function countBrandProjects(): Promise<number> {

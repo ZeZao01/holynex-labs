@@ -5,6 +5,8 @@ import SectionCard from "@/components/admin/SectionCard";
 import BaseTable from "@/components/admin/BaseTable";
 import EmptyState from "@/components/admin/EmptyState";
 import { Badge } from "@/components/ui/badge";
+import AccessDenied from "@/components/admin/AccessDenied";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import { listBrandAgentConfigs, listBrandAiRuns } from "@/services/brand-agents";
 import type { BrandAgentConfig, BrandAiRun } from "@/types/brand-studio";
 
@@ -12,23 +14,31 @@ const fmtDate = (value: string) =>
   new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function AdminBrandStudioPrompts() {
+  const { loading: accessLoading, canViewBrandProject, canRunBrandAgent, canManageBrandAgents } = useAccessControl();
   const [loading, setLoading] = useState(true);
   const [configs, setConfigs] = useState<BrandAgentConfig[]>([]);
   const [runs, setRuns] = useState<BrandAiRun[]>([]);
 
   useEffect(() => {
     const load = async () => {
+      const allowRuns = canViewBrandProject() || canRunBrandAgent();
+      const allowConfigs = canManageBrandAgents();
+      if (!allowRuns && !allowConfigs) return;
       setLoading(true);
       try {
-        const [configData, runData] = await Promise.all([listBrandAgentConfigs(), listBrandAiRuns(30)]);
-        setConfigs(configData);
-        setRuns(runData);
+        const [configData, runData] = await Promise.all([
+          allowConfigs ? listBrandAgentConfigs() : Promise.resolve([]),
+          allowRuns ? listBrandAiRuns(30) : Promise.resolve([]),
+        ]);
+        setConfigs(configData as BrandAgentConfig[]);
+        setRuns(runData as BrandAiRun[]);
       } finally {
         setLoading(false);
       }
     };
+    if (accessLoading) return;
     load();
-  }, []);
+  }, [accessLoading, canManageBrandAgents, canRunBrandAgent, canViewBrandProject]);
 
   const configColumns = useMemo(
     () => [
@@ -110,6 +120,10 @@ export default function AdminBrandStudioPrompts() {
     [],
   );
 
+  if (!accessLoading && !canManageBrandAgents() && !canRunBrandAgent() && !canViewBrandProject()) {
+    return <AccessDenied />;
+  }
+
   return (
     <div className="space-y-6">
       <BrandStudioRouteHeader
@@ -119,13 +133,24 @@ export default function AdminBrandStudioPrompts() {
       />
 
       <SectionCard title="Configuracoes de agentes">
-        <BaseTable columns={configColumns} data={configs} keyExtractor={(item) => item.id} loading={loading} loadingRows={4} />
-        {!loading && configs.length === 0 && (
+        {canManageBrandAgents() ? (
+          <>
+            <BaseTable columns={configColumns} data={configs} keyExtractor={(item) => item.id} loading={loading} loadingRows={4} />
+            {!loading && configs.length === 0 && (
+              <EmptyState
+                compact
+                icon={<BrainCircuit className="h-8 w-8 text-muted-foreground" />}
+                title="Nenhum agente configurado"
+                description="A tabela brand_agent_configs foi provisionada para controle de prompts e modelos."
+              />
+            )}
+          </>
+        ) : (
           <EmptyState
             compact
             icon={<BrainCircuit className="h-8 w-8 text-muted-foreground" />}
-            title="Nenhum agente configurado"
-            description="A tabela brand_agent_configs foi provisionada para controle de prompts e modelos."
+            title="Acesso restrito"
+            description="Somente perfis autorizados podem gerenciar prompts e provedores de IA."
           />
         )}
       </SectionCard>

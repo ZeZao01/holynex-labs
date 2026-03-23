@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { dbAny, logDomain, unwrap } from "@/lib/service-helpers";
+import { logAction } from "@/lib/audit-logs";
 import { createBrandAiRun } from "@/services/brand-agents";
 import type {
   BrandAiRun,
@@ -139,7 +140,12 @@ export async function updateBrandStrategyStatus(
   }
 
   const result = await dbAny.from(TABLE).update(payload).eq("id", id).select("*").single();
-  return unwrap(result, DOMAIN, "updateBrandStrategyStatus") as BrandStrategyOutput;
+  const updated = unwrap(result, DOMAIN, "updateBrandStrategyStatus") as BrandStrategyOutput;
+  await logAction(status === "aprovado" ? "approve_brand_asset" : "reject_brand_asset", "brand_strategy", updated.id, {
+    project_id: updated.project_id,
+    status,
+  });
+  return updated;
 }
 
 export async function runBrandStrategyAgent(payload: {
@@ -238,6 +244,13 @@ export async function runBrandStrategyAgent(payload: {
     .single();
 
   const outputRow = unwrap(saved, DOMAIN, "runBrandStrategyAgent.insert") as BrandStrategyOutput;
+
+  await logAction("run_brand_agent", "brand_agent", run.id, {
+    project_id: payload.project.id,
+    agent_key: STRATEGY_AGENT_KEY,
+    used_fallback: usedFallback,
+    prompt_version: PROMPT_VERSION,
+  });
 
   return {
     run,

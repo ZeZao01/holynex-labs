@@ -23,6 +23,15 @@ interface AccessControlContextValue {
   canApprove: (module: string) => boolean;
   canActivateAddon: () => boolean;
   canViewSensitiveData: () => boolean;
+  canViewBrandProject: () => boolean;
+  canCreateBrandProject: () => boolean;
+  canEditBrandProject: () => boolean;
+  canRunBrandAgent: () => boolean;
+  canApproveBrandAsset: () => boolean;
+  canGenerateBrandPdf: () => boolean;
+  canManageBrandAgents: () => boolean;
+  canActivateBrandAddon: () => boolean;
+  canViewBrandSensitive: () => boolean;
   isDevAdmin: () => boolean;
   isSuperAdmin: () => boolean;
   guardAction: (module: string, action: string, opts?: GuardOptions) => Promise<boolean>;
@@ -34,10 +43,12 @@ const VIEW_OVERRIDES: Record<string, string[]> = {
   financeiro: ["visualizar", "acessar_financeiro"],
   seguranca: ["visualizar", "acessar_seguranca"],
   configuracoes: ["visualizar", "gerenciar_configuracoes"],
+  brand_studio: ["visualizar", "view_brand_project"],
 };
 
 const EDIT_OVERRIDES: Record<string, string[]> = {
   configuracoes: ["editar", "gerenciar_configuracoes"],
+  brand_studio: ["editar", "edit_brand_project"],
 };
 
 export function AccessControlProvider({ children }: { children: ReactNode }) {
@@ -107,6 +118,51 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
   const canApprove = useCallback((module: string) => hasPermission(module, "aprovar"), [hasPermission]);
   const canActivateAddon = useCallback(() => hasPermission("configuracoes", "ativar_addon"), [hasPermission]);
   const canViewSensitiveData = useCallback(() => hasPermission("acessos", "visualizar_segredo"), [hasPermission]);
+  const canViewBrandProject = useCallback(
+    () => hasPermission("brand_studio", "view_brand_project") || canView("brand_studio"),
+    [hasPermission, canView]
+  );
+  const canCreateBrandProject = useCallback(
+    () => hasPermission("brand_studio", "create_brand_project") || canCreate("brand_studio"),
+    [hasPermission, canCreate]
+  );
+  const canEditBrandProject = useCallback(
+    () => hasPermission("brand_studio", "edit_brand_project") || canEdit("brand_studio"),
+    [hasPermission, canEdit]
+  );
+  const canRunBrandAgent = useCallback(
+    () => hasPermission("brand_studio", "run_brand_agent"),
+    [hasPermission]
+  );
+  const canApproveBrandAsset = useCallback(
+    () => hasPermission("brand_studio", "approve_brand_asset") || canApprove("brand_studio"),
+    [hasPermission, canApprove]
+  );
+  const canGenerateBrandPdf = useCallback(
+    () =>
+      hasPermission("brand_studio", "generate_brand_pdf") ||
+      hasPermission("brand_studio", "gerar_pdf") ||
+      hasPermission("brand_studio", "baixar_pdf"),
+    [hasPermission]
+  );
+  const canManageBrandAgents = useCallback(
+    () => hasPermission("brand_studio", "manage_brand_agents") || hasPermission("brand_studio", "gerenciar_provedores_ia"),
+    [hasPermission]
+  );
+  const canActivateBrandAddon = useCallback(
+    () =>
+      hasPermission("brand_studio", "activate_brand_addon") ||
+      hasPermission("brand_studio", "ativar_addon") ||
+      hasPermission("configuracoes", "ativar_addon"),
+    [hasPermission]
+  );
+  const canViewBrandSensitive = useCallback(
+    () =>
+      hasPermission("brand_studio", "visualizar_segredo") ||
+      hasPermission("brand_studio", "acessar_avancado") ||
+      hasPermission("acessos", "visualizar_segredo"),
+    [hasPermission]
+  );
   const isDevAdmin = useCallback(() => roles.includes("dev_admin") || roles.includes("super_admin"), [roles]);
   const isSuperAdmin = useCallback(() => roles.includes("super_admin"), [roles]);
 
@@ -131,10 +187,16 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
       loading, roles, permissions, refresh,
       hasPermission, canView, canCreate, canEdit, canDelete,
       canExport, canApprove, canActivateAddon, canViewSensitiveData,
+      canViewBrandProject, canCreateBrandProject, canEditBrandProject,
+      canRunBrandAgent, canApproveBrandAsset, canGenerateBrandPdf,
+      canManageBrandAgents, canActivateBrandAddon, canViewBrandSensitive,
       isDevAdmin, isSuperAdmin, guardAction,
     }),
     [loading, roles, permissions, refresh, hasPermission, canView, canCreate, canEdit,
      canDelete, canExport, canApprove, canActivateAddon, canViewSensitiveData,
+     canViewBrandProject, canCreateBrandProject, canEditBrandProject,
+     canRunBrandAgent, canApproveBrandAsset, canGenerateBrandPdf,
+     canManageBrandAgents, canActivateBrandAddon, canViewBrandSensitive,
      isDevAdmin, isSuperAdmin, guardAction]
   );
 

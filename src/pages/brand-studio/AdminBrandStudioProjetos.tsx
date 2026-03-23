@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
+import AccessDenied from "@/components/admin/AccessDenied";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import { createBrandProject, listBrandProjects } from "@/services/brand-projects";
 import type { BrandProject } from "@/types/brand-studio";
 import { BRAND_PROJECT_STATUS_LABELS } from "@/types/brand-studio";
@@ -19,6 +21,7 @@ const fmtDate = (value: string) =>
 
 export default function AdminBrandStudioProjetos() {
   const navigate = useNavigate();
+  const { loading: accessLoading, canViewBrandProject, canCreateBrandProject, guardAction } = useAccessControl();
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<BrandProject[]>([]);
   const [newProjectName, setNewProjectName] = useState("");
@@ -35,10 +38,21 @@ export default function AdminBrandStudioProjetos() {
   }, []);
 
   useEffect(() => {
+    if (accessLoading) return;
+    if (!canViewBrandProject()) return;
     load();
-  }, [load]);
+  }, [accessLoading, canViewBrandProject, load]);
 
   const handleCreateProject = async () => {
+    const allowed = await guardAction("brand_studio", "create_brand_project", {
+      description: "Tentativa de criar projeto de branding",
+      severity: "medium",
+      metadata: { source: "brand_studio_projects" },
+    });
+    if (!allowed) {
+      toast.error("Sem permissao para criar projetos");
+      return;
+    }
     const nome = newProjectName.trim();
     if (!nome) {
       toast.error("Informe o nome do projeto");
@@ -107,6 +121,10 @@ export default function AdminBrandStudioProjetos() {
     [navigate],
   );
 
+  if (!accessLoading && !canViewBrandProject()) {
+    return <AccessDenied />;
+  }
+
   return (
     <div className="space-y-6">
       <BrandStudioRouteHeader
@@ -124,8 +142,9 @@ export default function AdminBrandStudioProjetos() {
               onChange={(event) => setNewProjectName(event.target.value)}
               placeholder="Nome do novo projeto"
               className="h-8 w-56"
+              disabled={!canCreateBrandProject()}
             />
-            <Button size="sm" onClick={handleCreateProject} disabled={creatingProject}>
+            <Button size="sm" onClick={handleCreateProject} disabled={creatingProject || !canCreateBrandProject()}>
               <Plus className="h-3.5 w-3.5 mr-1" />
               {creatingProject ? "Criando..." : "Novo"}
             </Button>
