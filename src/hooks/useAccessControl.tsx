@@ -88,8 +88,9 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
   }, [user?.id, refresh]);
 
   const hasPermission = useCallback((module: string, action: string) => {
+    if (roles.includes("dev_admin") || roles.includes("super_admin")) return true;
     return !!permissions?.[module]?.[action];
-  }, [permissions]);
+  }, [permissions, roles]);
 
   const canView = useCallback((module: string) => {
     const actions = VIEW_OVERRIDES[module] || ["visualizar"];
