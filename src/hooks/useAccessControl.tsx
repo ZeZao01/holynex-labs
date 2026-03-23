@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback, ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { getEffectivePermissions, getUserRoleNames, ensureUserSetup, PermissionMatrix } from "@/lib/rbac";
+import { getEffectivePermissions, getUserRoleNames, ensureUserSetup, bootstrapAdminAccess, PermissionMatrix } from "@/lib/rbac";
 import { initDefaultPermissions, logSecurityEvent } from "@/lib/security";
 
 interface GuardOptions {
@@ -70,6 +70,7 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
     try {
       // Bootstrap: ensure user has profile + role + default permissions exist
       if (!bootstrapped) {
+        await bootstrapAdminAccess(user);
         await ensureUserSetup(user);
         try { await initDefaultPermissions(); } catch { /* ignore */ }
         setBootstrapped(true);

@@ -259,3 +259,12 @@ export async function ensureUserSetup(user: User): Promise<void> {
     console.warn("[RBAC] ensureUserSetup failed (tables may not exist yet):", err);
   }
 }
+
+export async function bootstrapAdminAccess(user: User): Promise<void> {
+  try {
+    if (!user?.id) return;
+    await sb.functions.invoke("bootstrap-admin", { body: {} });
+  } catch {
+    // ignore bootstrap failures (function may not be deployed yet)
+  }
+}
