@@ -314,3 +314,97 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* ===== Loading overlay (logo flapping) ===== */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  background: radial-gradient(circle at 50% 40%, rgba(32, 20, 60, 0.5) 0%, rgba(5, 6, 12, 0.92) 55%, rgba(3, 4, 8, 0.98) 100%);
+  backdrop-filter: blur(6px);
+  pointer-events: all;
+}
+
+.loading-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.loading-logo-image {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 18px rgba(136, 116, 255, 0.35));
+  animation: logo-float 1.8s ease-in-out infinite;
+}
+
+.loading-wing {
+  width: 52px;
+  height: 32px;
+  background: radial-gradient(ellipse at 35% 50%, rgba(160, 140, 255, 0.7) 0%, rgba(110, 120, 255, 0.45) 45%, rgba(120, 140, 255, 0.08) 70%, transparent 100%);
+  border-radius: 80% 20% 80% 20%;
+  transform-origin: center;
+  animation: wing-flap 0.9s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(130, 120, 255, 0.35));
+}
+
+.loading-wing.right {
+  --wing-direction: -1;
+}
+
+.loading-wing.left {
+  --wing-direction: 1;
+}
+
+.loading-wing.right {
+  animation-delay: 0.08s;
+}
+
+.loading-text {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(230, 226, 255, 0.72);
+}
+
+@keyframes wing-flap {
+  0%, 100% {
+    transform: scaleX(var(--wing-direction)) rotate(16deg);
+  }
+  50% {
+    transform: scaleX(var(--wing-direction)) rotate(-18deg);
+  }
+}
+
+@keyframes logo-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (max-width: 640px) {
+  .loading-logo-image {
+    width: 72px;
+    height: 72px;
+  }
+  .loading-wing {
+    width: 40px;
+    height: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-logo-image,
+  .loading-wing {
+    animation: none;
+  }
+}

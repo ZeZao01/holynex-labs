@@ -32,8 +32,10 @@ export default function AnimatedBackground() {
     let animationId: number;
     const orbs: Orb[] = [];
     const particles: Particle[] = [];
-    const orbCount = 4;
-    const particleCount = 80;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isSmallScreen = window.innerWidth < 900;
+    const orbCount = prefersReducedMotion ? 2 : isSmallScreen ? 3 : 4;
+    const particleCount = prefersReducedMotion ? 30 : isSmallScreen ? 50 : 80;
     const tokens = ["0", "0", "0", "1", "1", "1"];
 
     const resize = () => {
@@ -48,11 +50,11 @@ export default function AnimatedBackground() {
       orbs.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
+        vx: (Math.random() - 0.5) * (prefersReducedMotion ? 0.12 : 0.3),
+        vy: (Math.random() - 0.5) * (prefersReducedMotion ? 0.12 : 0.3),
         radius: 180 + Math.random() * 280,
         hue: 250 + Math.random() * 40,
-        alpha: 0.04 + Math.random() * 0.04,
+        alpha: 0.04 + Math.random() * (prefersReducedMotion ? 0.02 : 0.04),
       });
     }
 

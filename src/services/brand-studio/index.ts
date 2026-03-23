@@ -50,6 +50,13 @@ export {
 } from "@/services/brand-agents";
 
 export {
+  listBrandStrategyOutputsByProject,
+  getLatestBrandStrategyOutput,
+  updateBrandStrategyStatus,
+  runBrandStrategyAgent,
+} from "@/services/brand-strategy";
+
+export {
   listBrandVersionsByProject,
   listBrandPresentations,
   registerBrandPresentation,
