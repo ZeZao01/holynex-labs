@@ -99,6 +99,33 @@ export interface BrandBriefingExecutionResult extends BrandBriefingAgentRunResul
   brief: BrandBrief;
 }
 
+export type BrandConsistencyQaStatus = "pronto" | "em_revisao" | "critico";
+export type BrandConsistencyCheckStatus = "ok" | "attention" | "critical" | "pending";
+
+export interface BrandConsistencyQaCheck {
+  id: string;
+  label: string;
+  status: BrandConsistencyCheckStatus;
+  notes?: string;
+}
+
+export interface BrandConsistencyQaOutput {
+  readiness_score: number;
+  status: BrandConsistencyQaStatus;
+  readiness_for_delivery: boolean;
+  summary: string;
+  critical_issues: string[];
+  warnings: string[];
+  pending_items: string[];
+  checks: BrandConsistencyQaCheck[];
+}
+
+export interface BrandConsistencyQaExecutionResult {
+  run: BrandAiRun;
+  output: BrandConsistencyQaOutput;
+  used_fallback: boolean;
+}
+
 export type BrandStrategyStatus = "pendente" | "aprovado" | "rejeitado";
 
 export interface BrandStrategyDirection {

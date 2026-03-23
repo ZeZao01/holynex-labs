@@ -76,3 +76,5 @@ export {
   registerBrandPresentation,
   countBrandPresentations,
 } from "@/services/brand-pdf";
+
+export { runBrandConsistencyQaAgent } from "@/services/brand-consistency-qa";

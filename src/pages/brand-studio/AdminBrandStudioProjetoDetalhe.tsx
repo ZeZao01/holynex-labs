@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Check, Link2, Palette, RefreshCw, Save, Sparkles, Trash2, Type, Upload, X } from "lucide-react";
+import { AlertTriangle, Check, ClipboardCheck, Link2, Palette, RefreshCw, Save, ShieldCheck, Sparkles, Trash2, Type, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -12,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import SectionCard from "@/components/admin/SectionCard";
 import EmptyState from "@/components/admin/EmptyState";
+import OperationalStatusPanel from "@/components/admin/OperationalStatusPanel";
 import BrandStudioRouteHeader from "@/components/brand-studio/BrandStudioRouteHeader";
 import { getBrandProjectById, updateBrandProject } from "@/services/brand-projects";
 import { getBrandBriefsByProject, saveBrandBrief } from "@/services/brand-briefs";
@@ -19,6 +21,7 @@ import { getBrandTasksByProject } from "@/services/brand-tasks";
 import { getBrandAssetsByProject } from "@/services/brand-assets";
 import { listBrandVersionsByProject } from "@/services/brand-pdf";
 import { getBrandAiRunsByProject } from "@/services/brand-agents";
+import { runBrandConsistencyQaAgent } from "@/services/brand-consistency-qa";
 import {
   createBrandBriefReference,
   deleteBrandBriefReferenceWithStorage,
@@ -59,6 +62,7 @@ import { BRAND_PROJECT_STATUS_BADGE } from "@/lib/brand-studio";
 import {
   BRAND_PROJECT_STATUS_LABELS,
   type BrandAiRun,
+  type BrandConsistencyQaOutput,
   type BrandBrief,
   type BrandBriefReference,
   type BrandBusinessCardOutputPayload,
@@ -104,6 +108,15 @@ interface BriefFormState {
   observacoes_adicionais: string;
 }
 
+interface DeliveryChecklistState {
+  files_ready: boolean;
+  versions_approved: boolean;
+  pdf_generated: boolean;
+  required_pieces_done: boolean;
+  final_notes: string;
+  updated_at?: string;
+}
+
 const emptyFormState: BriefFormState = {
   titulo: "",
   contexto: "",
@@ -118,6 +131,14 @@ const emptyFormState: BriefFormState = {
   objetivos_identidade: "",
   referencia_visual_contexto: "",
   observacoes_adicionais: "",
+};
+
+const baseChecklistState: DeliveryChecklistState = {
+  files_ready: false,
+  versions_approved: false,
+  pdf_generated: false,
+  required_pieces_done: false,
+  final_notes: "",
 };
 
 const toListInput = (value: string[] | null | undefined) => (value || []).join("\n");
@@ -150,6 +171,20 @@ const buildFormState = (brief: BrandBrief | null, projectName = ""): BriefFormSt
     objetivos_identidade: toListInput(brief.objetivos_identidade),
     referencia_visual_contexto: brief.referencia_visual_contexto || "",
     observacoes_adicionais: brief.observacoes_adicionais || "",
+  };
+};
+
+const buildChecklistState = (
+  project: BrandProject | null,
+  defaults: DeliveryChecklistState
+): DeliveryChecklistState => {
+  if (!project?.metadata || typeof project.metadata !== "object") return defaults;
+  const raw = (project.metadata as { delivery_checklist?: Partial<DeliveryChecklistState> }).delivery_checklist;
+  if (!raw || typeof raw !== "object") return defaults;
+  return {
+    ...defaults,
+    ...raw,
+    final_notes: typeof raw.final_notes === "string" ? raw.final_notes : defaults.final_notes,
   };
 };
 
@@ -188,6 +223,18 @@ const VISUAL_STATUS_BADGE = {
   rejeitado: "bg-rose-500/15 text-rose-400",
 } as const;
 
+const QA_STATUS_LABELS = {
+  pronto: "Pronto",
+  em_revisao: "Em revisao",
+  critico: "Critico",
+} as const;
+
+const QA_STATUS_BADGE = {
+  pronto: "bg-emerald-500/15 text-emerald-400",
+  em_revisao: "bg-amber-500/15 text-amber-400",
+  critico: "bg-rose-500/15 text-rose-400",
+} as const;
+
 export default function AdminBrandStudioProjetoDetalhe() {
   const { id } = useParams<{ id: string }>();
 
@@ -216,12 +263,16 @@ export default function AdminBrandStudioProjetoDetalhe() {
   const [runningLogoCritic, setRunningLogoCritic] = useState(false);
   const [runningBusinessCard, setRunningBusinessCard] = useState(false);
   const [runningFlyer, setRunningFlyer] = useState(false);
+  const [runningConsistencyQa, setRunningConsistencyQa] = useState(false);
   const [savingLinks, setSavingLinks] = useState(false);
   const [updatingStrategy, setUpdatingStrategy] = useState(false);
   const [updatingPalette, setUpdatingPalette] = useState(false);
   const [updatingTypography, setUpdatingTypography] = useState(false);
   const [updatingLogoStatus, setUpdatingLogoStatus] = useState(false);
   const [updatingPieceStatus, setUpdatingPieceStatus] = useState(false);
+  const [savingChecklist, setSavingChecklist] = useState(false);
+  const [checklist, setChecklist] = useState<DeliveryChecklistState>(baseChecklistState);
+  const [qaOutput, setQaOutput] = useState<BrandConsistencyQaOutput | null>(null);
 
   const [urlInput, setUrlInput] = useState("");
   const [noteInput, setNoteInput] = useState("");
@@ -283,6 +334,79 @@ export default function AdminBrandStudioProjetoDetalhe() {
     latestPalette?.status === "aprovado" &&
     latestTypography?.status === "aprovado" &&
     latestLogoConcept?.status === "aprovado";
+
+  const requiredPieceTypes = ["business_card", "flyer"] as const;
+  const requiredPieces = useMemo(
+    () =>
+      requiredPieceTypes.map((type) => ({
+        type,
+        label: type === "business_card" ? "Cartao de visita" : "Flyer",
+        latest: pieces.find((piece) => piece.piece_type === type) || null,
+      })),
+    [pieces]
+  );
+
+  const hasApprovedPalette = colorPalettes.some((item) => item.status === "aprovado");
+  const hasApprovedTypography = typographySets.some((item) => item.status === "aprovado");
+  const hasApprovedLogo = logoConcepts.some((item) => item.status === "aprovado");
+  const hasApprovedSystemVisual = hasApprovedPalette && hasApprovedTypography;
+  const hasPresentation = versions.some((version) => Boolean(version.presentation_url));
+  const requiredPiecesApproved = requiredPieces.every((item) => item.latest?.status === "aprovado");
+  const autoVersionsApproved = versions.some((version) => ["aprovado", "apresentado"].includes(version.status));
+  const hasFinalAssets = assets.some((asset) => asset.bucket === "brand-final" || asset.asset_type === "presentation");
+
+  const latestConsistencyRun = useMemo(
+    () =>
+      aiRuns.find((run) =>
+        (run.input_payload as { agent_key?: string } | null)?.agent_key === "brand_consistency_qa_agent"
+      ) || null,
+    [aiRuns]
+  );
+
+  const latestConsistencyOutput = useMemo(() => {
+    const raw = latestConsistencyRun?.output_payload as Record<string, unknown> | null;
+    if (!raw || typeof raw !== "object") return null;
+    const statusRaw = String(raw.status || "");
+    const normalizedStatus =
+      statusRaw === "aprovado" ? "pronto" : statusRaw === "atencao" ? "em_revisao" : statusRaw;
+    const readinessForDelivery =
+      typeof raw.readiness_for_delivery === "boolean" ? raw.readiness_for_delivery : normalizedStatus !== "critico";
+    const checksRaw = Array.isArray(raw.checks) ? raw.checks : [];
+    const checks = checksRaw.map((check) => {
+      const payload = typeof check === "object" && check ? (check as Record<string, unknown>) : {};
+      const checkStatusRaw = String(payload.status || "");
+      const normalizedCheckStatus =
+        checkStatusRaw === "warn"
+          ? "attention"
+          : checkStatusRaw === "fail"
+            ? "critical"
+            : checkStatusRaw === "pending"
+              ? "pending"
+              : checkStatusRaw === "ok"
+                ? "ok"
+                : "attention";
+      return {
+        ...payload,
+        status: normalizedCheckStatus,
+      };
+    });
+    return {
+      ...(raw as BrandConsistencyQaOutput),
+      status: (normalizedStatus || "em_revisao") as BrandConsistencyQaOutput["status"],
+      readiness_score: typeof raw.readiness_score === "number" ? raw.readiness_score : 0,
+      readiness_for_delivery: readinessForDelivery,
+      checks: checks.length ? (checks as BrandConsistencyQaOutput["checks"]) : (raw as BrandConsistencyQaOutput).checks,
+    };
+  }, [latestConsistencyRun]);
+
+  const checklistDefaults = useMemo(
+    () => ({
+      ...baseChecklistState,
+      pdf_generated: hasPresentation,
+      required_pieces_done: requiredPiecesApproved,
+    }),
+    [hasPresentation, requiredPiecesApproved]
+  );
 
   const normalizedContextPreview = useMemo(() => {
     if (!activeBrief?.normalized_context) return "";
@@ -412,6 +536,15 @@ export default function AdminBrandStudioProjetoDetalhe() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!project) return;
+    setChecklist(buildChecklistState(project, checklistDefaults));
+  }, [project, checklistDefaults]);
+
+  useEffect(() => {
+    setQaOutput(latestConsistencyOutput || null);
+  }, [latestConsistencyOutput]);
 
   useEffect(() => {
     localImagePreviewsRef.current = localImagePreviews;
@@ -954,6 +1087,62 @@ export default function AdminBrandStudioProjetoDetalhe() {
     }
   };
 
+  const updateChecklistValue = (key: keyof DeliveryChecklistState, value: boolean | string) => {
+    setChecklist((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleRunConsistencyQa = async () => {
+    if (!project) return;
+    setRunningConsistencyQa(true);
+    try {
+      let briefForRun = activeBrief;
+      if (!briefForRun) {
+        briefForRun = await persistBrief();
+      }
+      const result = await runBrandConsistencyQaAgent({
+        project,
+        brief: briefForRun,
+        strategy: latestStrategy,
+        palette: latestPalette,
+        typography: latestTypography,
+        logo: latestLogoConcept,
+        pieces,
+        versions,
+      });
+      setAiRuns((prev) => [result.run, ...prev]);
+      setQaOutput(result.output);
+      toast.success(`brand_consistency_qa_agent executado${result.used_fallback ? " - fallback local" : ""}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha na execucao do QA de consistencia");
+    } finally {
+      setRunningConsistencyQa(false);
+    }
+  };
+
+  const handleSaveChecklist = async () => {
+    if (!project) return;
+    setSavingChecklist(true);
+    try {
+      const nextMetadata = {
+        ...(project.metadata || {}),
+        delivery_checklist: {
+          ...checklist,
+          updated_at: new Date().toISOString(),
+        },
+      };
+      const updated = await updateBrandProject(project.id, { metadata: nextMetadata });
+      setProject(updated);
+      toast.success("Checklist operacional salvo");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao salvar checklist operacional");
+    } finally {
+      setSavingChecklist(false);
+    }
+  };
+
   const handleUpdateTypographyStatus = async (status: "aprovado" | "rejeitado") => {
     if (!latestTypography) return;
     setUpdatingTypography(true);
@@ -991,6 +1180,28 @@ export default function AdminBrandStudioProjetoDetalhe() {
     const merged = [...payload.paleta_principal, ...payload.paleta_secundaria, ...payload.neutros, payload.destaque];
     return merged.filter(Boolean).slice(0, 8);
   };
+
+  const checklistComplete =
+    checklist.files_ready &&
+    checklist.versions_approved &&
+    checklist.pdf_generated &&
+    checklist.required_pieces_done;
+
+  const qaHasCritical = Boolean(qaOutput?.critical_issues?.length || qaOutput?.status === "critico");
+  const qaReady = qaOutput?.readiness_for_delivery === true;
+  const qaStatusLabel = qaOutput ? QA_STATUS_LABELS[qaOutput.status] ?? "Em revisao" : "Pendente";
+  const qaStatusBadge = qaOutput
+    ? QA_STATUS_BADGE[qaOutput.status] ?? "bg-amber-500/15 text-amber-400"
+    : "bg-muted text-muted-foreground";
+
+  const deliveryBlocks = [
+    !hasApprovedLogo ? "Logo aprovado ausente" : null,
+    !hasApprovedSystemVisual ? "Sistema visual aprovado ausente" : null,
+    qaHasCritical ? "QA marcou inconsistencias criticas" : null,
+    !hasPresentation ? "PDF nao foi gerado" : null,
+  ].filter(Boolean) as string[];
+
+  const deliveryReady = deliveryBlocks.length === 0 && checklistComplete && qaReady;
 
   if (!id) {
     return (
@@ -2235,6 +2446,233 @@ export default function AdminBrandStudioProjetoDetalhe() {
               <div className="rounded-md border border-border/40 p-2">Assinatura de e-mail</div>
               <div className="rounded-md border border-border/40 p-2">Papel timbrado</div>
               <div className="rounded-md border border-border/40 p-2">Manual rapido</div>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="QA de consistencia (IA)"
+        action={
+          <Button size="sm" variant="outline" onClick={handleRunConsistencyQa} disabled={runningConsistencyQa}>
+            <ShieldCheck className="h-3.5 w-3.5 mr-1" />
+            {runningConsistencyQa ? "Executando..." : "Executar brand_consistency_qa_agent"}
+          </Button>
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border/50 p-4 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium">Status da revisao automatizada</p>
+                <p className="text-[11px] text-muted-foreground">QA nao substitui a revisao humana final.</p>
+              </div>
+              <Badge className={`text-[10px] ${qaStatusBadge}`}>
+                {qaStatusLabel}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {qaOutput?.summary || "Execute o QA para validar consistencia entre estrategia, visual e entregas."}
+            </p>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Readiness</span>
+                <span>{qaOutput?.readiness_score ?? 0}%</span>
+              </div>
+              <Progress value={qaOutput?.readiness_score ?? 0} className="h-1.5" />
+            </div>
+            <p className="text-[11px] text-muted-foreground">Ultima avaliacao: {latestConsistencyRun?.criado_em ? fmtDate(latestConsistencyRun.criado_em) : "-"}</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="rounded-lg border border-border/50 p-3 space-y-2">
+              <p className="text-sm font-medium">Criticos</p>
+              {qaOutput?.critical_issues?.length ? (
+                <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                  {qaOutput.critical_issues.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">Nenhum bloqueio critico detectado.</p>
+              )}
+            </div>
+            <div className="rounded-lg border border-border/50 p-3 space-y-2">
+              <p className="text-sm font-medium">Atencoes</p>
+              {qaOutput?.warnings?.length ? (
+                <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                  {qaOutput.warnings.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">Sem alertas adicionais.</p>
+              )}
+            </div>
+            <div className="rounded-lg border border-border/50 p-3 space-y-2">
+              <p className="text-sm font-medium">Pendencias</p>
+              {qaOutput?.pending_items?.length ? (
+                <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                  {qaOutput.pending_items.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">Nenhuma pendencia listada.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border/50 p-3 space-y-2">
+            <p className="text-sm font-medium">Checks executados</p>
+            {qaOutput?.checks?.length ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                {qaOutput.checks.map((check) => (
+                  <div key={check.id} className="rounded-md border border-border/40 p-2 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span>{check.label}</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {check.status === "ok"
+                          ? "OK"
+                          : check.status === "attention"
+                            ? "Atencao"
+                            : check.status === "pending"
+                              ? "Pendente"
+                              : "Critico"}
+                      </Badge>
+                    </div>
+                    {check.notes ? <p className="text-[11px] text-muted-foreground">{check.notes}</p> : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Nenhum check registrado ate o momento.</p>
+            )}
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Checklist operacional e entrega"
+        action={
+          <Button size="sm" variant="outline" onClick={handleSaveChecklist} disabled={savingChecklist}>
+            <ClipboardCheck className="h-3.5 w-3.5 mr-1" />
+            {savingChecklist ? "Salvando..." : "Salvar checklist"}
+          </Button>
+        }
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="rounded-lg border border-border/50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">Checklist final</p>
+                <Badge className={`text-[10px] ${checklistComplete ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+                  {checklistComplete ? "Completo" : "Pendente"}
+                </Badge>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={checklist.files_ready}
+                  onCheckedChange={(value) => updateChecklistValue("files_ready", Boolean(value))}
+                />
+                <div className="flex-1">
+                  <p className="text-sm">Arquivos finais disponiveis</p>
+                  <p className="text-[11px] text-muted-foreground">Confirme que os assets finais estao no bucket apropriado.</p>
+                </div>
+                <Badge variant="outline" className="text-[10px]">
+                  {hasFinalAssets ? "Auto: detectado" : "Auto: nao detectado"}
+                </Badge>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={checklist.versions_approved}
+                  onCheckedChange={(value) => updateChecklistValue("versions_approved", Boolean(value))}
+                />
+                <div className="flex-1">
+                  <p className="text-sm">Versoes aprovadas</p>
+                  <p className="text-[11px] text-muted-foreground">Garanta que a versao final esta aprovada internamente.</p>
+                </div>
+                <Badge variant="outline" className="text-[10px]">
+                  {autoVersionsApproved ? "Auto: aprovada" : "Auto: pendente"}
+                </Badge>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={checklist.pdf_generated}
+                  onCheckedChange={(value) => updateChecklistValue("pdf_generated", Boolean(value))}
+                />
+                <div className="flex-1">
+                  <p className="text-sm">PDF gerado</p>
+                  <p className="text-[11px] text-muted-foreground">Apresentacao final exportada e pronta para envio.</p>
+                </div>
+                <Badge variant="outline" className="text-[10px]">
+                  {hasPresentation ? "Auto: detectado" : "Auto: ausente"}
+                </Badge>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={checklist.required_pieces_done}
+                  onCheckedChange={(value) => updateChecklistValue("required_pieces_done", Boolean(value))}
+                />
+                <div className="flex-1">
+                  <p className="text-sm">Pecas obrigatorias concluidas</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {requiredPieces.map((piece) => piece.label).join(" + ")}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-[10px]">
+                  {requiredPiecesApproved ? "Auto: aprovado" : "Auto: pendente"}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border/50 p-4 space-y-2">
+              <Label className="text-xs">Observacoes finais</Label>
+              <Textarea
+                rows={3}
+                value={checklist.final_notes}
+                onChange={(event) => updateChecklistValue("final_notes", event.target.value)}
+                placeholder="Observacoes para a entrega final (ex: detalhes do envio, ajustes combinados, etc.)"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border/50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">Status de entrega</p>
+                <Badge className={`text-[10px] ${deliveryReady ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+                  {deliveryReady ? "Pronto" : "Bloqueado"}
+                </Badge>
+              </div>
+              <OperationalStatusPanel
+                items={[
+                  { label: "Logo aprovado", status: hasApprovedLogo ? "ok" : "pending" },
+                  { label: "Sistema visual aprovado", status: hasApprovedSystemVisual ? "ok" : "pending" },
+                  { label: "QA sem criticos", status: qaHasCritical ? "attention" : qaReady ? "ok" : "pending" },
+                  { label: "PDF gerado", status: hasPresentation ? "ok" : "pending" },
+                  { label: "Checklist completo", status: checklistComplete ? "ok" : "pending" },
+                ]}
+              />
+            </div>
+
+            <div className="rounded-lg border border-border/50 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <AlertTriangle className="h-4 w-4 text-amber-400" /> Bloqueios ativos
+              </div>
+              {deliveryBlocks.length ? (
+                <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                  {deliveryBlocks.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">Nenhum bloqueio ativo identificado.</p>
+              )}
             </div>
           </div>
         </div>
