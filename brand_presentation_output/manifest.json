@@ -1,0 +1,7 @@
+{
+  "blueprint": "blueprint.json",
+  "text": "presentation_text.json",
+  "artifacts": "artifacts.json",
+  "export": "presentation.pdf",
+  "generated_at": "2026-03-23T14:19:09.061388Z"
+}

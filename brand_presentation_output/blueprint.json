@@ -1,0 +1,56 @@
+{
+  "title": "Identidade Visual Infinity",
+  "sections": [
+    {
+      "section_key": "cover",
+      "title": "Capa",
+      "order_index": 1
+    },
+    {
+      "section_key": "context",
+      "title": "Contexto",
+      "order_index": 2
+    },
+    {
+      "section_key": "objectives",
+      "title": "Objetivos",
+      "order_index": 3
+    },
+    {
+      "section_key": "creative_direction",
+      "title": "Direcao criativa",
+      "order_index": 4
+    },
+    {
+      "section_key": "palette",
+      "title": "Paleta",
+      "order_index": 5
+    },
+    {
+      "section_key": "typography",
+      "title": "Tipografia",
+      "order_index": 6
+    },
+    {
+      "section_key": "logo",
+      "title": "Logo",
+      "order_index": 7
+    },
+    {
+      "section_key": "pieces",
+      "title": "Pecas",
+      "order_index": 8
+    },
+    {
+      "section_key": "redesign_rationale",
+      "title": "Justificativa do redesign",
+      "order_index": 9
+    },
+    {
+      "section_key": "next_steps",
+      "title": "Proximos passos",
+      "order_index": 10
+    }
+  ],
+  "generated_at": "2026-03-23T14:19:09.057039Z"
+}

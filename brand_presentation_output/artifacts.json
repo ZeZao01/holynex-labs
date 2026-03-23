@@ -1,0 +1,65 @@
+[
+  {
+    "artifact_type": "strategy",
+    "artifact_payload": {
+      "approved": true,
+      "summary": "Posicionamento premium com linguagem direta e foco em confianca.",
+      "objectives": "Reforcar credibilidade e diferenciar a marca no segmento.",
+      "creative_direction": "Minimalista, tecnico e alinhado a performance.",
+      "purpose": "Traduzir a estrategia em um sistema visual consistente."
+    }
+  },
+  {
+    "artifact_type": "palette",
+    "artifact_payload": {
+      "approved": true,
+      "summary": "Paleta neutra com acentos contrastantes para hierarquia.",
+      "colors": [
+        "#0F1115",
+        "#F5F5F2",
+        "#C2A96B",
+        "#2F6FED"
+      ]
+    }
+  },
+  {
+    "artifact_type": "typography",
+    "artifact_payload": {
+      "approved": true,
+      "summary": "Familias legiveis com boa leitura em digital e impresso.",
+      "families": [
+        "Manrope",
+        "Source Serif 4"
+      ]
+    }
+  },
+  {
+    "artifact_type": "logo",
+    "artifact_payload": {
+      "approved": true,
+      "summary": "Logo geometrico com equilibrio entre solidez e precisao.",
+      "concept": "Sintese entre estabilidade e movimento controlado."
+    }
+  },
+  {
+    "artifact_type": "piece",
+    "artifact_payload": {
+      "approved": true,
+      "name": "Cartao de visitas"
+    }
+  },
+  {
+    "artifact_type": "piece",
+    "artifact_payload": {
+      "approved": true,
+      "name": "Template de apresentacao"
+    }
+  },
+  {
+    "artifact_type": "piece",
+    "artifact_payload": {
+      "approved": true,
+      "name": "Assinatura de email"
+    }
+  }
+]
