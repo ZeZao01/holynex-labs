@@ -405,11 +405,11 @@ export default function AdminBrandStudioProjetoDetalhe() {
       };
     });
     return {
-      ...(raw as BrandConsistencyQaOutput),
+      ...(raw as unknown as BrandConsistencyQaOutput),
       status: (normalizedStatus || "em_revisao") as BrandConsistencyQaOutput["status"],
       readiness_score: typeof raw.readiness_score === "number" ? raw.readiness_score : 0,
       readiness_for_delivery: readinessForDelivery,
-      checks: checks.length ? (checks as BrandConsistencyQaOutput["checks"]) : (raw as BrandConsistencyQaOutput).checks,
+      checks: checks.length ? (checks as BrandConsistencyQaOutput["checks"]) : (raw as unknown as BrandConsistencyQaOutput).checks,
     };
   }, [latestConsistencyRun]);
 

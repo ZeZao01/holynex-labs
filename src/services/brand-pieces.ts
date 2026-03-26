@@ -467,7 +467,7 @@ export async function runFlyerAgent(payload: {
     cost_estimated: null,
   })) as BrandAiRun;
 
-  const version = await createBrandVersionForPiece(payload.project.id, "flyer");
+  const version = await createBrandVersionForPiece(payload.project.id, "flyer") as { id: string; version_number: number };
 
   const saved = await dbAny
     .from(TABLE)
