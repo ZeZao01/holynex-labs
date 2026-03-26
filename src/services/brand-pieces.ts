@@ -332,7 +332,7 @@ export async function runBusinessCardAgent(payload: {
     cost_estimated: null,
   })) as BrandAiRun;
 
-  const version = await createBrandVersionForPiece(payload.project.id, "business_card");
+  const version = await createBrandVersionForPiece(payload.project.id, "business_card") as { id: string; version_number: number };
 
   const saved = await dbAny
     .from(TABLE)
