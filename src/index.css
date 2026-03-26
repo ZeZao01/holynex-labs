@@ -315,54 +315,48 @@
   animation-play-state: paused;
 }
 
-/* ===== Loading overlay (logo flapping) ===== */
+/* ===== Loading overlay (phoenix flapping) ===== */
 .loading-overlay {
   position: fixed;
   inset: 0;
   z-index: 50;
-  display: grid;
-  place-items: center;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
   background: radial-gradient(circle at 50% 40%, rgba(32, 20, 60, 0.5) 0%, rgba(5, 6, 12, 0.92) 55%, rgba(3, 4, 8, 0.98) 100%);
   backdrop-filter: blur(6px);
   pointer-events: all;
 }
 
-.loading-logo {
-  display: inline-flex;
+.loading-phoenix {
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  animation: phoenix-fly 2.4s ease-in-out infinite;
 }
 
-.loading-logo-image {
-  width: 96px;
-  height: 96px;
+.loading-phoenix-img {
+  width: 110px;
+  height: 110px;
   object-fit: contain;
-  filter: drop-shadow(0 0 18px rgba(136, 116, 255, 0.35));
-  animation: logo-float 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 24px rgba(136, 116, 255, 0.4));
+  animation: phoenix-flap 0.6s ease-in-out infinite;
 }
 
-.loading-wing {
-  width: 52px;
-  height: 32px;
-  background: radial-gradient(ellipse at 35% 50%, rgba(160, 140, 255, 0.7) 0%, rgba(110, 120, 255, 0.45) 45%, rgba(120, 140, 255, 0.08) 70%, transparent 100%);
-  border-radius: 80% 20% 80% 20%;
-  transform-origin: center;
-  animation: wing-flap 0.9s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px rgba(130, 120, 255, 0.35));
-}
-
-.loading-wing.right {
-  --wing-direction: -1;
-}
-
-.loading-wing.left {
-  --wing-direction: 1;
-}
-
-.loading-wing.right {
-  animation-delay: 0.08s;
+.loading-phoenix::after {
+  content: '';
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(136, 116, 255, 0.25) 0%, transparent 70%);
+  animation: phoenix-shadow 2.4s ease-in-out infinite;
 }
 
 .loading-text {
@@ -373,38 +367,61 @@
   color: rgba(230, 226, 255, 0.72);
 }
 
-@keyframes wing-flap {
+/* Flapping: squash/stretch on X to simulate wing beats */
+@keyframes phoenix-flap {
   0%, 100% {
-    transform: scaleX(var(--wing-direction)) rotate(16deg);
+    transform: scaleX(1) scaleY(1);
   }
-  50% {
-    transform: scaleX(var(--wing-direction)) rotate(-18deg);
+  30% {
+    transform: scaleX(1.12) scaleY(0.92);
+  }
+  60% {
+    transform: scaleX(0.9) scaleY(1.06);
   }
 }
 
-@keyframes logo-float {
+/* Floating up and down like flying */
+@keyframes phoenix-fly {
   0%, 100% {
-    transform: translateY(0);
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-12px) rotate(-1.5deg);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-4px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-14px) rotate(1.5deg);
+  }
+}
+
+/* Shadow shrinks when phoenix rises */
+@keyframes phoenix-shadow {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.5;
+  }
+  25%, 75% {
+    transform: translateX(-50%) scale(0.6);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translateX(-50%) scale(0.85);
+    opacity: 0.4;
   }
 }
 
 @media (max-width: 640px) {
-  .loading-logo-image {
-    width: 72px;
-    height: 72px;
-  }
-  .loading-wing {
-    width: 40px;
-    height: 26px;
+  .loading-phoenix-img {
+    width: 80px;
+    height: 80px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading-logo-image,
-  .loading-wing {
+  .loading-phoenix-img,
+  .loading-phoenix {
     animation: none;
   }
 }
