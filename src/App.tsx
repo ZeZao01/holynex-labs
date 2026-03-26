@@ -55,7 +55,15 @@ const AdminBrandStudioAssets = lazy(() => import("./pages/brand-studio/AdminBran
 const AdminBrandStudioConfiguracoes = lazy(() => import("./pages/brand-studio/AdminBrandStudioConfiguracoes"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
 
 function AppRoutes() {
   const location = useLocation();
