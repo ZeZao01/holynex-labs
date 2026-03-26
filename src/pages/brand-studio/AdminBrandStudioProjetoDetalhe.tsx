@@ -336,8 +336,8 @@ export default function AdminBrandStudioProjetoDetalhe() {
     [pieces]
   );
   const latestFlyer = useMemo(() => pieces.find((piece) => piece.piece_type === "flyer") || null, [pieces]);
-  const businessCardPayload = latestBusinessCard?.output_payload as BrandBusinessCardOutputPayload | null;
-  const flyerPayload = latestFlyer?.output_payload as BrandFlyerOutputPayload | null;
+  const businessCardPayload = latestBusinessCard?.output_payload as unknown as BrandBusinessCardOutputPayload | null;
+  const flyerPayload = latestFlyer?.output_payload as unknown as BrandFlyerOutputPayload | null;
 
   const canRunVisual = latestStrategy?.status === "aprovado";
   const canRunLogo = canRunVisual;
@@ -405,11 +405,11 @@ export default function AdminBrandStudioProjetoDetalhe() {
       };
     });
     return {
-      ...(raw as BrandConsistencyQaOutput),
+      ...(raw as unknown as BrandConsistencyQaOutput),
       status: (normalizedStatus || "em_revisao") as BrandConsistencyQaOutput["status"],
       readiness_score: typeof raw.readiness_score === "number" ? raw.readiness_score : 0,
       readiness_for_delivery: readinessForDelivery,
-      checks: checks.length ? (checks as BrandConsistencyQaOutput["checks"]) : (raw as BrandConsistencyQaOutput).checks,
+      checks: checks.length ? (checks as BrandConsistencyQaOutput["checks"]) : (raw as unknown as BrandConsistencyQaOutput).checks,
     };
   }, [latestConsistencyRun]);
 
