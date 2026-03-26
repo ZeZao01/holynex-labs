@@ -336,8 +336,8 @@ export default function AdminBrandStudioProjetoDetalhe() {
     [pieces]
   );
   const latestFlyer = useMemo(() => pieces.find((piece) => piece.piece_type === "flyer") || null, [pieces]);
-  const businessCardPayload = latestBusinessCard?.output_payload as BrandBusinessCardOutputPayload | null;
-  const flyerPayload = latestFlyer?.output_payload as BrandFlyerOutputPayload | null;
+  const businessCardPayload = latestBusinessCard?.output_payload as unknown as BrandBusinessCardOutputPayload | null;
+  const flyerPayload = latestFlyer?.output_payload as unknown as BrandFlyerOutputPayload | null;
 
   const canRunVisual = latestStrategy?.status === "aprovado";
   const canRunLogo = canRunVisual;
