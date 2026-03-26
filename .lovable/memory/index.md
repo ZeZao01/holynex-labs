@@ -16,5 +16,7 @@ Edge function gerar-proposta pipeline, provider priority, PDF generation, and pr
 - gerarPropostaIA returns GerarPropostaResult { proposta, structured_content, document_spec, pricing_sheet, stitch_prompt, hidden_addons, portfolio_refs, pdf_blueprint, ai_metadata }
 - PDF includes: pricing table, terms & conditions, compliance (exclusions/assumptions)
 - Design system: dark cyberpunk theme, HSL colors, Space Grotesk + Inter fonts
-- PDF style: Genspark Slides-inspired (v4) — dark navy bg, decorative circles, category badges, numbered cards with colored top borders, watermark numbers, bold typography
+- PDF style v6: dark navy bg, clean cards with accent top borders, numbered badges (no unicode icons), safeText() strips accents for jsPDF helvetica compatibility
 - PDF pages: Cover → Executive Summary → Scope/Features → Investment → Strategic Benefits → Tiers (conditional) → Timeline → Risks → Closing
+- PDF logo: uses logo-transparent.png (phoenix bird) at 28x28mm on cover, 36x36mm on closing
+- PDF CRITICAL: jsPDF helvetica cannot render unicode symbols (◎◆★◇●) or accented chars properly — always use safeText() and ASCII-only icons
