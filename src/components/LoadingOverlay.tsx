@@ -1,4 +1,4 @@
-import logo from "@/assets/logo-transparent.png";
+import logo from "@/assets/logo-loading.png";
 
 type LoadingOverlayProps = {
   active?: boolean;
