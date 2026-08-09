@@ -18,7 +18,9 @@ import {
   Sparkles,
   Layers,
   Palette,
+  Network,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccessControl } from "@/hooks/useAccessControl";
@@ -41,7 +43,7 @@ import logo from "@/assets/logo.png";
 interface SidebarItem {
   title: string;
   url: string;
-  icon: any;
+  icon: LucideIcon;
   module: string;
   action?: string;
 }
@@ -70,6 +72,7 @@ const comercialItems: SidebarItem[] = [
 ];
 
 const sistemaItems: SidebarItem[] = [
+  { title: "QG Agência", url: "/admin/qg", icon: Network, module: "configuracoes" },
   { title: "Segurança & Auditoria", url: "/admin/seguranca", icon: ShieldCheck, module: "seguranca" },
   { title: "Add-ons Ocultos", url: "/admin/addons", icon: Layers, module: "addons" },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, module: "configuracoes" },

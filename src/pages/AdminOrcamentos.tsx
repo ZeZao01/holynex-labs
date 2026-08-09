@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/admin/PageHeader";
 import FilterToolbar from "@/components/admin/FilterToolbar";
 import EmptyState from "@/components/admin/EmptyState";
+import LeadCaptureDialog from "@/components/admin/LeadCaptureDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Trash2, Eye, FileBarChart, Plus, Flame, Snowflake, Sun } from "lucide-react";
+import { Users, Trash2, Eye, FileBarChart, Plus, Flame, Snowflake, Sun, UserRoundSearch } from "lucide-react";
 
 const tempIcons: Record<string, typeof Flame> = { quente: Flame, morno: Sun, frio: Snowflake };
 const tempColors: Record<string, string> = { quente: "text-red-400", morno: "text-amber-400", frio: "text-sky-400" };
@@ -25,6 +26,7 @@ export default function AdminOrcamentos() {
   const [filterStatus, setFilterStatus] = useState("todos");
   const [filterTipo, setFilterTipo] = useState("todos");
   const [filterUrgencia, setFilterUrgencia] = useState("todos");
+  const [captureOpen, setCaptureOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -71,10 +73,22 @@ export default function AdminOrcamentos() {
         title="Leads & Orçamentos"
         description="Pipeline comercial qualificado"
         actions={
-          <Button onClick={() => navigate("/contato")} size="sm" className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo Lead
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => navigate("/contato")} size="sm" className="gap-1.5">
+              <Plus className="h-4 w-4" /> Formulário público
+            </Button>
+            <Button onClick={() => setCaptureOpen(true)} size="sm" className="gap-1.5">
+              <UserRoundSearch className="h-4 w-4" /> Captar leads
+            </Button>
+          </div>
         }
+      />
+
+      <LeadCaptureDialog
+        open={captureOpen}
+        onOpenChange={setCaptureOpen}
+        existingLeads={orcamentos}
+        onImported={refresh}
       />
 
       {/* Stats */}

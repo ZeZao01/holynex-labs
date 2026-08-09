@@ -26,7 +26,9 @@ const ROUTE_LABELS: Record<string, string> = {
   "/admin/brand-studio/apresentacoes": "Brand Studio · Apresentacoes",
   "/admin/brand-studio/assets": "Brand Studio · Assets",
   "/admin/brand-studio/configuracoes": "Brand Studio · Configuracoes",
+  "/admin/qg": "QG Agência",
   "/admin/seguranca": "Segurança",
+  "/admin/addons": "Add-ons Ocultos",
   "/admin/configuracoes": "Configurações",
 };
 

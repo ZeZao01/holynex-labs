@@ -45,6 +45,7 @@ const AdminSeguranca = lazy(() => import("./pages/AdminSeguranca"));
 const AdminConfiguracoes = lazy(() => import("./pages/AdminConfiguracoes"));
 const AdminIA = lazy(() => import("./pages/AdminIA"));
 const AdminAddons = lazy(() => import("./pages/AdminAddons"));
+const AdminQGHub = lazy(() => import("./pages/AdminQGHub"));
 const AdminBrandStudio = lazy(() => import("./pages/brand-studio/AdminBrandStudio"));
 const AdminBrandStudioProjetos = lazy(() => import("./pages/brand-studio/AdminBrandStudioProjetos"));
 const AdminBrandStudioProjetoDetalhe = lazy(() => import("./pages/brand-studio/AdminBrandStudioProjetoDetalhe"));
@@ -105,6 +106,7 @@ function AppRoutes() {
             <Route path="/admin/brand-studio/configuracoes" element={<AdminRouteGuard module="brand_studio"><AdminBrandStudioConfiguracoes /></AdminRouteGuard>} />
             <Route path="/admin/seguranca" element={<AdminRouteGuard module="seguranca"><AdminSeguranca /></AdminRouteGuard>} />
             <Route path="/admin/addons" element={<AdminRouteGuard module="addons"><AdminAddons /></AdminRouteGuard>} />
+            <Route path="/admin/qg" element={<AdminRouteGuard module="configuracoes"><AdminQGHub /></AdminRouteGuard>} />
             <Route path="/admin/configuracoes" element={<AdminRouteGuard module="configuracoes"><AdminConfiguracoes /></AdminRouteGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

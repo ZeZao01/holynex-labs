@@ -9,6 +9,8 @@ import SectionCard from "@/components/admin/SectionCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import QuickActionsGrid from "@/components/admin/QuickActionsGrid";
 import OperationalStatusPanel from "@/components/admin/OperationalStatusPanel";
+import type { OperationalItem } from "@/components/admin/OperationalStatusPanel";
+import LeadPromptStudio from "@/components/admin/LeadPromptStudio";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,8 +23,32 @@ import { getAddonsBySource, createAddon, ADDON_STATUS_MAP, type Addon } from "@/
 import {
   ArrowLeft, Mail, Building2, FileBarChart, Sparkles, Target, Flame, Snowflake, Sun,
   Check, Monitor, Smartphone, Shield, Users as UsersIcon, Layers, Zap, Clock,
-  Loader2, Brain, Copy,
+  Loader2, Brain, Copy, WandSparkles,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+interface LeadAnalysisData {
+  resumo_executivo?: string;
+  prioridade?: string;
+  complexidade?: string;
+  leitura_tecnica?: string;
+  modulos_recomendados?: string[];
+  stack_sugerida?: string[];
+  riscos?: string[];
+  oportunidades_adicionais?: string[];
+  funcionalidades_complementares?: string[];
+  roadmap_resumido?: string[];
+  addons_ocultos_sugeridos?: string[];
+  referencias_portfolio?: Array<{ id?: string; title?: string; motivo?: string }>;
+  estrutura_comercial?: {
+    faixa_sugerida?: string;
+    modelo_cobranca?: string;
+    potencial_recorrencia?: string;
+    estrategia_fechamento?: string;
+  };
+  base_pdf?: { sumario?: string[]; destaques?: string[] };
+  base_stitch?: { objetivo?: string; principais_entregas?: string[]; metricas_sucesso?: string[] };
+}
 
 const tempConfig: Record<string, { icon: typeof Flame; color: string; label: string }> = {
   quente: { icon: Flame, color: "text-red-400", label: "Quente" },
@@ -58,7 +84,7 @@ export default function AdminLeadDetalhe() {
   const [registeringAddons, setRegisteringAddons] = useState(false);
   const [obs, setObs] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<unknown>(null);
   const [analises, setAnalises] = useState<OrcamentoAnalise[]>([]);
   const [portfolioRefs, setPortfolioRefs] = useState<PortfolioReference[]>([]);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -94,7 +120,7 @@ export default function AdminLeadDetalhe() {
 
   // Portfolio references - compute before early returns so useEffect is always called
   const latestAnalise = analises[0];
-  const analiseData = (latestAnalise?.output_json as any) || null;
+  const analiseData = (latestAnalise?.output_json as LeadAnalysisData | null) || null;
 
   useEffect(() => {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
@@ -128,7 +154,7 @@ export default function AdminLeadDetalhe() {
     };
     fetchRefs();
     return () => { active = false; };
-  }, [lead?.id, lead?.nicho, lead?.tipo_projeto, lead?.tags_automaticas, latestAnalise?.id]);
+  }, [lead, latestAnalise?.id, analiseData?.modulos_recomendados, analiseData?.stack_sugerida]);
 
   const handleStatusChange = async (status: StatusComercial) => {
     if (!lead) return;
@@ -211,14 +237,19 @@ export default function AdminLeadDetalhe() {
     falhou: { label: "Falhou", color: "bg-destructive/15 text-destructive" },
   };
   const statusInfo = latestAnalise ? statusMap[latestAnalise.status] || { label: latestAnalise.status, color: "bg-muted text-muted-foreground" } : null;
-  const operationalItems = [
+  const operationalItems: OperationalItem[] = [
     { label: "Briefing", status: lead.descricao ? "ok" : "pending" },
     { label: "Contato", status: lead.email ? "ok" : "attention" },
     { label: "Análise IA", status: latestAnalise ? "ok" : "pending" },
     { label: "Add-ons", status: addons.length > 0 ? "ok" : "pending" },
     { label: "Portfólio", status: portfolioRefs.length > 0 ? "ok" : "pending" },
-  ] as const;
+  ];
   const quickActions = [
+    {
+      label: "Gerar prompt do projeto",
+      icon: <WandSparkles className="h-4 w-4" />,
+      onClick: () => document.getElementById("prompt-studio")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    },
     {
       label: "Converter em proposta",
       icon: <FileBarChart className="h-4 w-4" />,
@@ -432,6 +463,35 @@ export default function AdminLeadDetalhe() {
             )}
           </SectionCard>
 
+          <LeadPromptStudio
+            lead={{
+              id: lead.id,
+              contactName: lead.nome,
+              company: lead.empresa,
+              niche: lead.nicho || "",
+              projectType: lead.tipo_projeto || "",
+              objective: lead.objetivo || "",
+              mainPain: lead.dor_principal || "",
+              briefing: lead.descricao,
+              detailedBriefing: lead.descricao_detalhada,
+              operationStage: lead.estagio_operacao,
+              desiredDeadline: lead.prazo_desejado,
+              investmentRange: lead.faixa_investimento || lead.orcamento_estimado,
+              users: lead.numero_usuarios,
+              needsLogin: lead.precisa_login,
+              needsAdmin: lead.precisa_admin,
+              needsCustomerArea: lead.precisa_area_cliente,
+              needsIntegrations: lead.precisa_integracoes,
+              needsMobileApp: lead.precisa_app_mobile,
+              recommendedModules: Array.isArray(analiseData?.modulos_recomendados) ? analiseData.modulos_recomendados : [],
+              suggestedStack: Array.isArray(analiseData?.stack_sugerida) ? analiseData.stack_sugerida : [],
+              risks: Array.isArray(analiseData?.riscos) ? analiseData.riscos : [],
+              opportunities: Array.isArray(analiseData?.oportunidades_adicionais) ? analiseData.oportunidades_adicionais : [],
+              roadmap: Array.isArray(analiseData?.roadmap_resumido) ? analiseData.roadmap_resumido : [],
+              portfolioReferences: portfolioRefs.map((reference) => `${reference.title}: ${reference.reason || "referência semelhante"}`),
+            }}
+          />
+
           <SectionCard
             title="Análise Operacional do Orçamento"
             action={
@@ -517,7 +577,7 @@ export default function AdminLeadDetalhe() {
                       <div className="space-y-2">
                         <span className="text-xs font-medium text-muted-foreground">Referências de Portfólio</span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {analiseData.referencias_portfolio.map((ref: any, idx: number) => (
+                          {analiseData.referencias_portfolio.map((ref, idx: number) => (
                             <div key={ref?.id || idx} className="rounded-lg border border-border/60 p-2 text-xs">
                               <div className="font-medium">{ref?.title || "Item"}</div>
                               {ref?.motivo && <div className="text-muted-foreground mt-1">{ref.motivo}</div>}
@@ -640,7 +700,7 @@ export default function AdminLeadDetalhe() {
         {/* Sidebar */}
         <div className="space-y-6">
           <SectionCard title="Status Operacional">
-            <OperationalStatusPanel items={operationalItems as any} />
+            <OperationalStatusPanel items={operationalItems} />
           </SectionCard>
 
           {/* Qualification */}
@@ -705,7 +765,7 @@ function InfoTag({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SmallTag({ children, icon: Icon }: { children: React.ReactNode; icon: any }) {
+function SmallTag({ children, icon: Icon }: { children: React.ReactNode; icon: LucideIcon }) {
   return (
     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium bg-primary/10 border border-primary/20 text-primary">
       <Icon className="h-3 w-3" /> {children}
