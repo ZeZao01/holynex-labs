@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ExternalLink, FileUp, Loader2, MapPin, Plus, Search, Upload } from "lucide-react";
+import { BriefcaseBusiness, Copy, ExternalLink, FileUp, Loader2, MapPin, MessageCircle, Plus, Search, Star, Upload } from "lucide-react";
 import { salvarOrcamento, type Orcamento, TIPOS_PROJETO } from "@/lib/orcamentos";
 import { buildLeadBriefing, leadImportKey, parseLeadCsv, type LeadImportRow } from "@/lib/lead-import";
 import {
@@ -56,7 +56,7 @@ async function persistLead(lead: LeadImportRow) {
     tipo_projeto: lead.projectType,
     nicho: lead.niche,
     objetivo: lead.objective,
-    origem_lead: lead.source === "openstreetmap" ? "google" : lead.source === "csv" ? "outro" : lead.source || "outro",
+    origem_lead: lead.source === "google_places" ? "google" : lead.source === "csv" ? "outro" : lead.source || "outro",
     aceita_mvp: true,
   });
 }
@@ -69,6 +69,7 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
   const [prospects, setProspects] = useState<LeadProspect[]>([]);
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const [attribution, setAttribution] = useState("");
+  const [searchMeta, setSearchMeta] = useState({ totalFetched: 0, resultLimit: 60 });
   const [busy, setBusy] = useState(false);
   const existingKeys = useMemo(() => new Set(existingLeads.map(toExistingKey)), [existingLeads]);
   const uniqueRows = useMemo(() => {
@@ -105,6 +106,7 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
       setProspects(result.prospects);
       setSelectedProspects(new Set(result.prospects.map((prospect) => prospect.id)));
       setAttribution(result.attribution);
+      setSearchMeta({ totalFetched: result.totalFetched, resultLimit: result.resultLimit });
       if (!result.prospects.length) toast.info("Nenhum negócio encontrado. Tente um segmento mais amplo.");
     } catch (error) {
       toast.error("Não foi possível pesquisar potenciais clientes", {
@@ -167,12 +169,22 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
     });
   };
 
+  const copyMessage = async (prospect: LeadProspect) => {
+    await navigator.clipboard.writeText(prospect.readyMessage);
+    toast.success("Mensagem pronta copiada");
+  };
+
+  const whatsappUrl = (prospect: LeadProspect) => {
+    const phone = prospect.phone.replace(/\D/g, "");
+    return `https://wa.me/${phone}?text=${encodeURIComponent(prospect.readyMessage)}`;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Captar leads</DialogTitle>
-          <DialogDescription>Pesquise negócios por cidade e segmento ou adicione uma base própria.</DialogDescription>
+          <DialogDescription>Encontre no Google Maps estabelecimentos sem site e receba a abordagem e o projeto recomendados.</DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="search">
           <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3">
@@ -212,8 +224,9 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{prospects.length} encontrados</Badge>
+                    <Badge variant="secondary">{prospects.length} sem site</Badge>
                     <Badge variant="outline">{selectedProspects.size} selecionados</Badge>
+                    <Badge variant="outline">{searchMeta.totalFetched} analisados no Google</Badge>
                   </div>
                   <Button
                     variant="ghost"
@@ -226,7 +239,7 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
                   </Button>
                 </div>
 
-                <div className="max-h-[42vh] divide-y divide-border overflow-y-auto rounded-md border">
+                <div className="max-h-[55vh] divide-y divide-border overflow-y-auto rounded-md border">
                   {prospects.map((prospect) => (
                     <div key={prospect.id} className="flex gap-3 p-3 sm:p-4">
                       <Checkbox
@@ -238,31 +251,46 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <p className="font-medium">{prospect.name}</p>
-                          <Badge variant={prospect.website ? "secondary" : "outline"}>
-                            {prospect.website ? "Site encontrado" : "Sem site informado"}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1.5">
+                            <Badge variant="outline">Sem site no Google</Badge>
+                            <Badge className={prospect.successScore >= 75 ? "bg-emerald-600" : prospect.successScore >= 55 ? "bg-amber-600" : "bg-slate-600"}>
+                              {prospect.successScore}% chance {prospect.successLabel.toLowerCase()}
+                            </Badge>
+                          </div>
                         </div>
                         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                           <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                           <span>{prospect.address}</span>
                         </p>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {prospect.rating ? prospect.rating.toFixed(1) : "Sem nota"} ({prospect.reviewCount} avaliações)</span>
                           {prospect.phone && <span>{prospect.phone}</span>}
-                          {prospect.website && (
-                            <a href={prospect.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                              Visitar site <ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
                           <a href={prospect.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
                             Ver no mapa <ExternalLink className="h-3 w-3" />
                           </a>
                         </div>
+                        <div className="mt-3 grid gap-2 rounded-md bg-muted/40 p-3 text-xs sm:grid-cols-2">
+                          <div>
+                            <p className="mb-1 flex items-center gap-1.5 font-semibold text-foreground"><BriefcaseBusiness className="h-3.5 w-3.5 text-primary" /> Projeto pronto</p>
+                            <p className="font-medium text-foreground">{prospect.suggestedProject}</p>
+                            <p className="mt-1 text-muted-foreground">{prospect.projectSummary}</p>
+                          </div>
+                          <div>
+                            <p className="mb-1 flex items-center gap-1.5 font-semibold text-foreground"><MessageCircle className="h-3.5 w-3.5 text-primary" /> Mensagem pronta</p>
+                            <p className="line-clamp-4 text-muted-foreground">{prospect.readyMessage}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <Button type="button" variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => copyMessage(prospect)}><Copy className="h-3 w-3" /> Copiar</Button>
+                              {prospect.phone && <Button asChild type="button" size="sm" className="h-7 gap-1.5 text-xs"><a href={whatsappUrl(prospect)} target="_blank" rel="noreferrer"><MessageCircle className="h-3 w-3" /> Abrir WhatsApp</a></Button>}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">Cálculo: {prospect.scoreReasons.join(" • ")}</p>
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-[11px] text-muted-foreground">{attribution}</p>
+                  <p className="max-w-xl text-[11px] text-muted-foreground">{attribution} A consulta analisa até {searchMeta.resultLimit} resultados por segmento e cidade.</p>
                   <Button onClick={importSelectedProspects} disabled={busy || selectedProspects.size === 0} className="gap-2">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Adicionar {selectedProspects.size} ao CRM

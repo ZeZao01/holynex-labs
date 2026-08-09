@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { LeadImportRow } from "@/lib/lead-import";
 
+export type ProspectOffer = "site" | "automation" | "system";
+
 export interface LeadProspect {
   id: string;
   name: string;
@@ -9,109 +11,50 @@ export interface LeadProspect {
   city: string;
   phone: string;
   website: string;
-  instagram: string;
   openingHours: string;
   latitude: string;
   longitude: string;
   mapUrl: string;
+  rating: number;
+  reviewCount: number;
+  businessStatus: string;
+  successScore: number;
+  successLabel: "Alta" | "Média" | "Baixa";
+  scoreReasons: string[];
+  suggestedOffer: ProspectOffer;
+  suggestedProject: string;
+  projectSummary: string;
+  readyMessage: string;
 }
-
 export const PROSPECT_NICHES = [
-  "Academias",
-  "Advocacia",
-  "Clínicas e consultórios",
-  "Construção civil",
-  "Contabilidade",
-  "Escolas e cursos",
-  "Estética e beleza",
-  "Imobiliárias",
-  "Lojas e comércio",
-  "Oficinas automotivas",
-  "Pet shops e veterinárias",
+  "Academias", "Advocacia", "Clínicas e consultórios", "Construção civil",
+  "Contabilidade", "Escolas e cursos", "Estética e beleza", "Imobiliárias",
+  "Lojas e comércio", "Oficinas automotivas", "Pet shops e veterinárias",
   "Restaurantes e alimentação",
 ] as const;
 
-interface FunctionErrorWithContext {
-  context?: Response;
-}
+interface FunctionErrorWithContext { context?: Response }
 
-interface NominatimPlace {
-  place_id?: number;
-  osm_id?: number;
-  osm_type?: "node" | "way" | "relation";
-  display_name?: string;
-  category?: string;
-  type?: string;
-  lat?: string;
-  lon?: string;
-  namedetails?: Record<string, string>;
-  extratags?: Record<string, string>;
-  address?: Record<string, string>;
-}
-
-function mapNominatimPlace(place: NominatimPlace, fallbackCity: string, fallbackNiche: string): LeadProspect {
-  const tags = place.extratags || {};
-  const address = place.address || {};
-  const osmPrefix = place.osm_type === "node" ? "N" : place.osm_type === "way" ? "W" : "R";
-  return {
-    id: `${osmPrefix}${place.osm_id || place.place_id}`,
-    name: place.namedetails?.name || String(place.display_name || "").split(",")[0] || fallbackNiche,
-    segment: place.type || place.category || fallbackNiche,
-    address: place.display_name || "",
-    city: address.city || address.town || address.municipality || address.village || fallbackCity,
-    phone: tags.phone || tags["contact:phone"] || tags.mobile || "",
-    website: tags.website || tags["contact:website"] || "",
-    instagram: tags["contact:instagram"] || "",
-    openingHours: tags.opening_hours || "",
-    latitude: String(place.lat || ""),
-    longitude: String(place.lon || ""),
-    mapUrl: `https://www.openstreetmap.org/${place.osm_type || "node"}/${place.osm_id || ""}`,
-  };
-}
-
-async function searchDirectly(city: string, niche: string, limit: number) {
-  const params = new URLSearchParams({
-    format: "jsonv2",
-    q: `${niche}, ${city}, Brasil`,
-    addressdetails: "1",
-    extratags: "1",
-    namedetails: "1",
-    countrycodes: "br",
-    layer: "poi,address",
-    limit: String(Math.min(Math.max(limit, 1), 20)),
-  });
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-    headers: { "Accept-Language": "pt-BR,pt;q=0.9", Accept: "application/json" },
-  });
-  if (!response.ok) throw new Error(`Fonte de pesquisa indisponível (${response.status})`);
-  const places = await response.json() as NominatimPlace[];
-  return {
-    prospects: places.map((place) => mapNominatimPlace(place, city, niche)),
-    attribution: "Dados de locais: OpenStreetMap contributors (ODbL)",
-  };
-}
-
-export async function searchLeadProspects(city: string, niche: string, limit = 12) {
+export async function searchLeadProspects(city: string, niche: string, limit = 60) {
   const { data, error } = await supabase.functions.invoke("prospectar-leads", {
-    body: { city, niche, limit },
+    body: { city, niche, limit, withoutWebsite: true },
   });
   if (error) {
     const status = (error as FunctionErrorWithContext).context?.status;
-    // Keep prospecting available while the Edge Function is missing or unreachable.
-    // Explicit authentication and authorization failures must still reach the UI.
-    if (status === undefined || status === 404) return searchDirectly(city, niche, limit);
-    throw error;
+    if (status === 503) throw new Error("A busca Google Maps ainda não foi configurada. Cadastre GOOGLE_MAPS_API_KEY nos secrets do Supabase.");
+    throw new Error(status === 401 || status === 403 ? "Sua sessão não tem permissão para prospectar leads." : "A busca Google Maps está indisponível no momento.");
   }
   if (data?.error) throw new Error(data.error);
   return {
     prospects: (data?.prospects || []) as LeadProspect[],
-    attribution: String(data?.attribution || ""),
+    attribution: String(data?.attribution || "Google Maps Platform"),
+    totalFetched: Number(data?.totalFetched || 0),
+    resultLimit: Number(data?.resultLimit || 60),
   };
 }
 
 export function prospectToLeadImport(prospect: LeadProspect, niche: string): LeadImportRow {
   const safeId = prospect.id.replace(/[^a-zA-Z0-9-]/g, "").toLowerCase() || crypto.randomUUID();
-  const hasWebsite = Boolean(prospect.website);
   return {
     name: prospect.name,
     company: prospect.name,
@@ -119,13 +62,11 @@ export function prospectToLeadImport(prospect: LeadProspect, niche: string): Lea
     phone: prospect.phone,
     city: prospect.city,
     niche,
-    projectType: hasWebsite ? "Sistema interno" : "Landing page / Site institucional",
-    objective: hasWebsite
-      ? `Avaliar melhorias digitais e automações para ${prospect.name}.`
-      : `${prospect.name} não possui site informado na fonte pesquisada; validar oportunidade de presença digital.`,
+    projectType: prospect.suggestedOffer === "site" ? "Landing page / Site institucional" : prospect.suggestedOffer === "automation" ? "Automação / IA" : "Sistema personalizado",
+    objective: `${prospect.projectSummary}\n\nProbabilidade comercial estimada: ${prospect.successScore}% (${prospect.successLabel}).\nMotivos: ${prospect.scoreReasons.join("; ")}\n\nMensagem sugerida:\n${prospect.readyMessage}`,
     address: prospect.address,
     website: prospect.website,
-    instagram: prospect.instagram,
-    source: "openstreetmap",
+    instagram: "",
+    source: "google_places",
   };
 }
