@@ -179,6 +179,1518 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_addons: {
+        Row: {
+          addon_key: string
+          atualizado_em: string
+          criado_em: string
+          descricao: string | null
+          id: string
+          impacto: string | null
+          metadata: Json
+          project_id: string
+          status: string
+          titulo: string
+        }
+        Insert: {
+          addon_key: string
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          impacto?: string | null
+          metadata?: Json
+          project_id: string
+          status?: string
+          titulo?: string
+        }
+        Update: {
+          addon_key?: string
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          impacto?: string | null
+          metadata?: Json
+          project_id?: string
+          status?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_addons_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_agent_config_versions: {
+        Row: {
+          agent_config_id: string
+          atualizado_em: string
+          created_by: string | null
+          criado_em: string
+          description: string | null
+          fallback_enabled: boolean
+          id: string
+          input_schema: Json
+          is_active: boolean
+          max_tokens: number | null
+          model: string
+          output_schema: Json
+          provider: string
+          system_prompt: string | null
+          temperature: number | null
+          title: string
+          version_number: number
+        }
+        Insert: {
+          agent_config_id: string
+          atualizado_em?: string
+          created_by?: string | null
+          criado_em?: string
+          description?: string | null
+          fallback_enabled?: boolean
+          id?: string
+          input_schema?: Json
+          is_active?: boolean
+          max_tokens?: number | null
+          model?: string
+          output_schema?: Json
+          provider?: string
+          system_prompt?: string | null
+          temperature?: number | null
+          title?: string
+          version_number?: number
+        }
+        Update: {
+          agent_config_id?: string
+          atualizado_em?: string
+          created_by?: string | null
+          criado_em?: string
+          description?: string | null
+          fallback_enabled?: boolean
+          id?: string
+          input_schema?: Json
+          is_active?: boolean
+          max_tokens?: number | null
+          model?: string
+          output_schema?: Json
+          provider?: string
+          system_prompt?: string | null
+          temperature?: number | null
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_agent_config_versions_agent_config_id_fkey"
+            columns: ["agent_config_id"]
+            isOneToOne: false
+            referencedRelation: "brand_agent_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_agent_configs: {
+        Row: {
+          active_version_id: string | null
+          agent_key: string
+          atualizado_em: string
+          config: Json
+          criado_em: string
+          description: string | null
+          fallback_enabled: boolean
+          id: string
+          input_schema: Json
+          is_active: boolean
+          max_tokens: number | null
+          model: string
+          output_schema: Json
+          provider: string
+          system_prompt: string | null
+          temperature: number | null
+          title: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          active_version_id?: string | null
+          agent_key: string
+          atualizado_em?: string
+          config?: Json
+          criado_em?: string
+          description?: string | null
+          fallback_enabled?: boolean
+          id?: string
+          input_schema?: Json
+          is_active?: boolean
+          max_tokens?: number | null
+          model?: string
+          output_schema?: Json
+          provider?: string
+          system_prompt?: string | null
+          temperature?: number | null
+          title?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          active_version_id?: string | null
+          agent_key?: string
+          atualizado_em?: string
+          config?: Json
+          criado_em?: string
+          description?: string | null
+          fallback_enabled?: boolean
+          id?: string
+          input_schema?: Json
+          is_active?: boolean
+          max_tokens?: number | null
+          model?: string
+          output_schema?: Json
+          provider?: string
+          system_prompt?: string | null
+          temperature?: number | null
+          title?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      brand_ai_runs: {
+        Row: {
+          agent_config_id: string | null
+          atualizado_em: string
+          cost_estimated: number | null
+          criado_em: string
+          duration_ms: number | null
+          error_reason: string | null
+          executed_by: string | null
+          id: string
+          input_payload: Json
+          model_used: string | null
+          output_payload: Json
+          project_id: string
+          provider_used: string | null
+          status: string
+          task_id: string | null
+          tokens_input: number | null
+          tokens_output: number | null
+        }
+        Insert: {
+          agent_config_id?: string | null
+          atualizado_em?: string
+          cost_estimated?: number | null
+          criado_em?: string
+          duration_ms?: number | null
+          error_reason?: string | null
+          executed_by?: string | null
+          id?: string
+          input_payload?: Json
+          model_used?: string | null
+          output_payload?: Json
+          project_id: string
+          provider_used?: string | null
+          status?: string
+          task_id?: string | null
+          tokens_input?: number | null
+          tokens_output?: number | null
+        }
+        Update: {
+          agent_config_id?: string | null
+          atualizado_em?: string
+          cost_estimated?: number | null
+          criado_em?: string
+          duration_ms?: number | null
+          error_reason?: string | null
+          executed_by?: string | null
+          id?: string
+          input_payload?: Json
+          model_used?: string | null
+          output_payload?: Json
+          project_id?: string
+          provider_used?: string | null
+          status?: string
+          task_id?: string | null
+          tokens_input?: number | null
+          tokens_output?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_ai_runs_agent_config_id_fkey"
+            columns: ["agent_config_id"]
+            isOneToOne: false
+            referencedRelation: "brand_agent_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_ai_runs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_ai_runs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "brand_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_brief_references: {
+        Row: {
+          atualizado_em: string
+          brief_id: string | null
+          bucket: string
+          created_by: string | null
+          criado_em: string
+          id: string
+          metadata: Json
+          mime_type: string | null
+          note: string | null
+          original_name: string | null
+          project_id: string
+          public_url: string | null
+          reference_type: string
+          size_bytes: number | null
+          sort_order: number
+          source_url: string | null
+          storage_path: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          brief_id?: string | null
+          bucket?: string
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          note?: string | null
+          original_name?: string | null
+          project_id: string
+          public_url?: string | null
+          reference_type?: string
+          size_bytes?: number | null
+          sort_order?: number
+          source_url?: string | null
+          storage_path?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          brief_id?: string | null
+          bucket?: string
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          note?: string | null
+          original_name?: string | null
+          project_id?: string
+          public_url?: string | null
+          reference_type?: string
+          size_bytes?: number | null
+          sort_order?: number
+          source_url?: string | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_brief_references_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "brand_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_brief_references_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_briefs: {
+        Row: {
+          atualizado_em: string
+          concorrentes: string[]
+          contexto: string | null
+          created_by: string | null
+          criado_em: string
+          estilos_desejados: string[]
+          estilos_evitar: string[]
+          gap_summary: string | null
+          id: string
+          missing_questions: string[]
+          nicho: string | null
+          nome_marca: string | null
+          normalized_at: string | null
+          normalized_context: Json
+          objetivos: string[]
+          objetivos_identidade: string[]
+          observacoes_adicionais: string | null
+          project_id: string
+          proposta_valor: string | null
+          publico_alvo: string | null
+          publico_alvo_detalhado: string | null
+          readiness_score: number
+          referencia_visual_contexto: string | null
+          restricoes: string[]
+          slogan: string | null
+          status: string
+          titulo: string
+          version: number
+        }
+        Insert: {
+          atualizado_em?: string
+          concorrentes?: string[]
+          contexto?: string | null
+          created_by?: string | null
+          criado_em?: string
+          estilos_desejados?: string[]
+          estilos_evitar?: string[]
+          gap_summary?: string | null
+          id?: string
+          missing_questions?: string[]
+          nicho?: string | null
+          nome_marca?: string | null
+          normalized_at?: string | null
+          normalized_context?: Json
+          objetivos?: string[]
+          objetivos_identidade?: string[]
+          observacoes_adicionais?: string | null
+          project_id: string
+          proposta_valor?: string | null
+          publico_alvo?: string | null
+          publico_alvo_detalhado?: string | null
+          readiness_score?: number
+          referencia_visual_contexto?: string | null
+          restricoes?: string[]
+          slogan?: string | null
+          status?: string
+          titulo?: string
+          version?: number
+        }
+        Update: {
+          atualizado_em?: string
+          concorrentes?: string[]
+          contexto?: string | null
+          created_by?: string | null
+          criado_em?: string
+          estilos_desejados?: string[]
+          estilos_evitar?: string[]
+          gap_summary?: string | null
+          id?: string
+          missing_questions?: string[]
+          nicho?: string | null
+          nome_marca?: string | null
+          normalized_at?: string | null
+          normalized_context?: Json
+          objetivos?: string[]
+          objetivos_identidade?: string[]
+          observacoes_adicionais?: string | null
+          project_id?: string
+          proposta_valor?: string | null
+          publico_alvo?: string | null
+          publico_alvo_detalhado?: string | null
+          readiness_score?: number
+          referencia_visual_contexto?: string | null
+          restricoes?: string[]
+          slogan?: string | null
+          status?: string
+          titulo?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_briefs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_color_palettes: {
+        Row: {
+          ai_run_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          atualizado_em: string
+          brief_id: string | null
+          created_by: string | null
+          criado_em: string
+          id: string
+          model_used: string | null
+          output_payload: Json
+          project_id: string
+          prompt_version: string
+          provider_used: string | null
+          status: string
+          strategy_id: string | null
+          version_id: string | null
+          version_number: number
+        }
+        Insert: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          model_used?: string | null
+          output_payload?: Json
+          project_id: string
+          prompt_version?: string
+          provider_used?: string | null
+          status?: string
+          strategy_id?: string | null
+          version_id?: string | null
+          version_number?: number
+        }
+        Update: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          model_used?: string | null
+          output_payload?: Json
+          project_id?: string
+          prompt_version?: string
+          provider_used?: string | null
+          status?: string
+          strategy_id?: string | null
+          version_id?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_color_palettes_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "brand_ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_color_palettes_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "brand_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_color_palettes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_color_palettes_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "brand_strategy_outputs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_color_palettes_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "brand_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_design_assets: {
+        Row: {
+          asset_type: string
+          atualizado_em: string
+          bucket: string
+          created_by: string | null
+          criado_em: string
+          height: number | null
+          id: string
+          metadata: Json
+          mime_type: string | null
+          project_id: string
+          public_url: string | null
+          size_bytes: number | null
+          storage_path: string
+          task_id: string | null
+          version_id: string | null
+          width: number | null
+        }
+        Insert: {
+          asset_type?: string
+          atualizado_em?: string
+          bucket?: string
+          created_by?: string | null
+          criado_em?: string
+          height?: number | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          project_id: string
+          public_url?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          task_id?: string | null
+          version_id?: string | null
+          width?: number | null
+        }
+        Update: {
+          asset_type?: string
+          atualizado_em?: string
+          bucket?: string
+          created_by?: string | null
+          criado_em?: string
+          height?: number | null
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          project_id?: string
+          public_url?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          task_id?: string | null
+          version_id?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_design_assets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_design_assets_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "brand_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_design_assets_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "brand_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_feedback_cycles: {
+        Row: {
+          atualizado_em: string
+          change_requests: Json
+          criado_em: string
+          feedback_text: string | null
+          id: string
+          project_id: string
+          resolved_at: string | null
+          reviewer_id: string | null
+          score: number | null
+          status: string
+          version_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          change_requests?: Json
+          criado_em?: string
+          feedback_text?: string | null
+          id?: string
+          project_id: string
+          resolved_at?: string | null
+          reviewer_id?: string | null
+          score?: number | null
+          status?: string
+          version_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          change_requests?: Json
+          criado_em?: string
+          feedback_text?: string | null
+          id?: string
+          project_id?: string
+          resolved_at?: string | null
+          reviewer_id?: string | null
+          score?: number | null
+          status?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_feedback_cycles_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_feedback_cycles_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "brand_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_logo_concepts: {
+        Row: {
+          ai_run_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          atualizado_em: string
+          brief_id: string | null
+          created_by: string | null
+          criado_em: string
+          critic_ai_run_id: string | null
+          critic_at: string | null
+          critic_model_used: string | null
+          critic_payload: Json | null
+          critic_prompt_version: string
+          critic_provider_used: string | null
+          critic_status: string
+          id: string
+          model_used: string | null
+          output_payload: Json
+          palette_id: string | null
+          project_id: string
+          prompt_version: string
+          provider_used: string | null
+          selected_concept_index: number | null
+          selected_concept_title: string | null
+          status: string
+          strategy_id: string | null
+          typography_id: string | null
+          version_id: string | null
+          version_number: number
+        }
+        Insert: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          critic_ai_run_id?: string | null
+          critic_at?: string | null
+          critic_model_used?: string | null
+          critic_payload?: Json | null
+          critic_prompt_version?: string
+          critic_provider_used?: string | null
+          critic_status?: string
+          id?: string
+          model_used?: string | null
+          output_payload?: Json
+          palette_id?: string | null
+          project_id: string
+          prompt_version?: string
+          provider_used?: string | null
+          selected_concept_index?: number | null
+          selected_concept_title?: string | null
+          status?: string
+          strategy_id?: string | null
+          typography_id?: string | null
+          version_id?: string | null
+          version_number?: number
+        }
+        Update: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          critic_ai_run_id?: string | null
+          critic_at?: string | null
+          critic_model_used?: string | null
+          critic_payload?: Json | null
+          critic_prompt_version?: string
+          critic_provider_used?: string | null
+          critic_status?: string
+          id?: string
+          model_used?: string | null
+          output_payload?: Json
+          palette_id?: string | null
+          project_id?: string
+          prompt_version?: string
+          provider_used?: string | null
+          selected_concept_index?: number | null
+          selected_concept_title?: string | null
+          status?: string
+          strategy_id?: string | null
+          typography_id?: string | null
+          version_id?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_logo_concepts_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "brand_ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_logo_concepts_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "brand_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_logo_concepts_critic_ai_run_id_fkey"
+            columns: ["critic_ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "brand_ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_logo_concepts_palette_id_fkey"
+            columns: ["palette_id"]
+            isOneToOne: false
+            referencedRelation: "brand_color_palettes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_logo_concepts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_logo_concepts_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "brand_strategy_outputs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_logo_concepts_typography_id_fkey"
+            columns: ["typography_id"]
+            isOneToOne: false
+            referencedRelation: "brand_typography_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_logo_concepts_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "brand_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_pieces: {
+        Row: {
+          ai_run_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          atualizado_em: string
+          brief_id: string | null
+          created_by: string | null
+          criado_em: string
+          id: string
+          logo_concept_id: string | null
+          model_used: string | null
+          output_payload: Json
+          palette_id: string | null
+          piece_type: string
+          project_id: string
+          prompt_version: string
+          provider_used: string | null
+          status: string
+          strategy_id: string | null
+          typography_id: string | null
+          version_id: string | null
+          version_number: number
+        }
+        Insert: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          logo_concept_id?: string | null
+          model_used?: string | null
+          output_payload?: Json
+          palette_id?: string | null
+          piece_type: string
+          project_id: string
+          prompt_version?: string
+          provider_used?: string | null
+          status?: string
+          strategy_id?: string | null
+          typography_id?: string | null
+          version_id?: string | null
+          version_number?: number
+        }
+        Update: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          logo_concept_id?: string | null
+          model_used?: string | null
+          output_payload?: Json
+          palette_id?: string | null
+          piece_type?: string
+          project_id?: string
+          prompt_version?: string
+          provider_used?: string | null
+          status?: string
+          strategy_id?: string | null
+          typography_id?: string | null
+          version_id?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_pieces_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "brand_ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_pieces_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "brand_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_pieces_logo_concept_id_fkey"
+            columns: ["logo_concept_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logo_concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_pieces_palette_id_fkey"
+            columns: ["palette_id"]
+            isOneToOne: false
+            referencedRelation: "brand_color_palettes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_pieces_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_pieces_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "brand_strategy_outputs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_pieces_typography_id_fkey"
+            columns: ["typography_id"]
+            isOneToOne: false
+            referencedRelation: "brand_typography_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_pieces_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "brand_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_presentation_artifacts: {
+        Row: {
+          approved: boolean
+          approved_at: string | null
+          artifact_id: string | null
+          artifact_payload: Json
+          artifact_type: string
+          atualizado_em: string
+          criado_em: string
+          id: string
+          presentation_id: string
+          source_version_id: string | null
+        }
+        Insert: {
+          approved?: boolean
+          approved_at?: string | null
+          artifact_id?: string | null
+          artifact_payload?: Json
+          artifact_type: string
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          presentation_id: string
+          source_version_id?: string | null
+        }
+        Update: {
+          approved?: boolean
+          approved_at?: string | null
+          artifact_id?: string | null
+          artifact_payload?: Json
+          artifact_type?: string
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          presentation_id?: string
+          source_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_presentation_artifacts_presentation_id_fkey"
+            columns: ["presentation_id"]
+            isOneToOne: false
+            referencedRelation: "brand_presentations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_presentation_exports: {
+        Row: {
+          checksum: string | null
+          created_by: string | null
+          criado_em: string
+          export_meta: Json
+          file_url: string | null
+          format: string
+          id: string
+          presentation_id: string
+          storage_path: string | null
+          version: number
+        }
+        Insert: {
+          checksum?: string | null
+          created_by?: string | null
+          criado_em?: string
+          export_meta?: Json
+          file_url?: string | null
+          format?: string
+          id?: string
+          presentation_id: string
+          storage_path?: string | null
+          version?: number
+        }
+        Update: {
+          checksum?: string | null
+          created_by?: string | null
+          criado_em?: string
+          export_meta?: Json
+          file_url?: string | null
+          format?: string
+          id?: string
+          presentation_id?: string
+          storage_path?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_presentation_exports_presentation_id_fkey"
+            columns: ["presentation_id"]
+            isOneToOne: false
+            referencedRelation: "brand_presentations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_presentation_sections: {
+        Row: {
+          artifacts: Json
+          atualizado_em: string
+          copy: string | null
+          criado_em: string
+          id: string
+          order_index: number
+          presentation_id: string
+          section_key: string
+          title: string
+        }
+        Insert: {
+          artifacts?: Json
+          atualizado_em?: string
+          copy?: string | null
+          criado_em?: string
+          id?: string
+          order_index?: number
+          presentation_id: string
+          section_key: string
+          title?: string
+        }
+        Update: {
+          artifacts?: Json
+          atualizado_em?: string
+          copy?: string | null
+          criado_em?: string
+          id?: string
+          order_index?: number
+          presentation_id?: string
+          section_key?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_presentation_sections_presentation_id_fkey"
+            columns: ["presentation_id"]
+            isOneToOne: false
+            referencedRelation: "brand_presentations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_presentations: {
+        Row: {
+          agent_config_id: string | null
+          agent_version_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          atualizado_em: string
+          blueprint: Json
+          brand_project_id: string | null
+          created_by: string | null
+          criado_em: string
+          executive_summary: string | null
+          final_message: string | null
+          id: string
+          model_used: string | null
+          prompt_version: number | null
+          provider_used: string | null
+          status: string
+          title: string
+          used_fallback: boolean
+        }
+        Insert: {
+          agent_config_id?: string | null
+          agent_version_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          blueprint?: Json
+          brand_project_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          executive_summary?: string | null
+          final_message?: string | null
+          id?: string
+          model_used?: string | null
+          prompt_version?: number | null
+          provider_used?: string | null
+          status?: string
+          title?: string
+          used_fallback?: boolean
+        }
+        Update: {
+          agent_config_id?: string | null
+          agent_version_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          blueprint?: Json
+          brand_project_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          executive_summary?: string | null
+          final_message?: string | null
+          id?: string
+          model_used?: string | null
+          prompt_version?: number | null
+          provider_used?: string | null
+          status?: string
+          title?: string
+          used_fallback?: boolean
+        }
+        Relationships: []
+      }
+      brand_projects: {
+        Row: {
+          atualizado_em: string
+          client_id: string | null
+          criado_em: string
+          deadline_at: string | null
+          descricao: string | null
+          id: string
+          lead_id: string | null
+          metadata: Json
+          nome: string
+          owner_user_id: string | null
+          project_id: string | null
+          proposal_id: string | null
+          slug: string | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          atualizado_em?: string
+          client_id?: string | null
+          criado_em?: string
+          deadline_at?: string | null
+          descricao?: string | null
+          id?: string
+          lead_id?: string | null
+          metadata?: Json
+          nome: string
+          owner_user_id?: string | null
+          project_id?: string | null
+          proposal_id?: string | null
+          slug?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          atualizado_em?: string
+          client_id?: string | null
+          criado_em?: string
+          deadline_at?: string | null
+          descricao?: string | null
+          id?: string
+          lead_id?: string | null
+          metadata?: Json
+          nome?: string
+          owner_user_id?: string | null
+          project_id?: string | null
+          proposal_id?: string | null
+          slug?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_projects_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_projects_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_projects_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_strategy_outputs: {
+        Row: {
+          ai_run_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          atualizado_em: string
+          brief_id: string | null
+          created_by: string | null
+          criado_em: string
+          id: string
+          model_used: string | null
+          output_payload: Json
+          project_id: string
+          prompt_version: string
+          provider_used: string | null
+          status: string
+        }
+        Insert: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          model_used?: string | null
+          output_payload?: Json
+          project_id: string
+          prompt_version?: string
+          provider_used?: string | null
+          status?: string
+        }
+        Update: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          model_used?: string | null
+          output_payload?: Json
+          project_id?: string
+          prompt_version?: string
+          provider_used?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_strategy_outputs_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "brand_ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_strategy_outputs_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "brand_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_strategy_outputs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_tasks: {
+        Row: {
+          ai_required: boolean
+          assigned_to: string | null
+          atualizado_em: string
+          brief_id: string | null
+          criado_em: string
+          description: string | null
+          due_date: string | null
+          id: string
+          payload: Json
+          priority: string
+          project_id: string
+          status: string
+          task_type: string
+          title: string
+        }
+        Insert: {
+          ai_required?: boolean
+          assigned_to?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          criado_em?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          payload?: Json
+          priority?: string
+          project_id: string
+          status?: string
+          task_type?: string
+          title?: string
+        }
+        Update: {
+          ai_required?: boolean
+          assigned_to?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          criado_em?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          payload?: Json
+          priority?: string
+          project_id?: string
+          status?: string
+          task_type?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_tasks_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "brand_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_typography_sets: {
+        Row: {
+          ai_run_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          atualizado_em: string
+          brief_id: string | null
+          created_by: string | null
+          criado_em: string
+          id: string
+          model_used: string | null
+          output_payload: Json
+          project_id: string
+          prompt_version: string
+          provider_used: string | null
+          status: string
+          strategy_id: string | null
+          version_id: string | null
+          version_number: number
+        }
+        Insert: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          model_used?: string | null
+          output_payload?: Json
+          project_id: string
+          prompt_version?: string
+          provider_used?: string | null
+          status?: string
+          strategy_id?: string | null
+          version_id?: string | null
+          version_number?: number
+        }
+        Update: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          atualizado_em?: string
+          brief_id?: string | null
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          model_used?: string | null
+          output_payload?: Json
+          project_id?: string
+          prompt_version?: string
+          provider_used?: string | null
+          status?: string
+          strategy_id?: string | null
+          version_id?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_typography_sets_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "brand_ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_typography_sets_brief_id_fkey"
+            columns: ["brief_id"]
+            isOneToOne: false
+            referencedRelation: "brand_briefs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_typography_sets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_typography_sets_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "brand_strategy_outputs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_typography_sets_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "brand_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_versions: {
+        Row: {
+          atualizado_em: string
+          change_log: string[]
+          created_by: string | null
+          criado_em: string
+          id: string
+          label: string
+          presentation_url: string | null
+          project_id: string
+          status: string
+          summary: string | null
+          version_number: number
+        }
+        Insert: {
+          atualizado_em?: string
+          change_log?: string[]
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          label?: string
+          presentation_url?: string | null
+          project_id: string
+          status?: string
+          summary?: string | null
+          version_number?: number
+        }
+        Update: {
+          atualizado_em?: string
+          change_log?: string[]
+          created_by?: string | null
+          criado_em?: string
+          id?: string
+          label?: string
+          presentation_url?: string | null
+          project_id?: string
+          status?: string
+          summary?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "brand_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivered_system_events: {
         Row: {
           criado_em: string | null
@@ -2219,6 +3731,42 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          atualizado_em: string
+          category: string
+          criado_em: string
+          id: string
+          is_active: boolean
+          is_sensitive: boolean
+          key: string
+          value: Json
+          version: number
+        }
+        Insert: {
+          atualizado_em?: string
+          category: string
+          criado_em?: string
+          id?: string
+          is_active?: boolean
+          is_sensitive?: boolean
+          key: string
+          value?: Json
+          version?: number
+        }
+        Update: {
+          atualizado_em?: string
+          category?: string
+          criado_em?: string
+          id?: string
+          is_active?: boolean
+          is_sensitive?: boolean
+          key?: string
+          value?: Json
+          version?: number
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           atualizado_em: string
@@ -2281,8 +3829,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_approve_brand: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_brand: { Args: { _user_id: string }; Returns: boolean }
+      can_view_brand: { Args: { _user_id: string }; Returns: boolean }
       get_user_role_names: { Args: { _user_id: string }; Returns: string[] }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_brand_role: {
+        Args: { _roles: string[]; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
