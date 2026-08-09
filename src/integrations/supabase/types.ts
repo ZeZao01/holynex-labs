@@ -3829,6 +3829,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_public_proposal: { Args: { p_token: string }; Returns: boolean }
       can_approve_brand: { Args: { _user_id: string }; Returns: boolean }
       can_manage_brand: { Args: { _user_id: string }; Returns: boolean }
       can_view_brand: { Args: { _user_id: string }; Returns: boolean }
