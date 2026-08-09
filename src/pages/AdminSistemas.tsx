@@ -41,8 +41,12 @@ export default function AdminSistemas() {
     setLoading(true);
     try {
       setSystems(await getDeliveredSystems());
-    } catch {
-      toast({ title: "Erro ao carregar sistemas", variant: "destructive" });
+    } catch (error) {
+      toast({
+        title: "Erro ao carregar sistemas",
+        description: error instanceof Error ? error.message : "Verifique as permissoes da conta e tente novamente.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -57,8 +61,12 @@ export default function AdminSistemas() {
       toast({ title: "Sistema cadastrado!" });
       setShowNew(false);
       load();
-    } catch {
-      toast({ title: "Erro ao cadastrar", variant: "destructive" });
+    } catch (error) {
+      toast({
+        title: "Erro ao cadastrar",
+        description: error instanceof Error ? error.message : "Nao foi possivel salvar o sistema.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }

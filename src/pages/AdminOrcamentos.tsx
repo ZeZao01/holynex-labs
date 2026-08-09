@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/sonner";
 import { Users, Trash2, Eye, FileBarChart, Plus, Flame, Snowflake, Sun, UserRoundSearch } from "lucide-react";
 
 const tempIcons: Record<string, typeof Flame> = { quente: Flame, morno: Sun, frio: Snowflake };
@@ -32,7 +33,11 @@ export default function AdminOrcamentos() {
     try {
       const data = await getOrcamentos();
       setOrcamentos(data);
-    } catch { /* silent */ } finally {
+    } catch (error) {
+      toast.error("Nao foi possivel carregar os leads", {
+        description: error instanceof Error ? error.message : "Verifique as permissoes da conta e tente novamente.",
+      });
+    } finally {
       setLoadingData(false);
     }
   }, []);
