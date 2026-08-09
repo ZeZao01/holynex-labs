@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.copiloto-ia]
 verify_jwt = false
+
+[functions.prospectar-leads]
+verify_jwt = true

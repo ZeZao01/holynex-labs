@@ -100,42 +100,44 @@ export async function upsertUserRoleAssignment(userId: string, roleName: string)
 export async function getUserRoleNames(userId: string, user?: User | null): Promise<string[]> {
   const roleNames = new Set<string>();
 
-  // 1. Try DB assignments first
+  // Resolve through the self-scoped database helper before reading tables.
   try {
-    const { data, error } = await sb
-      .from("user_role_assignments")
-      .select("role_name, is_active")
-      .eq("user_id", userId);
-
-    if (!error && data && data.length > 0) {
-      (data as UserRoleAssignment[]).forEach((row) => {
-        if (row.is_active && row.role_name) roleNames.add(row.role_name);
-      });
+    const { data, error } = await sb.rpc("get_user_role_names", { _user_id: userId });
+    if (!error && Array.isArray(data)) {
+      data.forEach((role: string) => role && roleNames.add(String(role)));
     }
   } catch {
-    // DB table may not exist yet, continue to fallback
+    // Continue to the compatibility path while older databases are migrating.
   }
 
-  // 2. Fallback: check user metadata
+  // Compatibility path for environments that have not applied the helper yet.
+  try {
+    if (roleNames.size === 0) {
+      const { data, error } = await sb
+        .from("user_role_assignments")
+        .select("role_name, is_active")
+        .eq("user_id", userId);
+
+      if (!error && data && data.length > 0) {
+        (data as UserRoleAssignment[]).forEach((row) => {
+          if (row.is_active && row.role_name) roleNames.add(row.role_name);
+        });
+      }
+    }
+  } catch {
+    // Continue to fallback.
+  }
+
+  // App metadata is server-controlled and can be used as a compatibility fallback.
   if (roleNames.size === 0 && user) {
-    const metaRoles = (user as any)?.user_metadata?.roles || (user as any)?.app_metadata?.roles;
-    const singleRole = (user as any)?.user_metadata?.role || (user as any)?.app_metadata?.role;
+    const metaRoles = (user as any)?.app_metadata?.roles;
+    const singleRole = (user as any)?.app_metadata?.role;
     if (Array.isArray(metaRoles)) metaRoles.forEach((r: string) => roleNames.add(String(r)));
     if (typeof metaRoles === "string") roleNames.add(metaRoles);
     if (singleRole) roleNames.add(String(singleRole));
   }
 
-  // 3. Fallback: check profile
-  if (roleNames.size === 0) {
-    try {
-      const profile = await getUserProfileByUserId(userId);
-      if (profile?.role_name) roleNames.add(profile.role_name);
-    } catch {
-      // ignore
-    }
-  }
-
-  // 4. Final fallback
+  // Final fallback.
   if (roleNames.size === 0) roleNames.add("somente_leitura");
 
   return Array.from(roleNames);

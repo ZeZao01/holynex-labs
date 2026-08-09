@@ -80,7 +80,8 @@ export function AccessControlProvider({ children }: { children: ReactNode }) {
       const perms = await getEffectivePermissions(roleNames);
       setRoles(roleNames);
       setPermissions(perms);
-    } catch {
+    } catch (error) {
+      console.error("[RBAC] Falha ao carregar permissões:", error);
       const fallbackRoles = ["somente_leitura"];
       try {
         const perms = await getEffectivePermissions(fallbackRoles);

@@ -72,7 +72,13 @@ export default function AdminConfiguracoes() {
         setAgencyPhone(featureFlagsValue?.system_profile?.agency_phone ?? "");
       } catch (error) {
         console.error("Erro ao carregar configuracoes:", error);
-        toast({ title: "Erro ao carregar configurações", variant: "destructive" });
+        toast({
+          title: "Configurações padrão carregadas",
+          description: error instanceof Error
+            ? `Não foi possível ler os ajustes salvos: ${error.message}`
+            : "Não foi possível ler os ajustes salvos. Você ainda pode revisar a página e tentar novamente.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
