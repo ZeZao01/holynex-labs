@@ -3,7 +3,7 @@ import { BriefcaseBusiness, Copy, ExternalLink, FileUp, Loader2, MapPin, Message
 import { salvarOrcamento, type Orcamento, TIPOS_PROJETO } from "@/lib/orcamentos";
 import { buildLeadBriefing, leadImportKey, parseLeadCsv, type LeadImportRow } from "@/lib/lead-import";
 import {
-  PROSPECT_NICHES,
+  PROSPECT_NICHE_GROUPS,
   prospectToLeadImport,
   searchLeadProspects,
   type LeadProspect,
@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -203,16 +203,24 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
                   autoComplete="address-level2"
                 />
               </Field>
-              <Field label="Segmento / nicho">
+              <Field label="Especialidade do estabelecimento">
+                <Select value={niche} onValueChange={setNiche}>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma especialidade" /></SelectTrigger>
+                  <SelectContent>
+                    {PROSPECT_NICHE_GROUPS.map((group) => (
+                      <SelectGroup key={group.label}>
+                        <SelectLabel>{group.label}</SelectLabel>
+                        {group.niches.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Input
                   value={niche}
                   onChange={(event) => setNiche(event.target.value)}
-                  placeholder="Escolha ou digite qualquer segmento"
-                  list="prospect-niches"
+                  placeholder="Ou digite uma especialidade ainda mais específica"
+                  className="mt-2"
                 />
-                <datalist id="prospect-niches">
-                  {PROSPECT_NICHES.map((item) => <option key={item} value={item} />)}
-                </datalist>
               </Field>
               <Button onClick={runProspectSearch} disabled={busy} className="gap-2">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}

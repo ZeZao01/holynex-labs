@@ -57,9 +57,9 @@ function offerFor(place: GooglePlace, niche: string) {
   const suggestedOffer = reviews >= 120 && operational ? "automation" : "site";
   const suggestedProject = suggestedOffer === "automation" ? "Site de conversão + atendimento automatizado" : "Site institucional de alta conversão";
   const projectSummary = suggestedOffer === "automation"
-    ? `${suggestedProject} para ${name}, com apresentação de serviços, prova social das ${reviews} avaliações, captação de contatos e fluxo de atendimento/agendamento pelo WhatsApp.`
-    : `${suggestedProject} para ${name}, com serviços, localização, prova social (${rating.toFixed(1)} no Google), botão de WhatsApp e estrutura preparada para SEO local.`;
-  const readyMessage = `Olá! Encontrei a ${name} no Google e vi que vocês têm ${reviews} avaliações${rating ? `, com nota ${rating.toFixed(1)}` : ""} — uma reputação que merece uma presença digital própria. Preparei uma ideia de ${suggestedProject.toLowerCase()} para transformar essas buscas em contatos pelo WhatsApp. Posso te enviar uma prévia sem compromisso?`;
+    ? `${suggestedProject} para ${name}, focado em ${niche.toLowerCase()}, com apresentação dos serviços, prova social das ${reviews} avaliações, captação de contatos e fluxo de atendimento/agendamento pelo WhatsApp.`
+    : `${suggestedProject} para ${name}, posicionado especificamente para ${niche.toLowerCase()}, com serviços, localização, prova social (${rating.toFixed(1)} no Google), botão de WhatsApp e estrutura preparada para SEO local.`;
+  const readyMessage = `Olá! Encontrei a ${name} ao pesquisar por ${niche.toLowerCase()} no Google e vi que vocês têm ${reviews} avaliações${rating ? `, com nota ${rating.toFixed(1)}` : ""} — uma reputação que merece uma presença digital própria. Preparei uma ideia de ${suggestedProject.toLowerCase()} alinhada especificamente a esse serviço para transformar essas buscas em contatos pelo WhatsApp. Posso te enviar uma prévia sem compromisso?`;
   return { suggestedOffer, suggestedProject, projectSummary, readyMessage };
 }
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { prospectToLeadImport, searchLeadProspects, type LeadProspect } from "@/lib/lead-prospecting";
+import { PROSPECT_NICHES, PROSPECT_NICHE_GROUPS, prospectToLeadImport, searchLeadProspects, type LeadProspect } from "@/lib/lead-prospecting";
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
@@ -33,6 +33,19 @@ const prospect: LeadProspect = {
 
 describe("Google Places lead prospecting", () => {
   afterEach(() => invokeMock.mockReset());
+
+  it("offers detailed prospecting specialties instead of generic clinic categories", () => {
+    expect(PROSPECT_NICHE_GROUPS.length).toBeGreaterThanOrEqual(10);
+    expect(PROSPECT_NICHES.length).toBeGreaterThan(100);
+    expect(PROSPECT_NICHES).toEqual(expect.arrayContaining([
+      "Clínica odontológica",
+      "Consultório odontológico",
+      "Clínica de estética",
+      "Clínica de psicologia",
+      "Clínica veterinária",
+    ]));
+    expect(PROSPECT_NICHES).not.toContain("Clínicas e consultórios");
+  });
 
   it("converts the scored opportunity, project and ready message into a CRM lead", () => {
     const lead = prospectToLeadImport(prospect, "Clínicas e consultórios");
