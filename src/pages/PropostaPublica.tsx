@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getPropostaByToken, type Proposta } from "@/lib/propostas";
+import { acceptPropostaByToken, getPropostaByToken, type Proposta } from "@/lib/propostas";
 import { TIER_DEFAULTS, type ProposalTier } from "@/lib/proposal-tiers";
 import { Loader2, CheckCircle2, XCircle, Star, Clock, Shield, Zap, ArrowRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,8 @@ export default function PropostaPublica() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+  const [accepted, setAccepted] = useState(false);
   const [portfolioRefs, setPortfolioRefs] = useState<PortfolioReference[]>([]);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
 
@@ -121,6 +123,22 @@ export default function PropostaPublica() {
     } catch (err: any) {
       toast.error("Erro ao gerar PDF");
     } finally { setDownloadingPdf(false); }
+  };
+
+  const handleAccept = async () => {
+    if (!token || accepting) return;
+    setAccepting(true);
+    try {
+      const ok = await acceptPropostaByToken(token);
+      if (!ok) throw new Error("A proposta não está mais disponível para aceite.");
+      setAccepted(true);
+      setProposta((current) => current ? { ...current, status: "aceita" } : current);
+      toast.success("Proposta aceita. A HolyNex entrará em contato para os próximos passos.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível aceitar a proposta.");
+    } finally {
+      setAccepting(false);
+    }
   };
 
   if (loading) {
@@ -311,8 +329,9 @@ export default function PropostaPublica() {
                 </div>
               ))}
             </div>
-            <Button size="lg" className="mt-4 gap-2">
-              <ArrowRight className="h-4 w-4" /> Aceitar Proposta
+            <Button size="lg" className="mt-4 gap-2" onClick={handleAccept} disabled={accepting || accepted || proposta.status === "aceita"}>
+              {accepting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              {accepted || proposta.status === "aceita" ? "Proposta aceita" : accepting ? "Confirmando..." : "Aceitar Proposta"}
             </Button>
           </section>
         )}

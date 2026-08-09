@@ -97,7 +97,9 @@ export async function searchLeadProspects(city: string, niche: string, limit = 1
   });
   if (error) {
     const status = (error as FunctionErrorWithContext).context?.status;
-    if (status === 404) return searchDirectly(city, niche, limit);
+    // Keep prospecting available while the Edge Function is missing or unreachable.
+    // Explicit authentication and authorization failures must still reach the UI.
+    if (status === undefined || status === 404) return searchDirectly(city, niche, limit);
     throw error;
   }
   if (data?.error) throw new Error(data.error);

@@ -20,6 +20,7 @@ export const QG_TOOLS = [
     description: "Conhecimento local, memória, fontes e apoio às decisões do QG.",
     status: "aplicativo local",
     href: "http://127.0.0.1:5181/",
+    localOnly: true,
     icon: BrainCircuit,
   },
   {
@@ -27,6 +28,7 @@ export const QG_TOOLS = [
     description: "Biblioteca de mídia, edição em lote, aprovação e calendário editorial.",
     status: "aplicativo local",
     href: "http://127.0.0.1:5191/",
+    localOnly: true,
     icon: Clapperboard,
   },
   {

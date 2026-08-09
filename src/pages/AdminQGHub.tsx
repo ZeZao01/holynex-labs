@@ -8,6 +8,7 @@ import { QG_CAPABILITIES, QG_FLOW, QG_TOOLS } from "@/lib/qg-tools";
 
 export default function AdminQGHub() {
   const navigate = useNavigate();
+  const visibleTools = QG_TOOLS.filter((tool) => !("localOnly" in tool) || import.meta.env.DEV);
 
   const openTool = (href: string) => {
     if (href.startsWith("http")) window.open(href, "_blank", "noopener,noreferrer");
@@ -23,7 +24,7 @@ export default function AdminQGHub() {
       />
 
       <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {QG_TOOLS.map((tool) => (
+        {visibleTools.map((tool) => (
           <article key={tool.name} className="flex min-h-44 flex-col rounded-md border border-border/60 bg-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="grid h-9 w-9 place-items-center rounded-md bg-primary/10 text-primary"><tool.icon className="h-4 w-4" /></div>

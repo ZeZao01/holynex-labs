@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getOrcamentos, atualizarStatusComercial, removerOrcamento, type Orcamento, type StatusComercial, STATUS_COMERCIAL_MAP, ESTRATEGIAS_COMERCIAIS } from "@/lib/orcamentos";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ const tempColors: Record<string, string> = { quente: "text-red-400", morno: "tex
 export default function AdminOrcamentos() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState("");
@@ -46,6 +47,12 @@ export default function AdminOrcamentos() {
     if (!authLoading && !user) { navigate("/admin/login"); return; }
     if (user) refresh();
   }, [user, authLoading, navigate, refresh]);
+
+  useEffect(() => {
+    if (searchParams.get("captar") !== "1") return;
+    setCaptureOpen(true);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useRealtimeSubscription("orcamentos", refresh, !!user);
 

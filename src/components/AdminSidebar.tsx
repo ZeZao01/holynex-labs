@@ -13,10 +13,8 @@ import {
   ShieldCheck,
   Settings,
   LogOut,
-  FilePlus,
   ClipboardList,
   Sparkles,
-  Layers,
   Palette,
   Network,
 } from "lucide-react";
@@ -48,11 +46,14 @@ interface SidebarItem {
   action?: string;
 }
 
-const operacionalItems: SidebarItem[] = [
+const principalItems: SidebarItem[] = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard, module: "dashboard" },
+  { title: "QG Agência", url: "/admin/qg", icon: Network, module: "configuracoes" },
+];
+
+const comercialItems: SidebarItem[] = [
   { title: "Leads & Orçamentos", url: "/admin/orcamentos", icon: Users, module: "leads" },
   { title: "Propostas", url: "/admin/propostas", icon: ClipboardList, module: "propostas" },
-  { title: "Nova Proposta", url: "/admin/propostas/nova", icon: FilePlus, module: "propostas", action: "criar" },
 ];
 
 const projetosItems: SidebarItem[] = [
@@ -63,18 +64,16 @@ const projetosItems: SidebarItem[] = [
   { title: "Manutenção", url: "/admin/manutencao", icon: Wrench, module: "manutencao" },
 ];
 
-const comercialItems: SidebarItem[] = [
-  { title: "Portfólio Público", url: "/admin/portfolio-admin", icon: Globe, module: "portfolio" },
-  { title: "Projetos Modelo", url: "/admin/modelos", icon: LayoutTemplate, module: "modelos" },
-  { title: "Financeiro", url: "/admin/financeiro", icon: DollarSign, module: "financeiro" },
-  { title: "IA Assistiva", url: "/admin/ia", icon: Sparkles, module: "ia" },
+const ferramentasItems: SidebarItem[] = [
   { title: "Brand Studio AI", url: "/admin/brand-studio", icon: Palette, module: "brand_studio" },
+  { title: "Projetos Modelo", url: "/admin/modelos", icon: LayoutTemplate, module: "modelos" },
+  { title: "Portfólio Público", url: "/admin/portfolio-admin", icon: Globe, module: "portfolio" },
+  { title: "Financeiro", url: "/admin/financeiro", icon: DollarSign, module: "financeiro" },
 ];
 
 const sistemaItems: SidebarItem[] = [
-  { title: "QG Agência", url: "/admin/qg", icon: Network, module: "configuracoes" },
+  { title: "IA & Automações", url: "/admin/ia", icon: Sparkles, module: "ia" },
   { title: "Segurança & Auditoria", url: "/admin/seguranca", icon: ShieldCheck, module: "seguranca" },
-  { title: "Add-ons Ocultos", url: "/admin/addons", icon: Layers, module: "addons" },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings, module: "configuracoes" },
 ];
 
@@ -153,10 +152,11 @@ export default function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {renderGroup("Comercial", operacionalItems)}
+        {renderGroup("Principal", principalItems)}
+        {renderGroup("Comercial", comercialItems)}
         {renderGroup("Operacional", projetosItems)}
-        {renderGroup("Estratégico", comercialItems)}
-        {renderGroup("Sistema", sistemaItems)}
+        {renderGroup("Ferramentas", ferramentasItems)}
+        {renderGroup("Administração", sistemaItems)}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border/40">

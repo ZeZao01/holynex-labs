@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prospectToLeadImport, searchLeadProspects, type LeadProspect } from "@/lib/lead-prospecting";
 
+const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
+
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     functions: {
-      invoke: vi.fn().mockResolvedValue({ data: null, error: { context: { status: 404 } } }),
+      invoke: invokeMock,
     },
   },
 }));
@@ -25,7 +27,10 @@ const prospect: LeadProspect = {
 };
 
 describe("lead prospect conversion", () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invokeMock.mockReset();
+  });
 
   it("keeps the selected city and niche when adding a prospect to the CRM", () => {
     const lead = prospectToLeadImport(prospect, "Clínicas e consultórios");
@@ -46,6 +51,7 @@ describe("lead prospect conversion", () => {
   });
 
   it("uses the direct user-triggered search while the proxy is not deployed", async () => {
+    invokeMock.mockResolvedValue({ data: null, error: { context: { status: 404 } } });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{
@@ -65,6 +71,19 @@ describe("lead prospect conversion", () => {
 
     expect(result.prospects).toHaveLength(1);
     expect(result.prospects[0]).toMatchObject({ name: "Restaurante Teste", city: "Campinas" });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses the direct search when the Edge Function request cannot be sent", async () => {
+    invokeMock.mockResolvedValue({ data: null, error: new Error("Failed to send a request to the Edge Function") });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    }));
+
+    const result = await searchLeadProspects("Santos, SP", "Imobiliárias", 8);
+
+    expect(result.prospects).toEqual([]);
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

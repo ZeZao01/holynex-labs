@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
   Users, FileText, FolderKanban, PackageCheck, Wrench, DollarSign,
-  Plus, Mail, FilePlus, KeyRound, Globe, Settings, Repeat,
+  Plus, Mail, UserRoundSearch, FilePlus, KeyRound, Globe, Settings, Repeat,
   Sparkles, Blocks, TrendingUp, BarChart3, Brain, Target, Palette,
 } from "lucide-react";
 
@@ -258,7 +258,7 @@ export default function AdminDashboard() {
   ];
 
   const quickActions = [
-    { label: "Novo Lead", icon: <Mail className="h-4 w-4" />, onClick: () => navigate("/contato") },
+    { label: "Captar Lead", icon: <UserRoundSearch className="h-4 w-4" />, onClick: () => navigate("/admin/orcamentos?captar=1") },
     { label: "Nova Proposta", icon: <FilePlus className="h-4 w-4" />, onClick: () => navigate("/admin/propostas/nova") },
     { label: "Novo Projeto", icon: <FolderKanban className="h-4 w-4" />, onClick: () => navigate("/admin/projetos") },
     { label: "Novo Sistema", icon: <PackageCheck className="h-4 w-4" />, onClick: () => navigate("/admin/sistemas") },

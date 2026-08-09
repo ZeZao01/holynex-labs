@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/admin/PageHeader";
 import SectionCard from "@/components/admin/SectionCard";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useAccessControl } from "@/hooks/useAccessControl";
-import { Settings, Globe, Bell, Palette, Shield, Save } from "lucide-react";
+import { Settings, Globe, Bell, Palette, Shield, Save, Layers } from "lucide-react";
 import { logSecurityEvent } from "@/lib/security";
 import {
   DEFAULT_SYSTEM_SETTINGS,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/system-settings";
 
 export default function AdminConfiguracoes() {
+  const navigate = useNavigate();
   const { canEdit, guardAction, hasPermission, canActivateAddon } = useAccessControl();
   const [agencyName, setAgencyName] = useState(DEFAULT_SYSTEM_SETTINGS.feature_flags.system_profile.agency_name);
   const [agencyEmail, setAgencyEmail] = useState(DEFAULT_SYSTEM_SETTINGS.feature_flags.system_profile.agency_email);
@@ -432,7 +434,14 @@ export default function AdminConfiguracoes() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Regras de Add-ons" action={<Settings className="h-4 w-4 text-muted-foreground" />}>
+        <SectionCard
+          title="Regras de Add-ons"
+          action={
+            <Button variant="outline" size="sm" onClick={() => navigate("/admin/addons")} className="gap-1.5">
+              <Layers className="h-4 w-4" /> Gerenciar
+            </Button>
+          }
+        >
           <div className="space-y-3">
             <Label>JSON de regras estruturais</Label>
             <Textarea

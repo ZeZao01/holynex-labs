@@ -509,3 +509,9 @@ export async function getPropostaByToken(token: string): Promise<Proposta | null
   if (error) return null;
   return parseRow(data);
 }
+
+export async function acceptPropostaByToken(token: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("accept_public_proposal" as never, { p_token: token } as never);
+  if (error) throw error;
+  return data === true;
+}

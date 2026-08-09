@@ -1,9 +1,12 @@
 export const ADMIN_MENU_ROUTES = [
-  "/admin/dashboard", "/admin/orcamentos", "/admin/propostas", "/admin/propostas/nova",
+  "/admin/dashboard", "/admin/qg", "/admin/orcamentos", "/admin/propostas",
   "/admin/projetos", "/admin/sistemas", "/admin/acessos", "/admin/modulos",
   "/admin/manutencao", "/admin/portfolio-admin", "/admin/modelos", "/admin/financeiro",
-  "/admin/ia", "/admin/brand-studio", "/admin/qg", "/admin/seguranca",
-  "/admin/addons", "/admin/configuracoes",
+  "/admin/ia", "/admin/brand-studio", "/admin/seguranca", "/admin/configuracoes",
+] as const;
+
+export const ADMIN_UTILITY_ROUTES = [
+  "/admin/propostas/nova", "/admin/addons",
 ] as const;
 
 export const ADMIN_SECONDARY_ROUTES = [

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ADMIN_MENU_ROUTES, ADMIN_ROUTE_LABELS, ADMIN_SECONDARY_ROUTES } from "@/lib/admin-routes";
+import { ADMIN_MENU_ROUTES, ADMIN_ROUTE_LABELS, ADMIN_SECONDARY_ROUTES, ADMIN_UTILITY_ROUTES } from "@/lib/admin-routes";
 
 const srcRoot = resolve(process.cwd(), "src");
 const appSource = readFileSync(resolve(srcRoot, "App.tsx"), "utf8");
@@ -22,6 +22,14 @@ describe("admin navigation contract", () => {
     for (const route of ADMIN_SECONDARY_ROUTES) {
       expect(appSource, `${route} is missing from App routes`).toContain(`path="${route}"`);
       expect(ADMIN_ROUTE_LABELS[route], `${route} has no header label`).toBeTruthy();
+    }
+  });
+
+  it("keeps utility routes available without duplicating them in the sidebar", () => {
+    for (const route of ADMIN_UTILITY_ROUTES) {
+      expect(appSource, `${route} is missing from App routes`).toContain(`path="${route}"`);
+      expect(ADMIN_ROUTE_LABELS[route], `${route} has no header label`).toBeTruthy();
+      expect(sidebarSource, `${route} should be reached from its parent workflow`).not.toContain(`url: "${route}"`);
     }
   });
 });
