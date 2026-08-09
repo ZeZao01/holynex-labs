@@ -20,7 +20,8 @@ describe("lead capture dialog", () => {
 
     expect(screen.getByText("Buscar potenciais")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Ex.: Campinas, SP")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Escolha ou digite qualquer segmento")).toBeInTheDocument();
+    expect(screen.getByText("Especialidade do estabelecimento")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Ou digite uma especialidade ainda mais específica")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Buscar" })).toBeInTheDocument();
   });
 });

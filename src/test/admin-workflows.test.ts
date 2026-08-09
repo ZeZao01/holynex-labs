@@ -11,8 +11,20 @@ describe("critical admin workflow wiring", () => {
     expect(read("src/pages/AdminOrcamentos.tsx")).toContain('searchParams.get("captar") !== "1"');
   });
 
-  it("keeps lead search available when the Edge Function cannot be reached", () => {
-    expect(read("src/lib/lead-prospecting.ts")).toContain("status === undefined || status === 404");
+  it("does not mask Edge Function failures with unrelated map data", () => {
+    const prospecting = read("src/lib/lead-prospecting.ts");
+    expect(prospecting).not.toContain("nominatim");
+    expect(prospecting).toContain("A busca Google Maps está indisponível no momento");
+  });
+
+  it("keeps the admin shell mounted and limits loading to the content area", () => {
+    const app = read("src/App.tsx");
+    const layout = read("src/components/AdminLayout.tsx");
+    expect(app).toContain("<AdminLayout>");
+    expect(app).toContain("fallback={<AdminContentLoading />}");
+    expect(app).not.toContain('<LoadingOverlay active={showDataLoading} label="Carregando dados" />\n      </AdminLayout>');
+    expect(layout).toContain("h-screen w-full overflow-hidden");
+    expect(layout).toContain("min-h-0 flex-1 overflow-y-auto");
   });
 
   it("connects public proposal acceptance to a token-scoped database function", () => {

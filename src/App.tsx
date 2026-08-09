@@ -13,6 +13,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { AccessControlProvider } from "@/hooks/useAccessControl";
 import AdminRouteGuard from "@/components/admin/AdminRouteGuard";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import { Loader2 } from "lucide-react";
 
 const Index = lazy(() => import("./pages/Index"));
 const Servicos = lazy(() => import("./pages/Servicos"));
@@ -75,7 +76,7 @@ function AppRoutes() {
   if (isAdmin) {
     return (
       <AdminLayout>
-        <Suspense fallback={<LoadingOverlay active label="Carregando painel" />}>
+        <Suspense fallback={<AdminContentLoading />}>
           <Routes>
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/admin/dashboard" element={<AdminRouteGuard module="dashboard"><AdminDashboard /></AdminRouteGuard>} />
@@ -111,7 +112,6 @@ function AppRoutes() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-        <LoadingOverlay active={showDataLoading} label="Carregando dados" />
       </AdminLayout>
     );
   }
@@ -140,6 +140,17 @@ function AppRoutes() {
       <WhatsAppFloat />
       <LoadingOverlay active={showDataLoading} label="Carregando dados" />
     </>
+  );
+}
+
+function AdminContentLoading() {
+  return (
+    <div className="flex min-h-[45vh] items-center justify-center" role="status" aria-live="polite">
+      <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-card/70 px-4 py-3 text-sm text-muted-foreground shadow-sm">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        Carregando seção…
+      </div>
+    </div>
   );
 }
 
