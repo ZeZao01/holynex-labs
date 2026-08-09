@@ -77,25 +77,29 @@ export default function AdminLogin() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block text-foreground">E-mail</label>
+              <label htmlFor="admin-email" className="text-sm font-medium mb-1.5 block text-foreground">E-mail</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="admin-email"
                   type="email"
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="admin@holynex.com"
+                  placeholder="admin@holynexlabs.com.br"
                   className="pl-10 bg-muted/50 border-border/50 focus:border-primary/50"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block text-foreground">Senha</label>
+              <label htmlFor="admin-password" className="text-sm font-medium mb-1.5 block text-foreground">Senha</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="admin-password"
                   type="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
