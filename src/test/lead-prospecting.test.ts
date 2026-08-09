@@ -1,5 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { prospectToLeadImport, type LeadProspect } from "@/lib/lead-prospecting";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { prospectToLeadImport, searchLeadProspects, type LeadProspect } from "@/lib/lead-prospecting";
+
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: {
+    functions: {
+      invoke: vi.fn().mockResolvedValue({ data: null, error: { context: { status: 404 } } }),
+    },
+  },
+}));
 
 const prospect: LeadProspect = {
   id: "N12345",
@@ -17,6 +25,8 @@ const prospect: LeadProspect = {
 };
 
 describe("lead prospect conversion", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it("keeps the selected city and niche when adding a prospect to the CRM", () => {
     const lead = prospectToLeadImport(prospect, "Clínicas e consultórios");
 
@@ -33,5 +43,28 @@ describe("lead prospect conversion", () => {
 
     expect(lead.projectType).toBe("Sistema interno");
     expect(lead.website).toBe("https://example.com");
+  });
+
+  it("uses the direct user-triggered search while the proxy is not deployed", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{
+        osm_type: "node",
+        osm_id: 77,
+        display_name: "Restaurante Teste, Campinas, São Paulo, Brasil",
+        namedetails: { name: "Restaurante Teste" },
+        address: { city: "Campinas" },
+        extratags: { phone: "+55 19 3333-0000" },
+        type: "restaurant",
+        lat: "-22.9",
+        lon: "-47.0",
+      }],
+    }));
+
+    const result = await searchLeadProspects("Campinas, SP", "Restaurantes", 12);
+
+    expect(result.prospects).toHaveLength(1);
+    expect(result.prospects[0]).toMatchObject({ name: "Restaurante Teste", city: "Campinas" });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
