@@ -17,6 +17,7 @@ import {
   Sparkles,
   Palette,
   Network,
+  UserRoundSearch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -53,6 +54,7 @@ const principalItems: SidebarItem[] = [
 
 const comercialItems: SidebarItem[] = [
   { title: "Leads & Orçamentos", url: "/admin/orcamentos", icon: Users, module: "leads" },
+  { title: "Prospectar leads", url: "/admin/orcamentos?captar=1", icon: UserRoundSearch, module: "leads", action: "criar" },
   { title: "Propostas", url: "/admin/propostas", icon: ClipboardList, module: "propostas" },
 ];
 
@@ -85,7 +87,10 @@ export default function AdminSidebar() {
   const { user, signOut } = useAuth();
   const { canView, canCreate, roles, loading: accessLoading, isDevAdmin } = useAccessControl();
 
-  const isActive = (path: string) => {
+  const isActive = (url: string) => {
+    const [path, search = ""] = url.split("?");
+    if (search) return location.pathname === path && new URLSearchParams(location.search).get("captar") === "1";
+    if (path === "/admin/orcamentos") return location.pathname === path && new URLSearchParams(location.search).get("captar") !== "1";
     if (path === "/admin/dashboard") return location.pathname === path;
     return location.pathname.startsWith(path);
   };

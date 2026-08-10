@@ -11,6 +11,15 @@ describe("critical admin workflow wiring", () => {
     expect(read("src/pages/AdminOrcamentos.tsx")).toContain('searchParams.get("captar") !== "1"');
   });
 
+  it("keeps prospecting visible and addressable from the fixed sidebar", () => {
+    const sidebar = read("src/components/AdminSidebar.tsx");
+    const leads = read("src/pages/AdminOrcamentos.tsx");
+    expect(sidebar).toContain('{ title: "Prospectar leads", url: "/admin/orcamentos?captar=1"');
+    expect(sidebar).toContain('new URLSearchParams(location.search).get("captar") === "1"');
+    expect(leads).toContain('const openCapture = () => setSearchParams({ captar: "1" })');
+    expect(leads).toContain('onOpenChange={handleCaptureOpenChange}');
+  });
+
   it("does not mask Edge Function failures with unrelated map data", () => {
     const prospecting = read("src/lib/lead-prospecting.ts");
     expect(prospecting).not.toContain("nominatim");

@@ -51,8 +51,13 @@ export default function AdminOrcamentos() {
   useEffect(() => {
     if (searchParams.get("captar") !== "1") return;
     setCaptureOpen(true);
-    setSearchParams({}, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, [searchParams]);
+
+  const openCapture = () => setSearchParams({ captar: "1" });
+  const handleCaptureOpenChange = (open: boolean) => {
+    setCaptureOpen(open);
+    if (!open && searchParams.get("captar") === "1") setSearchParams({}, { replace: true });
+  };
 
   useRealtimeSubscription("orcamentos", refresh, !!user);
 
@@ -89,7 +94,7 @@ export default function AdminOrcamentos() {
             <Button variant="outline" onClick={() => navigate("/contato")} size="sm" className="gap-1.5">
               <Plus className="h-4 w-4" /> Formulário público
             </Button>
-            <Button onClick={() => setCaptureOpen(true)} size="sm" className="gap-1.5">
+            <Button onClick={openCapture} size="sm" className="gap-1.5">
               <UserRoundSearch className="h-4 w-4" /> Captar leads
             </Button>
           </div>
@@ -98,7 +103,7 @@ export default function AdminOrcamentos() {
 
       <LeadCaptureDialog
         open={captureOpen}
-        onOpenChange={setCaptureOpen}
+        onOpenChange={handleCaptureOpenChange}
         existingLeads={orcamentos}
         onImported={refresh}
       />
