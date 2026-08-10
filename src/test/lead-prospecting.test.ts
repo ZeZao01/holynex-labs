@@ -29,6 +29,7 @@ const prospect: LeadProspect = {
   suggestedProject: "Site de conversão + atendimento automatizado",
   projectSummary: "Site com prova social e agendamento pelo WhatsApp.",
   readyMessage: "Olá! Preparei uma ideia para sua clínica.",
+  readyMessages: ["Olá! Preparei uma ideia para sua clínica.", "Posso enviar uma prévia?"],
 };
 
 describe("Google Places lead prospecting", () => {
@@ -66,21 +67,27 @@ describe("Google Places lead prospecting", () => {
       data: { prospects: [prospect], attribution: "Google Maps Platform", totalFetched: 20, resultLimit: 60 },
       error: null,
     });
-    const result = await searchLeadProspects("Campinas, SP", "Clínicas", 40);
+    const result = await searchLeadProspects("Campinas, SP", "Clínicas", 40, "software");
     expect(invokeMock).toHaveBeenCalledWith("prospectar-leads", {
-      body: { city: "Campinas, SP", niche: "Clínicas", limit: 40, withoutWebsite: true },
+      body: { city: "Campinas, SP", niche: "Clínicas", limit: 40, withoutWebsite: true, offerMode: "software" },
     });
     expect(result.prospects).toEqual([prospect]);
     expect(result.totalFetched).toBe(20);
   });
 
   it("does not hide a failed Edge Function behind unrelated map data", async () => {
-    invokeMock.mockResolvedValue({ data: null, error: { context: { status: 404 } } });
-    await expect(searchLeadProspects("Santos, SP", "Imobiliárias")).rejects.toThrow("indisponível");
+    invokeMock.mockResolvedValue({
+      data: null,
+      error: { context: new Response(JSON.stringify({ error: "Places API (New) não está habilitada", code: "PERMISSION_DENIED" }), { status: 502 }) },
+    });
+    await expect(searchLeadProspects("Santos, SP", "Imobiliárias")).rejects.toThrow("Places API (New) não está habilitada");
   });
 
   it("explains when the server-side Google key is missing", async () => {
-    invokeMock.mockResolvedValue({ data: null, error: { context: { status: 503 } } });
-    await expect(searchLeadProspects("Santos, SP", "Imobiliárias")).rejects.toThrow("GOOGLE_MAPS_API_KEY");
+    invokeMock.mockResolvedValue({
+      data: null,
+      error: { context: new Response(JSON.stringify({ error: "Regrave GOOGLE_MAPS_API_KEY", code: "GOOGLE_MAPS_SECRET_UNREADABLE" }), { status: 503 }) },
+    });
+    await expect(searchLeadProspects("Santos, SP", "Imobiliárias")).rejects.toThrow("Regrave GOOGLE_MAPS_API_KEY");
   });
 });

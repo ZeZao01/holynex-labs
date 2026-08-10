@@ -4,9 +4,11 @@ import { salvarOrcamento, type Orcamento, TIPOS_PROJETO } from "@/lib/orcamentos
 import { buildLeadBriefing, leadImportKey, parseLeadCsv, type LeadImportRow } from "@/lib/lead-import";
 import {
   PROSPECT_NICHE_GROUPS,
+  PROSPECT_OFFERS,
   prospectToLeadImport,
   searchLeadProspects,
   type LeadProspect,
+  type ProspectOfferMode,
 } from "@/lib/lead-prospecting";
 import { toast } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +68,9 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
   const [rows, setRows] = useState<LeadImportRow[]>([]);
   const [city, setCity] = useState("");
   const [niche, setNiche] = useState("");
+  const [offerMode, setOfferMode] = useState<ProspectOfferMode>("marketing");
   const [prospects, setProspects] = useState<LeadProspect[]>([]);
+  const [messageIndexes, setMessageIndexes] = useState<Record<string, number>>({});
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const [attribution, setAttribution] = useState("");
   const [searchMeta, setSearchMeta] = useState({ totalFetched: 0, resultLimit: 60 });
@@ -102,8 +106,9 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
     if (niche.trim().length < 2) return toast.error("Escolha ou digite o segmento");
     setBusy(true);
     try {
-      const result = await searchLeadProspects(city.trim(), niche.trim());
+      const result = await searchLeadProspects(city.trim(), niche.trim(), 60, offerMode);
       setProspects(result.prospects);
+      setMessageIndexes({});
       setSelectedProspects(new Set(result.prospects.map((prospect) => prospect.id)));
       setAttribution(result.attribution);
       setSearchMeta({ totalFetched: result.totalFetched, resultLimit: result.resultLimit });
@@ -120,7 +125,7 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
   const importSelectedProspects = async () => {
     const selected = prospects
       .filter((prospect) => selectedProspects.has(prospect.id))
-      .map((prospect) => prospectToLeadImport(prospect, niche));
+      .map((prospect) => prospectToLeadImport({ ...prospect, readyMessage: currentMessage(prospect) }, niche));
     if (!selected.length) return toast.error("Selecione ao menos um potencial cliente");
     const saved = await saveRows(selected, `${selected.length} potenciais clientes adicionados ao CRM`);
     if (saved) {
@@ -169,14 +174,24 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
     });
   };
 
+  const messageOptions = (prospect: LeadProspect) => prospect.readyMessages?.length ? prospect.readyMessages : [prospect.readyMessage];
+  const currentMessage = (prospect: LeadProspect) => {
+    const options = messageOptions(prospect);
+    return options[(messageIndexes[prospect.id] || 0) % options.length];
+  };
+  const nextMessage = (prospect: LeadProspect) => setMessageIndexes((current) => ({
+    ...current,
+    [prospect.id]: ((current[prospect.id] || 0) + 1) % messageOptions(prospect).length,
+  }));
+
   const copyMessage = async (prospect: LeadProspect) => {
-    await navigator.clipboard.writeText(prospect.readyMessage);
+    await navigator.clipboard.writeText(currentMessage(prospect));
     toast.success("Mensagem pronta copiada");
   };
 
   const whatsappUrl = (prospect: LeadProspect) => {
     const phone = prospect.phone.replace(/\D/g, "");
-    return `https://wa.me/${phone}?text=${encodeURIComponent(prospect.readyMessage)}`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(currentMessage(prospect))}`;
   };
 
   return (
@@ -194,6 +209,22 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
           </TabsList>
 
           <TabsContent value="search" className="space-y-4 pt-3">
+            <div className="space-y-2">
+              <Label>Oferta que você deseja prospectar</Label>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {(Object.entries(PROSPECT_OFFERS) as [ProspectOfferMode, (typeof PROSPECT_OFFERS)[ProspectOfferMode]][]).map(([key, offer]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setOfferMode(key)}
+                    className={`rounded-md border p-3 text-left transition-colors ${offerMode === key ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50"}`}
+                  >
+                    <span className="block text-sm font-semibold">{offer.label}</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">{offer.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
               <Field label="Cidade">
                 <Input
@@ -285,8 +316,9 @@ export default function LeadCaptureDialog({ open, onOpenChange, existingLeads, o
                           </div>
                           <div>
                             <p className="mb-1 flex items-center gap-1.5 font-semibold text-foreground"><MessageCircle className="h-3.5 w-3.5 text-primary" /> Mensagem pronta</p>
-                            <p className="line-clamp-4 text-muted-foreground">{prospect.readyMessage}</p>
+                            <p className="line-clamp-4 text-muted-foreground">{currentMessage(prospect)}</p>
                             <div className="mt-2 flex flex-wrap gap-2">
+                              {messageOptions(prospect).length > 1 && <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => nextMessage(prospect)}>Gerar outra</Button>}
                               <Button type="button" variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => copyMessage(prospect)}><Copy className="h-3 w-3" /> Copiar</Button>
                               {prospect.phone && <Button asChild type="button" size="sm" className="h-7 gap-1.5 text-xs"><a href={whatsappUrl(prospect)} target="_blank" rel="noreferrer"><MessageCircle className="h-3 w-3" /> Abrir WhatsApp</a></Button>}
                             </div>

@@ -19,6 +19,9 @@ describe("lead capture dialog", () => {
     );
 
     expect(screen.getByText("Buscar potenciais")).toBeInTheDocument();
+    expect(screen.getByText("Marketing / Sites")).toBeInTheDocument();
+    expect(screen.getByText("TI / Infraestrutura")).toBeInTheDocument();
+    expect(screen.getByText("Software sob medida")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Ex.: Campinas, SP")).toBeInTheDocument();
     expect(screen.getByText("Especialidade do estabelecimento")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Ou digite uma especialidade ainda mais específica")).toBeInTheDocument();

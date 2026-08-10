@@ -2,6 +2,22 @@ import { supabase } from "@/integrations/supabase/client";
 import type { LeadImportRow } from "@/lib/lead-import";
 
 export type ProspectOffer = "site" | "automation" | "system";
+export type ProspectOfferMode = "marketing" | "ti" | "software";
+
+export const PROSPECT_OFFERS: Record<ProspectOfferMode, { label: string; hint: string }> = {
+  marketing: {
+    label: "Marketing / Sites",
+    hint: "Prioriza ausência de site, reputação local e conversão pelo WhatsApp.",
+  },
+  ti: {
+    label: "TI / Infraestrutura",
+    hint: "Prioriza domínio, e-mail profissional, segurança, backup e suporte.",
+  },
+  software: {
+    label: "Software sob medida",
+    hint: "Prioriza negócios com volume de atendimento e potencial de automação.",
+  },
+};
 
 export interface LeadProspect {
   id: string;
@@ -25,6 +41,7 @@ export interface LeadProspect {
   suggestedProject: string;
   projectSummary: string;
   readyMessage: string;
+  readyMessages?: string[];
 }
 export const PROSPECT_NICHE_GROUPS = [
   {
@@ -156,16 +173,34 @@ export const PROSPECT_NICHE_GROUPS = [
 
 export const PROSPECT_NICHES = PROSPECT_NICHE_GROUPS.flatMap((group) => group.niches);
 
-interface FunctionErrorWithContext { context?: Response }
+interface FunctionErrorWithContext { context?: Response | { status?: number } }
 
-export async function searchLeadProspects(city: string, niche: string, limit = 60) {
+async function readFunctionError(error: FunctionErrorWithContext): Promise<{ status?: number; message?: string; code?: string }> {
+  const context = error.context;
+  const status = context?.status;
+  if (!(context instanceof Response)) return { status };
+  try {
+    const payload = await context.clone().json() as { error?: string; message?: string; code?: string };
+    return { status, message: payload.error || payload.message, code: payload.code };
+  } catch {
+    return { status };
+  }
+}
+
+export async function searchLeadProspects(city: string, niche: string, limit = 60, offerMode: ProspectOfferMode = "marketing") {
   const { data, error } = await supabase.functions.invoke("prospectar-leads", {
-    body: { city, niche, limit, withoutWebsite: true },
+    body: { city, niche, limit, withoutWebsite: true, offerMode },
   });
   if (error) {
-    const status = (error as FunctionErrorWithContext).context?.status;
-    if (status === 503) throw new Error("A busca Google Maps ainda não foi configurada. Cadastre GOOGLE_MAPS_API_KEY nos secrets do Supabase.");
-    throw new Error(status === 401 || status === 403 ? "Sua sessão não tem permissão para prospectar leads." : "A busca Google Maps está indisponível no momento.");
+    const details = await readFunctionError(error as FunctionErrorWithContext);
+    if (details.status === 401 || details.status === 403 && details.code !== "GOOGLE_PLACES_FORBIDDEN") {
+      throw new Error("Sua sessão não tem permissão para prospectar leads.");
+    }
+    if (details.status === 503 || details.code === "GOOGLE_MAPS_NOT_CONFIGURED" || details.code === "GOOGLE_MAPS_SECRET_UNREADABLE") {
+      throw new Error(details.message || "A busca Google Maps ainda não foi configurada. Cadastre novamente GOOGLE_MAPS_API_KEY nos secrets do Supabase.");
+    }
+    if (details.status === 429) throw new Error(details.message || "O limite temporário do Google Maps foi atingido. Aguarde um pouco e tente novamente.");
+    throw new Error(details.message || "A busca Google Maps está indisponível no momento.");
   }
   if (data?.error) throw new Error(data.error);
   return {
