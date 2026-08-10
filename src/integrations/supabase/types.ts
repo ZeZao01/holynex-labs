@@ -2032,22 +2032,31 @@ export type Database = {
       orcamentos: {
         Row: {
           aceita_mvp: boolean | null
+          avaliacao_google: number | null
+          cidade: string | null
           complexidade_estimada: string | null
           criado_em: string
           descricao: string
           dor_principal: string | null
           email: string
           empresa: string | null
+          endereco: string | null
           estagio_operacao: string | null
           estrategia_comercial: string | null
           faixa_investimento: string | null
           faixa_ticket: string | null
+          google_maps_url: string | null
+          google_place_id: string | null
+          horario_funcionamento: string | null
           id: string
+          mensagem_prospeccao: string | null
+          motivos_score: string[] | null
           nicho: string | null
           nome: string
           numero_usuarios: string | null
           objetivo: string | null
           observacoes_internas: string | null
+          oferta_prospeccao: string | null
           origem_lead: string | null
           prazo_desejado: string | null
           precisa_admin: boolean | null
@@ -2056,33 +2065,48 @@ export type Database = {
           precisa_integracoes: boolean | null
           precisa_login: boolean | null
           prioridade: string | null
+          projeto_sugerido: string | null
           resumo_ia: string | null
+          resumo_projeto_sugerido: string | null
+          score_prospeccao: number | null
           score_qualificacao: number | null
           status: string
           status_comercial: string | null
+          status_negocio_google: string | null
           tags_automaticas: string[] | null
+          telefone: string | null
           temperatura_lead: string | null
           tipo_projeto: string | null
+          total_avaliacoes: number | null
           urgencia: string | null
         }
         Insert: {
           aceita_mvp?: boolean | null
+          avaliacao_google?: number | null
+          cidade?: string | null
           complexidade_estimada?: string | null
           criado_em?: string
           descricao: string
           dor_principal?: string | null
           email: string
           empresa?: string | null
+          endereco?: string | null
           estagio_operacao?: string | null
           estrategia_comercial?: string | null
           faixa_investimento?: string | null
           faixa_ticket?: string | null
+          google_maps_url?: string | null
+          google_place_id?: string | null
+          horario_funcionamento?: string | null
           id?: string
+          mensagem_prospeccao?: string | null
+          motivos_score?: string[] | null
           nicho?: string | null
           nome: string
           numero_usuarios?: string | null
           objetivo?: string | null
           observacoes_internas?: string | null
+          oferta_prospeccao?: string | null
           origem_lead?: string | null
           prazo_desejado?: string | null
           precisa_admin?: boolean | null
@@ -2091,33 +2115,48 @@ export type Database = {
           precisa_integracoes?: boolean | null
           precisa_login?: boolean | null
           prioridade?: string | null
+          projeto_sugerido?: string | null
           resumo_ia?: string | null
+          resumo_projeto_sugerido?: string | null
+          score_prospeccao?: number | null
           score_qualificacao?: number | null
           status?: string
           status_comercial?: string | null
+          status_negocio_google?: string | null
           tags_automaticas?: string[] | null
+          telefone?: string | null
           temperatura_lead?: string | null
           tipo_projeto?: string | null
+          total_avaliacoes?: number | null
           urgencia?: string | null
         }
         Update: {
           aceita_mvp?: boolean | null
+          avaliacao_google?: number | null
+          cidade?: string | null
           complexidade_estimada?: string | null
           criado_em?: string
           descricao?: string
           dor_principal?: string | null
           email?: string
           empresa?: string | null
+          endereco?: string | null
           estagio_operacao?: string | null
           estrategia_comercial?: string | null
           faixa_investimento?: string | null
           faixa_ticket?: string | null
+          google_maps_url?: string | null
+          google_place_id?: string | null
+          horario_funcionamento?: string | null
           id?: string
+          mensagem_prospeccao?: string | null
+          motivos_score?: string[] | null
           nicho?: string | null
           nome?: string
           numero_usuarios?: string | null
           objetivo?: string | null
           observacoes_internas?: string | null
+          oferta_prospeccao?: string | null
           origem_lead?: string | null
           prazo_desejado?: string | null
           precisa_admin?: boolean | null
@@ -2126,13 +2165,19 @@ export type Database = {
           precisa_integracoes?: boolean | null
           precisa_login?: boolean | null
           prioridade?: string | null
+          projeto_sugerido?: string | null
           resumo_ia?: string | null
+          resumo_projeto_sugerido?: string | null
+          score_prospeccao?: number | null
           score_qualificacao?: number | null
           status?: string
           status_comercial?: string | null
+          status_negocio_google?: string | null
           tags_automaticas?: string[] | null
+          telefone?: string | null
           temperatura_lead?: string | null
           tipo_projeto?: string | null
+          total_avaliacoes?: number | null
           urgencia?: string | null
         }
         Relationships: []
