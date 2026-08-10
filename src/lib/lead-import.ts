@@ -11,6 +11,18 @@ export interface LeadImportRow {
   website: string;
   instagram: string;
   source: string;
+  googlePlaceId?: string;
+  googleMapsUrl?: string;
+  rating?: number;
+  reviewCount?: number;
+  businessStatus?: string;
+  openingHours?: string;
+  prospectScore?: number;
+  scoreReasons?: string[];
+  suggestedOffer?: string;
+  suggestedProject?: string;
+  projectSummary?: string;
+  readyMessage?: string;
 }
 
 function parseRow(row: string, delimiter: string): string[] {

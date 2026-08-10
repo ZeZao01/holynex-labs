@@ -69,6 +69,20 @@ export interface ModelEvent {
   criado_em: string;
 }
 
+export interface RankedProjectModel { model: ProjectModel; score: number; reasons: string[] }
+
+export function rankProjectModels(models: ProjectModel[], context: { niche?: string; projectType?: string; objective?: string }): RankedProjectModel[] {
+  const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const terms = normalize([context.niche, context.projectType, context.objective].filter(Boolean).join(" "))
+    .split(/[^a-z0-9]+/).filter((term) => term.length >= 4);
+  return models.filter((model) => model.is_active).map((model) => {
+    const haystack = normalize([model.title, model.subtitle, model.category, model.niche, model.value_proposition, model.target_audience, model.problem_solved, model.commercial_description].join(" "));
+    const matches = [...new Set(terms.filter((term) => haystack.includes(term)))];
+    const score = matches.length * 12 + (model.is_featured ? 8 : 0) + (model.availability_status === "disponivel" ? 8 : model.availability_status === "adaptavel" ? 5 : 0);
+    return { model, score, reasons: [matches.length ? `Compatibilidade com: ${matches.slice(0, 5).join(", ")}` : "Modelo reutilizável disponível no acervo", model.value_proposition || model.problem_solved].filter(Boolean) };
+  }).sort((a, b) => b.score - a.score || a.model.display_order - b.model.display_order);
+}
+
 // ── Constants ──
 export const MODEL_CATEGORIES = [
   "CRM", "ERP Leve", "Portal do Cliente", "Agendamento", "Dashboard Operacional",

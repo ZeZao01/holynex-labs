@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Clipboard, Download, WandSparkles } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   type DevelopmentProduct,
   type DevelopmentTarget,
 } from "@/lib/development-prompt";
+import { listModels, rankProjectModels, type ProjectModel } from "@/lib/project-models";
 
 interface LeadPromptStudioProps {
   lead: DevelopmentLeadContext;
@@ -27,14 +28,31 @@ const productLabels: Record<DevelopmentProduct, string> = {
 };
 
 export default function LeadPromptStudio({ lead }: LeadPromptStudioProps) {
-  const [target, setTarget] = useState<DevelopmentTarget>("codex");
+  const [target, setTarget] = useState<DevelopmentTarget>("lovable");
   const [product, setProduct] = useState<DevelopmentProduct>(() => inferDevelopmentProduct(lead.projectType));
   const [instructions, setInstructions] = useState("");
   const [copied, setCopied] = useState(false);
+  const [models, setModels] = useState<ProjectModel[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState("");
+  const rankedModels = useMemo(() => rankProjectModels(models, { niche: lead.niche, projectType: lead.projectType, objective: lead.objective }), [models, lead.niche, lead.objective, lead.projectType]);
+  const selectedModel = rankedModels.find(({ model }) => model.id === selectedModelId) || rankedModels[0];
+
+  useEffect(() => {
+    listModels(true).then((items) => {
+      setModels(items);
+      const first = rankProjectModels(items, { niche: lead.niche, projectType: lead.projectType, objective: lead.objective })[0];
+      setSelectedModelId(first?.model.id || "");
+    }).catch(() => setModels([]));
+  }, [lead.niche, lead.objective, lead.projectType]);
 
   const prompt = useMemo(
-    () => buildDevelopmentPrompt({ lead, target, product, additionalInstructions: instructions }),
-    [lead, target, product, instructions],
+    () => buildDevelopmentPrompt({ lead, target, product, additionalInstructions: instructions, projectReference: selectedModel ? {
+      title: selectedModel.model.title, category: selectedModel.model.category, niche: selectedModel.model.niche,
+      valueProposition: selectedModel.model.value_proposition, problemSolved: selectedModel.model.problem_solved,
+      commercialDescription: selectedModel.model.commercial_description, investmentRange: selectedModel.model.investment_range,
+      baseDeadline: selectedModel.model.base_deadline, reuseReasons: selectedModel.reasons,
+    } : undefined }),
+    [lead, target, product, instructions, selectedModel],
   );
 
   const copyPrompt = async () => {
@@ -95,6 +113,17 @@ export default function LeadPromptStudio({ lead }: LeadPromptStudioProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Projeto-modelo do estoque HolyNex</Label>
+            <Select value={selectedModelId} onValueChange={setSelectedModelId} disabled={!rankedModels.length}>
+              <SelectTrigger><SelectValue placeholder="Nenhum modelo ativo cadastrado" /></SelectTrigger>
+              <SelectContent>
+                {rankedModels.map(({ model, score }) => <SelectItem key={model.id} value={model.id}>{model.title} · aderência {score}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">A recomendação cruza nicho, objetivo e tipo de projeto com os modelos ativos cadastrados.</p>
           </div>
 
           <div className="space-y-2">

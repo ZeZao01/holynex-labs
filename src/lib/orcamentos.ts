@@ -130,6 +130,21 @@ export interface Orcamento {
   observacoes_internas?: string;
   tags_automaticas?: string[];
   dor_principal?: string;
+  telefone?: string;
+  endereco?: string;
+  cidade?: string;
+  google_place_id?: string;
+  google_maps_url?: string;
+  avaliacao_google?: number;
+  total_avaliacoes?: number;
+  status_negocio_google?: string;
+  horario_funcionamento?: string;
+  score_prospeccao?: number;
+  motivos_score?: string[];
+  oferta_prospeccao?: string;
+  projeto_sugerido?: string;
+  resumo_projeto_sugerido?: string;
+  mensagem_prospeccao?: string;
 }
 
 export interface OrcamentoAsset {
@@ -276,6 +291,21 @@ export async function salvarOrcamento(data: {
   estagio_operacao?: string;
   dor_principal?: string;
   origem_lead?: string;
+  telefone?: string;
+  endereco?: string;
+  cidade?: string;
+  google_place_id?: string;
+  google_maps_url?: string;
+  avaliacao_google?: number;
+  total_avaliacoes?: number;
+  status_negocio_google?: string;
+  horario_funcionamento?: string;
+  score_prospeccao?: number;
+  motivos_score?: string[];
+  oferta_prospeccao?: string;
+  projeto_sugerido?: string;
+  resumo_projeto_sugerido?: string;
+  mensagem_prospeccao?: string;
 }) {
   const prioridade = classificarPrioridade(data.descricao);
   const resumo_ia = gerarResumo(data.descricao);
@@ -313,6 +343,21 @@ export async function salvarOrcamento(data: {
     complexidade_estimada: qual.complexidade,
     temperatura_lead: qual.temperatura,
     estrategia_comercial: qual.estrategia,
+    telefone: data.telefone || "",
+    endereco: data.endereco || "",
+    cidade: data.cidade || "",
+    google_place_id: data.google_place_id || "",
+    google_maps_url: data.google_maps_url || "",
+    avaliacao_google: data.avaliacao_google ?? null,
+    total_avaliacoes: data.total_avaliacoes || 0,
+    status_negocio_google: data.status_negocio_google || "",
+    horario_funcionamento: data.horario_funcionamento || "",
+    score_prospeccao: data.score_prospeccao ?? null,
+    motivos_score: data.motivos_score || [],
+    oferta_prospeccao: data.oferta_prospeccao || "",
+    projeto_sugerido: data.projeto_sugerido || "",
+    resumo_projeto_sugerido: data.resumo_projeto_sugerido || "",
+    mensagem_prospeccao: data.mensagem_prospeccao || "",
   };
 
   const { error } = await supabase.from("orcamentos").insert(payload);
@@ -365,6 +410,14 @@ export async function getOrcamentos(): Promise<Orcamento[]> {
     observacoes_internas: row.observacoes_internas || "",
     tags_automaticas: row.tags_automaticas || [],
     dor_principal: row.dor_principal || "",
+    telefone: row.telefone || "", endereco: row.endereco || "", cidade: row.cidade || "",
+    google_place_id: row.google_place_id || "", google_maps_url: row.google_maps_url || "",
+    avaliacao_google: row.avaliacao_google == null ? undefined : Number(row.avaliacao_google),
+    total_avaliacoes: row.total_avaliacoes || 0, status_negocio_google: row.status_negocio_google || "",
+    horario_funcionamento: row.horario_funcionamento || "", score_prospeccao: row.score_prospeccao ?? undefined,
+    motivos_score: row.motivos_score || [], oferta_prospeccao: row.oferta_prospeccao || "",
+    projeto_sugerido: row.projeto_sugerido || "", resumo_projeto_sugerido: row.resumo_projeto_sugerido || "",
+    mensagem_prospeccao: row.mensagem_prospeccao || "",
   }));
 }
 
@@ -415,6 +468,14 @@ export async function getOrcamentoById(id: string): Promise<Orcamento | null> {
     observacoes_internas: row.observacoes_internas || "",
     tags_automaticas: row.tags_automaticas || [],
     dor_principal: row.dor_principal || "",
+    telefone: row.telefone || "", endereco: row.endereco || "", cidade: row.cidade || "",
+    google_place_id: row.google_place_id || "", google_maps_url: row.google_maps_url || "",
+    avaliacao_google: row.avaliacao_google == null ? undefined : Number(row.avaliacao_google),
+    total_avaliacoes: row.total_avaliacoes || 0, status_negocio_google: row.status_negocio_google || "",
+    horario_funcionamento: row.horario_funcionamento || "", score_prospeccao: row.score_prospeccao ?? undefined,
+    motivos_score: row.motivos_score || [], oferta_prospeccao: row.oferta_prospeccao || "",
+    projeto_sugerido: row.projeto_sugerido || "", resumo_projeto_sugerido: row.resumo_projeto_sugerido || "",
+    mensagem_prospeccao: row.mensagem_prospeccao || "",
   };
 }
 

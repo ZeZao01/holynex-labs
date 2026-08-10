@@ -212,11 +212,10 @@ export async function searchLeadProspects(city: string, niche: string, limit = 6
 }
 
 export function prospectToLeadImport(prospect: LeadProspect, niche: string): LeadImportRow {
-  const safeId = prospect.id.replace(/[^a-zA-Z0-9-]/g, "").toLowerCase() || crypto.randomUUID();
   return {
     name: prospect.name,
     company: prospect.name,
-    email: `prospect-${safeId}@sem-email.local`,
+    email: "",
     phone: prospect.phone,
     city: prospect.city,
     niche,
@@ -226,5 +225,17 @@ export function prospectToLeadImport(prospect: LeadProspect, niche: string): Lea
     website: prospect.website,
     instagram: "",
     source: "google_places",
+    googlePlaceId: prospect.id,
+    googleMapsUrl: prospect.mapUrl,
+    rating: prospect.rating,
+    reviewCount: prospect.reviewCount,
+    businessStatus: prospect.businessStatus,
+    openingHours: prospect.openingHours,
+    prospectScore: prospect.successScore,
+    scoreReasons: prospect.scoreReasons,
+    suggestedOffer: prospect.suggestedOffer,
+    suggestedProject: prospect.suggestedProject,
+    projectSummary: prospect.projectSummary,
+    readyMessage: prospect.readyMessage,
   };
 }

@@ -26,6 +26,14 @@ export interface DevelopmentLeadContext {
   opportunities?: string[];
   roadmap?: string[];
   portfolioReferences?: string[];
+  phone?: string; email?: string; address?: string; city?: string; googleMapsUrl?: string;
+  googleRating?: number; googleReviewCount?: number; prospectScore?: number;
+  prospectReasons?: string[]; suggestedProject?: string; prospectMessage?: string;
+}
+
+export interface DevelopmentProjectReference {
+  title: string; category: string; niche: string; valueProposition: string; problemSolved: string;
+  commercialDescription: string; investmentRange: string; baseDeadline: string; reuseReasons: string[];
 }
 
 export interface DevelopmentPromptInput {
@@ -33,6 +41,7 @@ export interface DevelopmentPromptInput {
   target: DevelopmentTarget;
   product: DevelopmentProduct;
   additionalInstructions?: string;
+  projectReference?: DevelopmentProjectReference;
 }
 
 const TARGET_LABELS: Record<DevelopmentTarget, string> = {
@@ -60,10 +69,14 @@ function targetInstructions(target: DevelopmentTarget): string {
 - Execute build, testes e QA visual em desktop e mobile antes de concluir.`;
   }
   if (target === "lovable") {
-    return `- Crie diretamente o produto utilizável, não uma página de marketing genérica.
+    return `- Trabalhe no projeto existente conectado ao Git e altere somente os arquivos necessários; não recrie o projeto do zero.
+- Antes de editar, responda com um plano curto contendo rotas, componentes, dados e critérios de aceite.
+- Crie diretamente o produto utilizável, não uma página de marketing genérica.
 - Reuse Supabase, componentes e tokens existentes quando disponíveis.
 - Não invente integrações ou dados reais; use estados honestos e marque dependências externas.
-- Entregue rotas, formulários, persistência, responsividade e feedback de ações completos.`;
+- Preserve o menu lateral e o shell da aplicação entre rotas; atualize somente a área de conteúdo.
+- Entregue rotas, formulários, persistência, responsividade, SEO local e feedback de ações completos.
+- Ao terminar, liste arquivos alterados, migrações, secrets necessários e testes executados.`;
   }
   if (target === "stitch") {
     return `- Gere telas coerentes como um único sistema visual, prontas para implementação em React.
@@ -86,7 +99,8 @@ export function buildDevelopmentPrompt(input: DevelopmentPromptInput): string {
     lead.needsMobileApp && "Experiência ou aplicativo mobile",
   ].filter(Boolean) as string[];
 
-  return `# Projeto personalizado HolyNex
+  const reference = input.projectReference;
+  return `# Execução Lovable — projeto comercial personalizado HolyNex
 
 Você é responsável por projetar e desenvolver um ${PRODUCT_LABELS[product]} para o lead abaixo usando ${TARGET_LABELS[target]}.
 
@@ -105,6 +119,16 @@ Use somente os fatos fornecidos. Não invente resultados, depoimentos, números,
 - Prazo desejado: ${value(lead.desiredDeadline)}
 - Faixa de investimento: ${value(lead.investmentRange)}
 - Usuários previstos: ${value(lead.users)}
+- Telefone/WhatsApp real: ${value(lead.phone)}
+- E-mail real: ${value(lead.email)}
+- Endereço: ${value(lead.address)}
+- Cidade: ${value(lead.city)}
+- Google Maps: ${value(lead.googleMapsUrl)}
+- Reputação Google: ${lead.googleRating ? `${lead.googleRating.toFixed(1)}/5 em ${lead.googleReviewCount || 0} avaliações` : "Sem avaliação disponível"}
+- Score de prospecção HolyNex: ${lead.prospectScore == null ? "A definir" : `${lead.prospectScore}%`}
+
+Evidências do score:
+${list(lead.prospectReasons)}
 
 ## Problema e objetivo
 
@@ -148,6 +172,30 @@ ${list(lead.roadmap)}
 
 ${list(lead.portfolioReferences)}
 
+## Projeto-modelo escolhido do estoque particular HolyNex
+
+- Nome: ${value(reference?.title || lead.suggestedProject)}
+- Categoria: ${value(reference?.category)}
+- Nicho original: ${value(reference?.niche)}
+- Proposta de valor: ${value(reference?.valueProposition)}
+- Problema resolvido: ${value(reference?.problemSolved)}
+- Descrição comercial: ${value(reference?.commercialDescription)}
+- Faixa de investimento: ${value(reference?.investmentRange)}
+- Prazo-base: ${value(reference?.baseDeadline)}
+
+Razões para reutilização:
+${list(reference?.reuseReasons)}
+
+Use esse modelo como base estrutural e de componentes. Adapte conteúdo, identidade, navegação e oferta ao estabelecimento; não copie marca ou textos de terceiros e não descarte módulos já funcionais sem justificativa.
+
+## Referências estratégicas de players consolidados
+
+- Vendasta Snapshot Report: transformar dados reais do negócio em diagnóstico personalizado e argumento comercial verificável.
+- Duda: reutilizar templates, seções e conteúdo estruturado para entregar sites de nicho com velocidade e consistência.
+- HighLevel: conectar captura, WhatsApp, CRM, agendamento e follow-up em um fluxo operacional único quando fizer sentido.
+
+São referências de estratégia, não layouts para copiar. A solução deve permanecer autoral e baseada nos dados reais acima.
+
 ## Instruções específicas para ${TARGET_LABELS[target]}
 
 ${targetInstructions(target)}
@@ -171,6 +219,19 @@ ${targetInstructions(target)}
 6. Implementação funcional do escopo aprovado.
 7. Critérios de aceite, testes e QA visual desktop/mobile.
 8. Pendências externas e próximos passos.
+
+## Critérios de aceite específicos
+
+- Nenhuma informação ausente é inventada; telefone e e-mail só aparecem quando forem legítimos.
+- Endereço abre o Google Maps e nome, especialidade, cidade, avaliação e quantidade de avaliações alimentam copy e SEO local.
+- O projeto-modelo escolhido é reaproveitado explicitamente, com lista do que foi reutilizado e adaptado.
+- CTA principal é mensurável; formulários têm validação, loading, sucesso e erro.
+- Mobile, acessibilidade, metadados, desempenho e ausência de recarregamento total entre menus são verificados.
+- Não declarar integração concluída sem persistência real e teste executado.
+
+## Mensagem de prospecção aprovada para contexto
+
+${value(lead.prospectMessage)}
 
 ## Instruções adicionais da HolyNex
 

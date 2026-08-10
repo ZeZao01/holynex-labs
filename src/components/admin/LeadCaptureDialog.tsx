@@ -60,6 +60,21 @@ async function persistLead(lead: LeadImportRow) {
     objetivo: lead.objective,
     origem_lead: lead.source === "google_places" ? "google" : lead.source === "csv" ? "outro" : lead.source || "outro",
     aceita_mvp: true,
+    telefone: lead.phone,
+    endereco: lead.address,
+    cidade: lead.city,
+    google_place_id: lead.googlePlaceId,
+    google_maps_url: lead.googleMapsUrl,
+    avaliacao_google: lead.rating,
+    total_avaliacoes: lead.reviewCount,
+    status_negocio_google: lead.businessStatus,
+    horario_funcionamento: lead.openingHours,
+    score_prospeccao: lead.prospectScore,
+    motivos_score: lead.scoreReasons,
+    oferta_prospeccao: lead.suggestedOffer,
+    projeto_sugerido: lead.suggestedProject,
+    resumo_projeto_sugerido: lead.projectSummary,
+    mensagem_prospeccao: lead.readyMessage,
   });
 }
 

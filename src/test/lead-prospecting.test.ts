@@ -56,7 +56,10 @@ describe("Google Places lead prospecting", () => {
       company: "Clínica Exemplo",
       source: "google_places",
       projectType: "Automação / IA",
-      email: "prospect-place-12345@sem-email.local",
+      email: "",
+      googlePlaceId: "place-12345",
+      phone: "+55 19 99999-0000",
+      rating: 4.8,
     });
     expect(lead.objective).toContain("85% (Alta)");
     expect(lead.objective).toContain(prospect.readyMessage);

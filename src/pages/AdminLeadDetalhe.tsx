@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getOrcamentoById, getOrcamentoAssets, getOrcamentoAnalises, atualizarStatusComercial, atualizarOrcamento, type Orcamento, type OrcamentoAsset, type OrcamentoAnalise, type StatusComercial, STATUS_COMERCIAL_MAP, ESTRATEGIAS_COMERCIAIS } from "@/lib/orcamentos";
@@ -23,7 +23,7 @@ import { getAddonsBySource, createAddon, ADDON_STATUS_MAP, type Addon } from "@/
 import {
   ArrowLeft, Mail, Building2, FileBarChart, Sparkles, Target, Flame, Snowflake, Sun,
   Check, Monitor, Smartphone, Shield, Users as UsersIcon, Layers, Zap, Clock,
-  Loader2, Brain, Copy, WandSparkles,
+  Loader2, Brain, Copy, WandSparkles, Phone, MapPin, Star,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -239,21 +239,29 @@ export default function AdminLeadDetalhe() {
   const statusInfo = latestAnalise ? statusMap[latestAnalise.status] || { label: latestAnalise.status, color: "bg-muted text-muted-foreground" } : null;
   const operationalItems: OperationalItem[] = [
     { label: "Briefing", status: lead.descricao ? "ok" : "pending" },
-    { label: "Contato", status: lead.email ? "ok" : "attention" },
+    { label: "Contato", status: lead.email || lead.telefone ? "ok" : "attention" },
     { label: "Análise IA", status: latestAnalise ? "ok" : "pending" },
     { label: "Add-ons", status: addons.length > 0 ? "ok" : "pending" },
     { label: "Portfólio", status: portfolioRefs.length > 0 ? "ok" : "pending" },
   ];
   const quickActions = [
-    {
+    lead.email && {
       label: "Gerar prompt do projeto",
       icon: <WandSparkles className="h-4 w-4" />,
       onClick: () => document.getElementById("prompt-studio")?.scrollIntoView({ behavior: "smooth", block: "start" }),
     },
-    {
+    lead.email && {
       label: "Converter em proposta",
       icon: <FileBarChart className="h-4 w-4" />,
       onClick: () => navigate(`/admin/propostas/nova?orcamento=${lead.id}`),
+    },
+    lead.telefone && {
+      label: "Copiar telefone",
+      icon: <Phone className="h-4 w-4" />,
+      onClick: async () => {
+        await navigator.clipboard.writeText(lead.telefone || "");
+        toast.success("Telefone copiado");
+      },
     },
     {
       label: "Copiar email",
@@ -282,7 +290,7 @@ export default function AdminLeadDetalhe() {
       icon: <Clock className="h-4 w-4" />,
       onClick: () => handleStatusChange("aguardando_contato"),
     },
-  ];
+  ].filter(Boolean) as { label: string; icon: ReactNode; onClick: () => void | Promise<void> }[];
 
 
   const handleRegisterAiAddons = async () => {
@@ -353,8 +361,12 @@ export default function AdminLeadDetalhe() {
           {/* Contact info */}
           <SectionCard title="Dados de Contato">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground"><Mail className="h-4 w-4" /> {lead.email}</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><Mail className="h-4 w-4" /> {lead.email || "E-mail não disponível no Google"}</div>
+              {lead.telefone && <div className="flex items-center gap-2 text-muted-foreground"><Phone className="h-4 w-4" /> {lead.telefone}</div>}
               {lead.empresa && <div className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-4 w-4" /> {lead.empresa}</div>}
+              {lead.endereco && <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" /> {lead.endereco}</div>}
+              {lead.avaliacao_google != null && <div className="flex items-center gap-2 text-muted-foreground"><Star className="h-4 w-4" /> {lead.avaliacao_google.toFixed(1)} ({lead.total_avaliacoes || 0} avaliações)</div>}
+              {lead.google_maps_url && <a className="text-primary hover:underline" href={lead.google_maps_url} target="_blank" rel="noreferrer">Abrir no Google Maps</a>}
               {lead.numero_usuarios && <div className="flex items-center gap-2 text-muted-foreground"><UsersIcon className="h-4 w-4" /> {lead.numero_usuarios} usuários</div>}
               {lead.estagio_operacao && <div className="flex items-center gap-2 text-muted-foreground"><Layers className="h-4 w-4" /> {lead.estagio_operacao}</div>}
             </div>
@@ -489,6 +501,17 @@ export default function AdminLeadDetalhe() {
               opportunities: Array.isArray(analiseData?.oportunidades_adicionais) ? analiseData.oportunidades_adicionais : [],
               roadmap: Array.isArray(analiseData?.roadmap_resumido) ? analiseData.roadmap_resumido : [],
               portfolioReferences: portfolioRefs.map((reference) => `${reference.title}: ${reference.reason || "referência semelhante"}`),
+              phone: lead.telefone,
+              email: lead.email,
+              address: lead.endereco,
+              city: lead.cidade,
+              googleMapsUrl: lead.google_maps_url,
+              googleRating: lead.avaliacao_google,
+              googleReviewCount: lead.total_avaliacoes,
+              prospectScore: lead.score_prospeccao,
+              prospectReasons: lead.motivos_score,
+              suggestedProject: lead.projeto_sugerido,
+              prospectMessage: lead.mensagem_prospeccao,
             }}
           />
 
