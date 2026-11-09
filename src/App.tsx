@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Navbar from "@/components/Navbar";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import ChatAtendimento from "@/components/ChatAtendimento";
 import Footer from "@/components/Footer";
 import AdminLayout from "@/components/AdminLayout";
 import { AccessControlProvider } from "@/hooks/useAccessControl";
@@ -163,6 +164,7 @@ const App = () => (
         <AccessControlProvider>
           <BrowserRouter>
             <AppRoutes />
+            <ChatAtendimento />
           </BrowserRouter>
         </AccessControlProvider>
       </LanguageProvider>
