@@ -17,6 +17,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
+      "@ds": ["./design-system/index.d.ts"],
+      "@ds/*": ["./design-system/*"],
       "@/*": [
         "./src/*"
       ]

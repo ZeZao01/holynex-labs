@@ -1,0 +1,25 @@
+<!-- @dsCard group="Components" viewport="700x520" name="Shell" subtitle="Sidebar · Topbar · BottomNav (phone frame)" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../styles.css">
+<style>body{background:#fff;padding:20px;margin:0}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-ui);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}body{background:var(--bg-canvas);padding:0}.frame{display:flex;height:520px;overflow:hidden}.frame .hn-sidebar{position:relative;height:100%;transform:none;box-shadow:none;width:220px}.frame .hn-sidebar__scrim{display:none}.frame .hn-sidebar__close{display:none}.frame .hn-topbar__menu{display:none}.phone{width:230px;height:470px;margin:24px 20px;border-radius:30px;border:6px solid var(--ink-950);background:var(--bg-canvas);position:relative;overflow:hidden;flex-shrink:0}.phone .hn-bnav{display:flex;position:absolute;height:60px;padding:0 4px;background:rgba(255,255,255,.96);border-top:1px solid var(--border-subtle);align-items:stretch}.phone .hn-bnav__item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:transparent;color:var(--text-tertiary);font:600 10px var(--font-ui)}.phone .hn-bnav__item.is-active{color:var(--accent)}.phone .hn-bnav__primary{align-self:center;width:46px;height:46px;margin:-20px 2px 0;border:4px solid var(--bg-canvas);border-radius:50%;background:var(--gradient-brand);color:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow-brand)}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="../../tools/ds-fallback.js"></script>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const NS = window.HolyNexDesignSystem_40df70;
+
+const { Sidebar, Topbar, BottomNav, IconButton } = NS;
+const sections=[{title:'Menu principal',items:[{id:'home',label:'Visão geral',icon:'layout-dashboard'},{id:'ai',label:'Nex AI',icon:'sparkles'},{id:'clients',label:'Clientes',icon:'users'},{id:'billing',label:'Faturas',icon:'receipt-text',badge:3},{id:'projects',label:'Projetos',icon:'folder-kanban'}]},{title:'Preferências',items:[{id:'settings',label:'Configurações',icon:'settings'},{id:'help',label:'Central de ajuda',icon:'circle-help'}]}];
+function App(){const [a,setA]=React.useState('home');return (<div className="frame">
+<Sidebar brand={{logo:'../../assets/logo-mark.png',name:'HolyNex'}} account={{name:'Rafael Nunes',subtitle:'Administrador'}} sections={sections} activeId={a} onNavigate={setA} />
+<div style={{flex:1,minWidth:0,display:'flex',flexDirection:'column'}}>
+<Topbar title="Visão geral" subtitle="Receita, clientes e operações em tempo real." actions={<><IconButton icon="bell" label="Notificações" dot size="sm" /></>} user={{name:'Rafael Nunes',status:'online'}} />
+<div style={{flex:1,display:'flex',justifyContent:'center'}}><div className="phone"><div style={{padding:'34px 14px 0',font:'600 15px var(--font-display)'}}>Visão geral</div><BottomNav activeId={a} onNavigate={setA} primary={{icon:'sparkles',label:'Nex AI'}} items={[{id:'home',label:'Início',icon:'layout-dashboard'},{id:'clients',label:'Clientes',icon:'users'},{id:'billing',label:'Faturas',icon:'receipt-text'},{id:'settings',label:'Ajustes',icon:'settings'}]} /></div></div>
+</div>
+</div>);}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script></body></html>

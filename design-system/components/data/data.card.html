@@ -1,0 +1,30 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Data" subtitle="DataTable, BarChart (diverging), AreaChart, DonutChart" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../styles.css">
+<style>body{background:#fff;padding:20px;margin:0}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-ui);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}body{background:var(--bg-canvas)}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="../../tools/ds-fallback.js"></script>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const NS = window.HolyNexDesignSystem_40df70;
+
+const { Card, DataTable, BarChart, AreaChart, DonutChart, Badge, Select, Avatar } = NS;
+const k = v => 'R$' + (Math.abs(v)/1000).toLocaleString('pt-BR') + 'k';
+const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const bars=[[6.2,3.1],[4.8,3.9],[5.6,2.4],[7.1,4.2],[5.2,3.3],[6.0,4.0],[4.4,3.6],[7.6,4.4],[6.4,3.0],[5.1,4.6],[7.9,3.8],[6.8,2.9]].map((d,i)=>({label:months[i],up:d[0]*1000,down:d[1]*1000}));
+function App(){const [sel,setSel]=React.useState(['2']);const [sort,setSort]=React.useState({key:'mrr',dir:'desc'});return (<div className="col" style={{gap:12}}>
+<div style={{display:'grid',gridTemplateColumns:'1.5fr 1fr',gap:12}}>
+<Card title="Fluxo de caixa" actions={<Select variant="pill" size="sm" options={['Este ano']} />}><BarChart height={150} data={bars} highlight={7} format={k} /></Card>
+<Card title="Custos" actions={<Select variant="pill" size="sm" options={['Este mês']} />}><DonutChart size={110} thickness={14} label="Total" value="R$ 3,5k" legend={false} segments={[{label:'Infra',value:2100},{label:'Licenças',value:525},{label:'Suporte',value:420},{label:'Outros',value:455}]} /></Card>
+</div>
+<div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:12}}>
+<Card title="Usuários ativos"><AreaChart height={110} data={[12,15,13,19,24,21,28,26,33]} compare={[10,12,12,14,16,17,19,20,21]} labels={['1','4','8','12','16','20','24','28','30']} highlight={6} format={v=>v+'k'} /></Card>
+<Card title="Clientes" padding="sm"><DataTable density="sm" selectable selected={sel} onSelectChange={setSel} sort={sort} onSortChange={setSort} columns={[{key:'name',header:'Cliente',primary:true,render:r=><span style={{display:'flex',alignItems:'center',gap:8,fontWeight:600}}><Avatar name={r.name} size={24} />{r.name}</span>},{key:'plan',header:'Plano'},{key:'mrr',header:'MRR',align:'right',sortable:true,render:r=><span className="hn-num">{r.mrr}</span>},{key:'st',header:'Status',trailing:true,render:r=><Badge tone={r.tone}>{r.st}</Badge>}]} rows={[{id:'1',name:'Atlas Engenharia',plan:'Enterprise',mrr:'R$ 12.400',st:'Ativo',tone:'success'},{id:'2',name:'Verde Agro',plan:'Pro',mrr:'R$ 2.490',st:'Pendente',tone:'warning'},{id:'3',name:'Lumen Saúde',plan:'Pro',mrr:'R$ 2.490',st:'Ativo',tone:'success'}]} /></Card>
+</div>
+</div>);}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script></body></html>

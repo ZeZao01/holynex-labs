@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "validate:release": "npm run typecheck && npm run test && npm run build"
+    "validate:release": "npm run typecheck && npm run test && npm run build",
+    "ds:scope": "node scripts/ds-scope.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -1,0 +1,42 @@
+/* Tema escuro do HolyNex Design System (criado em 17/11/2026; o export original era só claro).
+   Base: a mesma marca (violeta como único destaque, gradiente só no logo e na IA), com o fundo
+   do site público da HolyNex (quase preto puxado para o violeta) e as referências de painel
+   financeiro escuro em HolyNex Labs/referencias-web-design/behance-ai-*.
+   Como funciona: as escalas ink e neutral são invertidas. Os aliases semânticos (texto, cartão,
+   borda, inverso) continuam apontando para elas e mudam sozinhos. Só o que tinha cor fixa é ajustado
+   no fim do arquivo.
+   Ativar: <div class="hn-ds" data-theme="dark">. Contraste conferido para AA em texto normal. */
+:root[data-theme="dark"]{
+--ink-950:#F2F0FA;--ink-900:#E4E1F2;--ink-800:#CFCAE6;--ink-700:#B3ADCF;
+--neutral-0:#15112A;--neutral-25:#1A1531;--neutral-50:#0B0916;--neutral-100:#201A39;--neutral-150:#2A2347;--neutral-200:#352C57;--neutral-300:#4A4170;--neutral-400:#827C9E;--neutral-500:#A9A4C2;--neutral-600:#C7C3D9;--neutral-700:#DEDBEA;--neutral-800:#EEECF5;--neutral-900:#F7F6FB;
+--violet-50:#1E1640;--violet-100:#281D55;--violet-200:#D6C4FE;--violet-300:#C2A6FD;
+--success-50:#0F2A1C;--success-700:#6BDC97;
+--warning-50:#33250A;--warning-700:#FBC25A;
+--danger-50:#3A171B;--danger-700:#FF9497;
+--info-50:#0B2438;--info-700:#7CC8FF;
+--accent:var(--violet-500);--accent-hover:var(--violet-400);--accent-press:var(--violet-600);
+--accent-soft:var(--violet-50);--accent-soft-hover:var(--violet-100);--accent-soft-fg:var(--violet-200);
+--text-brand:var(--violet-300);--text-link:var(--violet-300);--text-link-hover:var(--violet-200);
+--border-brand:var(--violet-400);
+--surface-brand-soft:var(--violet-50);
+--chart-1:var(--violet-300);--chart-2:var(--violet-500);--chart-3:#3B2F6B;--chart-4:var(--neutral-200);
+--shadow-xs:0 1px 2px rgba(0,0,0,.4);
+--shadow-sm:0 1px 3px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.3);
+--shadow-md:0 8px 24px -8px rgba(0,0,0,.6),0 2px 4px rgba(0,0,0,.35);
+--shadow-lg:0 24px 56px -16px rgba(0,0,0,.7),0 4px 12px rgba(0,0,0,.4);
+--shadow-brand:0 10px 28px -10px rgba(126,59,248,.7);
+--ring-focus:0 0 0 3px rgba(150,98,250,.45);
+--overlay-scrim:rgba(4,3,10,.62);
+color-scheme:dark;
+}
+/* Componentes com cor fixa no claro */
+:root[data-theme="dark"] .hn-btn--dark,:root[data-theme="dark"] .hn-iconbtn--dark{background:var(--ink-950);color:#120A2E}
+:root[data-theme="dark"] .hn-btn--dark:hover,:root[data-theme="dark"] .hn-iconbtn--dark:hover{background:var(--ink-800);color:#120A2E}
+:root[data-theme="dark"] .hn-chip.is-selected{color:#120A2E}
+:root[data-theme="dark"] .hn-tip{color:#120A2E}
+:root[data-theme="dark"] .hn-badge--solid.hn-badge--warning{color:#120A2E}
+:root[data-theme="dark"] .hn-topbar{background:rgba(11,9,22,.82)}
+:root[data-theme="dark"] .hn-bnav{background:rgba(21,17,42,.92)}
+:root[data-theme="dark"] .hn-card--inverse{color:#120A2E}
+:root[data-theme="dark"] .hn-card--inverse .hn-card__title{color:#120A2E}
+:root[data-theme="dark"] .hn-card--inverse .hn-card__subtitle{color:rgba(18,10,46,.7)}

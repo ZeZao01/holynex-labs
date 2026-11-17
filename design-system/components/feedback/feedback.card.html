@@ -1,0 +1,26 @@
+<!-- @dsCard group="Components" viewport="700x420" name="Feedback" subtitle="Dialog (inline preview), Toast tones, Tooltip" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../styles.css">
+<style>body{background:#fff;padding:20px;margin:0}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-ui);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}body{background:var(--bg-canvas)}.hn-dialog-root{position:relative;inset:auto;padding:0;justify-content:flex-start;z-index:0}.hn-scrim{display:none}.hn-dialog{animation:none}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="../../tools/ds-fallback.js"></script>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const NS = window.HolyNexDesignSystem_40df70;
+
+const { Dialog, Toast, Tooltip, Button, IconButton, Input } = NS;
+function App(){return (<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,alignItems:'start'}}>
+<Dialog open size="sm" onClose={()=>{}} icon="user-plus" title="Convidar membro" description="Ele receberá um e-mail com o link de acesso." footer={<><Button variant="secondary">Cancelar</Button><Button>Enviar convite</Button></>}><Input label="E-mail" placeholder="nome@empresa.com.br" /></Dialog>
+<div className="col" style={{gap:8}}>
+<Toast tone="success" title="Fatura enviada" description="#INV-2041 para Atlas Engenharia" onClose={()=>{}} />
+<Toast tone="brand" title="Nex AI encontrou 3 anomalias" description="Cobranças duplicadas em novembro" action={<Button size="sm" variant="soft">Ver</Button>} />
+<Toast tone="danger" title="Falha no deploy" description="api-gateway · build #812" onClose={()=>{}} />
+<div className="row" style={{marginTop:28,gap:12}}><Tooltip label="Exportar CSV"><IconButton icon="download" label="Exportar" /></Tooltip><span style={{fontSize:12,color:'var(--text-secondary)'}}>← tooltip on hover</span></div>
+</div>
+</div>);}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script></body></html>

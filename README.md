@@ -46,3 +46,6 @@ Ultima homologacao: [`docs/READINESS_REPORT_2026-08-09.md`](docs/READINESS_REPOR
 - **Edge Functions:** `npx supabase functions deploy`, com o projeto ligado via `npx supabase link --project-ref ioqafyypnlzcbxzclehv`.
 - **Visual:** `DESIGN.md` (contrato) e `design-system/`.
 
+## Design system
+
+O painel admin usa o **HolyNex Design System** (`design-system/`), em tema claro e escuro. Regras, tokens e o mapa da biblioteca estão em [DESIGN.md](DESIGN.md). Vitrine em `/admin/design-system`. Depois de mudar `design-system/`, rode `npm run ds:scope`.

@@ -1,0 +1,24 @@
+<!-- @dsCard group="Components" viewport="700x330" name="Core — Buttons & Icons" subtitle="Button variants, sizes, states · IconButton · Icon" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../styles.css">
+<style>body{background:#fff;padding:20px;margin:0}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-ui);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="../../tools/ds-fallback.js"></script>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const NS = window.HolyNexDesignSystem_40df70;
+
+const { Button, IconButton, Icon } = NS;
+function App(){return (<div className="col">
+<div className="row"><span className="lbl">Variant</span><Button>Primary</Button><Button variant="dark" iconRight="arrow-up-right">Enviar</Button><Button variant="secondary" iconLeft="download">Exportar</Button><Button variant="soft" iconLeft="sparkles">Perguntar à IA</Button><Button variant="ghost">Ghost</Button><Button variant="danger" iconLeft="trash-2">Excluir</Button></div>
+<div className="row"><span className="lbl">Size</span><Button size="sm">Small</Button><Button size="md">Medium</Button><Button size="lg" iconRight="arrow-right">Large</Button></div>
+<div className="row"><span className="lbl">State</span><Button loading>Salvando</Button><Button disabled>Disabled</Button><Button variant="secondary" disabled>Disabled</Button><div style={{width:200}}><Button shape="rounded" fullWidth>Continuar</Button></div></div>
+<div className="row"><span className="lbl">Icon btn</span><IconButton icon="bell" label="Notificações" dot /><IconButton icon="settings" label="Configurações" /><IconButton icon="circle-help" label="Ajuda" /><IconButton icon="plus" label="Adicionar" variant="primary" /><IconButton icon="arrow-up-right" label="Abrir" variant="dark" /><IconButton icon="mic" label="Voz" variant="soft" /><IconButton icon="more-horizontal" label="Mais" variant="ghost" size="sm" /><IconButton icon="sliders-horizontal" label="Filtros" shape="square" size="sm" /></div>
+<div className="row" style={{color:'var(--text-primary)'}}><span className="lbl">Icon</span>{['layout-dashboard','sparkles','users','receipt-text','wallet','chart-pie','folder-kanban','settings','circle-help','search','command','paperclip','mic'].map(n=><Icon key={n} name={n} size={20} />)}</div>
+</div>);}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script></body></html>
