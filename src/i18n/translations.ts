@@ -2,14 +2,32 @@ export type Lang = "pt" | "en" | "es";
 
 export const translations: Record<Lang, Record<string, string>> = {
   pt: {
+    // Home (refinamento Impeccable, 17/11/2026)
+    "home.headline.lead": "Sistemas, SaaS e",
+    "home.headline.accent": "automações com IA",
+    "home.headline.tail": "para empresas que querem escalar.",
+    "home.sub": "Do primeiro esboço ao sistema no ar, com demonstração toda semana e suporte depois da entrega.",
+    "home.cta.portfolio": "Ver projetos",
+    "home.commit.1": "Projetos simples em 2 a 4 semanas",
+    "home.commit.2": "Atualização semanal com demonstração",
+    "home.commit.3": "Suporte e manutenção depois da entrega",
+    "home.projects.title": "Projetos que construímos",
+    "home.projects.desc": "Casos reais publicados no nosso portfólio.",
+    "home.projects.all": "Ver portfólio completo",
+    "home.projects.open": "Ver projeto",
+    "home.offer.payments": "Pagamentos integrados",
+    "home.offer.payments.desc": "Pix, cartão e boleto dentro do seu sistema, do checkout à conciliação.",
+    "home.process.title": "Como o projeto anda",
+    "home.faq.title": "Perguntas frequentes",
+
     // Navbar
     "nav.home": "Home",
-    "nav.services": "Serviços",
+    "nav.services": "O que fazemos",
     "nav.solutions": "Soluções",
     "nav.portfolio": "Portfólio",
     "nav.about": "Sobre",
     "nav.contact": "Contato",
-    "nav.cta": "Começar agora",
+    "nav.cta": "Iniciar projeto",
 
     // Hero
     "hero.badge": "Software House",
@@ -18,7 +36,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "hero.typewriter.3": "Soluções inteligentes.",
     "hero.typewriter.4": "Automação com IA.",
     "hero.desc": "Desenvolvemos sistemas inteligentes, SaaS e automações com inteligência artificial para empresas e empreendedores que desejam escalar seus negócios.",
-    "hero.cta1": "Iniciar Projeto",
+    "hero.cta1": "Iniciar projeto",
     "hero.cta2": "Falar com Especialista",
 
     // Stats
@@ -217,13 +235,31 @@ export const translations: Record<Lang, Record<string, string>> = {
   },
 
   en: {
+    // Home (refinamento Impeccable, 17/11/2026)
+    "home.headline.lead": "Systems, SaaS and",
+    "home.headline.accent": "AI automation",
+    "home.headline.tail": "for companies ready to scale.",
+    "home.sub": "From the first sketch to a live system, with a demo every week and support after delivery.",
+    "home.cta.portfolio": "See projects",
+    "home.commit.1": "Simple projects in 2 to 4 weeks",
+    "home.commit.2": "Weekly update with a demo",
+    "home.commit.3": "Support and maintenance after delivery",
+    "home.projects.title": "Projects we built",
+    "home.projects.desc": "Real cases published in our portfolio.",
+    "home.projects.all": "See full portfolio",
+    "home.projects.open": "See project",
+    "home.offer.payments": "Integrated payments",
+    "home.offer.payments.desc": "Pix, card and bank slip inside your system, from checkout to reconciliation.",
+    "home.process.title": "How the project moves",
+    "home.faq.title": "Frequently asked questions",
+
     "nav.home": "Home",
-    "nav.services": "Services",
+    "nav.services": "What we do",
     "nav.solutions": "Solutions",
     "nav.portfolio": "Portfolio",
     "nav.about": "About",
     "nav.contact": "Contact",
-    "nav.cta": "Get started",
+    "nav.cta": "Start project",
 
     "hero.badge": "Software House",
     "hero.typewriter.1": "Technology with purpose.",
@@ -231,7 +267,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "hero.typewriter.3": "Smart solutions.",
     "hero.typewriter.4": "AI automation.",
     "hero.desc": "We develop smart systems, SaaS and AI-powered automations for businesses and entrepreneurs looking to scale.",
-    "hero.cta1": "Start Project",
+    "hero.cta1": "Start project",
     "hero.cta2": "Talk to an Expert",
 
     "stats.projects": "Projects delivered",
@@ -413,13 +449,31 @@ export const translations: Record<Lang, Record<string, string>> = {
   },
 
   es: {
+    // Home (refinamento Impeccable, 17/11/2026)
+    "home.headline.lead": "Sistemas, SaaS y",
+    "home.headline.accent": "automatización con IA",
+    "home.headline.tail": "para empresas que quieren escalar.",
+    "home.sub": "Del primer boceto al sistema en línea, con demostración cada semana y soporte después de la entrega.",
+    "home.cta.portfolio": "Ver proyectos",
+    "home.commit.1": "Proyectos simples en 2 a 4 semanas",
+    "home.commit.2": "Actualización semanal con demostración",
+    "home.commit.3": "Soporte y mantenimiento después de la entrega",
+    "home.projects.title": "Proyectos que construimos",
+    "home.projects.desc": "Casos reales publicados en nuestro portafolio.",
+    "home.projects.all": "Ver portafolio completo",
+    "home.projects.open": "Ver proyecto",
+    "home.offer.payments": "Pagos integrados",
+    "home.offer.payments.desc": "Pix, tarjeta y boleto dentro de tu sistema, del checkout a la conciliación.",
+    "home.process.title": "Cómo avanza el proyecto",
+    "home.faq.title": "Preguntas frecuentes",
+
     "nav.home": "Inicio",
-    "nav.services": "Servicios",
+    "nav.services": "Qué hacemos",
     "nav.solutions": "Soluciones",
     "nav.portfolio": "Portafolio",
     "nav.about": "Nosotros",
     "nav.contact": "Contacto",
-    "nav.cta": "Empezar ahora",
+    "nav.cta": "Iniciar proyecto",
 
     "hero.badge": "Software House",
     "hero.typewriter.1": "Tecnología con propósito.",
@@ -427,7 +481,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "hero.typewriter.3": "Soluciones inteligentes.",
     "hero.typewriter.4": "Automatización con IA.",
     "hero.desc": "Desarrollamos sistemas inteligentes, SaaS y automatizaciones con inteligencia artificial para empresas y emprendedores que desean escalar sus negocios.",
-    "hero.cta1": "Iniciar Proyecto",
+    "hero.cta1": "Iniciar proyecto",
     "hero.cta2": "Hablar con un Especialista",
 
     "stats.projects": "Proyectos entregados",

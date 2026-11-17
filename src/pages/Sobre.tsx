@@ -17,7 +17,7 @@ export default function Sobre() {
         <div className="max-w-3xl mx-auto">
           <RevealBox className="card-animated glass rounded-2xl p-6 sm:p-8 md:p-12 mb-8 sm:mb-12">
             <p className="text-base sm:text-lg text-foreground/80 leading-relaxed mb-4 sm:mb-6">
-              <span className="text-primary font-semibold">HolyNex Labs</span> {t("about.p1").replace("HolyNex Labs ", "")}
+              <span className="text-primary font-semibold">HolyNex Labs</span> {t("about.p1").replace(/^(A |La )?HolyNex Labs /, "")}
             </p>
             <p className="text-base sm:text-lg text-foreground/80 leading-relaxed">{t("about.p2")}</p>
           </RevealBox>

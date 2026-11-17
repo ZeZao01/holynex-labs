@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider, useIsFetching } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -18,9 +18,6 @@ import { Loader2 } from "lucide-react";
 const Index = lazy(() => import("./pages/Index"));
 const Servicos = lazy(() => import("./pages/Servicos"));
 const PortfolioDetalhe = lazy(() => import("./pages/PortfolioDetalhe"));
-const Modelos = lazy(() => import("./pages/Modelos"));
-const ModeloDetalhe = lazy(() => import("./pages/ModeloDetalhe"));
-const Solucoes = lazy(() => import("./pages/Solucoes"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Sobre = lazy(() => import("./pages/Sobre"));
 const Contato = lazy(() => import("./pages/Contato"));
@@ -71,8 +68,6 @@ const queryClient = new QueryClient({
 function AppRoutes() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin") && location.pathname !== "/admin/login";
-  const isFetching = useIsFetching();
-  const showDataLoading = isFetching > 0;
 
   if (isAdmin) {
     return (
@@ -122,15 +117,16 @@ function AppRoutes() {
     <>
       <AnimatedBackground />
       <Navbar />
-      <Suspense fallback={<LoadingOverlay active label="Carregando conteúdo" />}>
+      <Suspense fallback={<div className="min-h-screen" aria-busy="true" />}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/servicos" element={<Servicos />} />
-          <Route path="/solucoes" element={<Solucoes />} />
+          {/* Site = vitrine e captação (17/11/2026): Soluções foi para Serviços; Modelos (com preço) saiu do público. */}
+          <Route path="/solucoes" element={<Navigate to="/servicos#exemplos" replace />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/portfolio/:id" element={<PortfolioDetalhe />} />
-          <Route path="/modelos" element={<Modelos />} />
-          <Route path="/modelos/:slug" element={<ModeloDetalhe />} />
+          <Route path="/modelos" element={<Navigate to="/portfolio" replace />} />
+          <Route path="/modelos/:slug" element={<Navigate to="/portfolio" replace />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/contato" element={<Contato />} />
           <Route path="/proposta/:token" element={<PropostaPublica />} />
@@ -142,7 +138,6 @@ function AppRoutes() {
       </Suspense>
       <Footer />
       <WhatsAppFloat />
-      <LoadingOverlay active={showDataLoading} label="Carregando dados" />
     </>
   );
 }

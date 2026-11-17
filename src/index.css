@@ -427,3 +427,20 @@
     animation: none;
   }
 }
+
+/* Superfícies do navegador na cor da marca (refinamento Impeccable, 17/11/2026). */
+@layer base {
+  ::selection { background: hsl(var(--primary) / 0.35); color: hsl(var(--foreground)); }
+  html { scrollbar-color: hsl(var(--primary) / 0.45) hsl(var(--background)); scrollbar-width: thin; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--primary) / 0.4); border-radius: 999px; border: 2px solid hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.65); }
+  input, textarea { caret-color: hsl(var(--primary)); }
+  :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+}
+
+/* Quem pede menos movimento não recebe o brilho animado dos botões nem o gradiente correndo. */
+@media (prefers-reduced-motion: reduce) {
+  .btn-glow, .btn-glow-filled, .text-gradient-animated { animation: none !important; }
+}

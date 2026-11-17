@@ -18,6 +18,7 @@ const STEPS = [
 
 interface FormData {
   nome: string;
+  telefone: string;
   email: string;
   empresa: string;
   descricao: string;
@@ -131,10 +132,12 @@ export default function Contato() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
+  // Armadilha contra robô: campo invisível que pessoa não preenche.
+  const [armadilha, setArmadilha] = useState("");
   const { t } = useLanguage();
   const [visualRefs, setVisualRefs] = useState<VisualRef[]>([]);
   const [form, setForm] = useState<FormData>({
-    nome: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
+    nome: "", telefone: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
     tipo_projeto: [], nicho: [], objetivo: "", dor_principal: "",
     faixa_investimento: "", orcamento_estimado: "", prazo_desejado: "", urgencia: "sem_urgencia",
     numero_usuarios: "", precisa_login: false, precisa_admin: false,
@@ -202,6 +205,7 @@ export default function Contato() {
   };
 
   const handleSubmit = async () => {
+    if (armadilha.trim()) return;
     setLoading(true);
     setUploadError(null);
     try {
@@ -230,7 +234,7 @@ export default function Contato() {
       toast.success(t("contact.success"));
 
       setForm({
-        nome: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
+        nome: "", telefone: "", email: "", empresa: "", descricao: "", descricao_detalhada: "",
         tipo_projeto: [], nicho: [], objetivo: "", dor_principal: "",
         faixa_investimento: "", orcamento_estimado: "", prazo_desejado: "", urgencia: "sem_urgencia",
         numero_usuarios: "", precisa_login: false, precisa_admin: false,
@@ -280,20 +284,24 @@ export default function Contato() {
             <div className="space-y-4">
               <h2 className="font-display text-lg font-semibold mb-4">Dados Básicos</h2>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">{t("contact.name")} *</label>
-                <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} placeholder={t("contact.name.placeholder")} className="bg-muted/50 border-border/50" />
+                <label htmlFor="ct-nome" className="text-sm font-medium mb-1.5 block">{t("contact.name")} *</label>
+                <Input id="ct-nome" autoComplete="name" value={form.nome} onChange={(e) => set("nome", e.target.value)} placeholder={t("contact.name.placeholder")} className="h-11 bg-muted/50 border-border/50" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">{t("contact.email")} *</label>
-                <Input value={form.email} onChange={(e) => set("email", e.target.value)} type="email" placeholder={t("contact.email.placeholder")} className="bg-muted/50 border-border/50" />
+                <label htmlFor="ct-email" className="text-sm font-medium mb-1.5 block">{t("contact.email")} *</label>
+                <Input id="ct-email" autoComplete="email" inputMode="email" value={form.email} onChange={(e) => set("email", e.target.value)} type="email" placeholder={t("contact.email.placeholder")} className="h-11 bg-muted/50 border-border/50" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">{t("contact.company")}</label>
-                <Input value={form.empresa} onChange={(e) => set("empresa", e.target.value)} placeholder={t("contact.company.placeholder")} className="bg-muted/50 border-border/50" />
+                <label htmlFor="ct-tel" className="text-sm font-medium mb-1.5 block">WhatsApp</label>
+                <Input id="ct-tel" autoComplete="tel" inputMode="tel" type="tel" value={form.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(00) 00000-0000" className="h-11 bg-muted/50 border-border/50" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">{t("contact.project")} *</label>
-                <Textarea value={form.descricao} onChange={(e) => set("descricao", e.target.value)} placeholder={t("contact.project.placeholder")} rows={4} className="bg-muted/50 border-border/50" />
+                <label htmlFor="ct-empresa" className="text-sm font-medium mb-1.5 block">{t("contact.company")}</label>
+                <Input id="ct-empresa" autoComplete="organization" value={form.empresa} onChange={(e) => set("empresa", e.target.value)} placeholder={t("contact.company.placeholder")} className="h-11 bg-muted/50 border-border/50" />
+              </div>
+              <div className="pt-1">
+                <label htmlFor="ct-projeto" className="text-sm font-medium mb-1.5 block">{t("contact.project")} *</label>
+                <Textarea id="ct-projeto" value={form.descricao} onChange={(e) => set("descricao", e.target.value)} placeholder={t("contact.project.placeholder")} rows={4} className="bg-muted/50 border-border/50" />
               </div>
             </div>
           )}
@@ -439,12 +447,20 @@ export default function Contato() {
                 <ArrowLeft className="h-4 w-4" /> Voltar
               </button>
             ) : <div />}
+            <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+              <label htmlFor="hn-website">Website</label>
+              <input id="hn-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={armadilha} onChange={(e) => setArmadilha(e.target.value)} />
+            </div>
+            {step === 1 && !canNext() && (
+              <p className="sr-only" aria-live="polite">Preencha nome, e-mail e a descrição do projeto para continuar.</p>
+            )}
             {step < 4 ? (
               <button
                 type="button"
                 disabled={!canNext()}
+                title={!canNext() ? "Preencha nome, e-mail e a descrição do projeto" : undefined}
                 onClick={() => setStep(step + 1)}
-                className="btn-glow inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-foreground disabled:opacity-50"
+                className="btn-glow inline-flex min-h-[44px] items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-foreground disabled:opacity-50"
               >
                 Próximo <ArrowRight className="h-4 w-4" />
               </button>

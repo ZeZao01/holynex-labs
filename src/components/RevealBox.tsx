@@ -1,4 +1,4 @@
-import { motion, type Variants } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ReactNode } from "react";
 
 interface RevealBoxProps {
@@ -15,6 +15,8 @@ const directions = {
 };
 
 export default function RevealBox({ children, className = "", delay = 0, direction = "up" }: RevealBoxProps) {
+  const reduce = useReducedMotion();
+  if (reduce) return <div className={className}>{children}</div>;
   return (
     <motion.div
       className={className}

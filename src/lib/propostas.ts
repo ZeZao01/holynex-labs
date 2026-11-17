@@ -500,13 +500,10 @@ export async function togglePropostaPublic(id: string, isPublic: boolean): Promi
 }
 
 export async function getPropostaByToken(token: string): Promise<Proposta | null> {
-  const { data, error } = await supabase
-    .from("propostas" as any)
-    .select("*")
-    .eq("public_token", token)
-    .eq("is_public", true)
-    .single();
-  if (error) return null;
+  // A leitura pública passa pela função get_public_proposal: só acha a proposta com o link exato
+  // e só devolve os campos do cliente (sem e-mail, margem, estratégia ou planilha de preço).
+  const { data, error } = await supabase.rpc("get_public_proposal" as never, { p_token: token } as never);
+  if (error || !data) return null;
   return parseRow(data);
 }
 
