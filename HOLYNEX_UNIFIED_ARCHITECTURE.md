@@ -25,7 +25,7 @@ captacao manual ou CSV
 - Importacao CSV com virgula ou ponto e virgula, aliases comuns de colunas e cidade em texto livre.
 - Pre-visualizacao de importacao e indicacao de registros possivelmente duplicados.
 - Prompt Studio dentro do detalhe do lead.
-- Prompts direcionados para Codex, Lovable, Google Stitch ou uso generico.
+- Prompts direcionados para Codex, Google Stitch ou uso generico.
 - Briefing gerado a partir de lead, analise, modulos, stack, riscos, oportunidades, roadmap e portfolio.
 - Exportacao do prompt em Markdown e copia para a area de transferencia.
 - Hub `QG Agencia` com fluxo operacional, capacidades e atalhos locais.
@@ -38,7 +38,7 @@ captacao manual ou CSV
 | Brand Studio AI | identidade e pecas do projeto | integrado no sistema |
 | QG Brain | pesquisa e memoria local | atalho local, servidor separado |
 | Fluxo | producao e aprovacao de conteudo | atalho local, servidor separado |
-| Codex, Lovable e Stitch | desenvolvimento a partir do lead | prompt gerado e revisado por humano |
+| Codex e Stitch | desenvolvimento a partir do lead | prompt gerado e revisado por humano |
 | Supabase | autenticacao e persistencia | existente; ambiente remoto nao alterado nesta etapa |
 
 ## Seguranca e governanca

@@ -33,7 +33,7 @@ export const QG_TOOLS = [
   },
   {
     name: "Prompt Studio",
-    description: "Briefs personalizados para Codex, Lovable, Stitch e outras IAs.",
+    description: "Briefs personalizados para Codex, Stitch e outras IAs.",
     status: "integrado por lead",
     href: "/admin/orcamentos",
     icon: FileCode2,

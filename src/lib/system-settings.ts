@@ -33,7 +33,7 @@ export interface AiProvidersSettings {
 export const DEFAULT_SYSTEM_SETTINGS: Record<SystemSettingKey, any> = {
   ai_providers: {
     default_provider: "OpenRouter",
-    fallback_order: ["OpenRouter", "Groq", "Genspark", "Lovable AI"],
+    fallback_order: ["OpenRouter", "Groq", "Genspark"],
     fallback_enabled: true,
     temperature: 0.3,
     max_tokens: 4000,
@@ -59,13 +59,6 @@ export const DEFAULT_SYSTEM_SETTINGS: Record<SystemSettingKey, any> = {
         url: "https://api.genspark.ai/v1/chat/completions",
         model: "genspark-lite",
         priority: 3,
-      },
-      {
-        name: "Lovable AI",
-        enabled: false,
-        url: "https://ai.gateway.lovable.dev/v1/chat/completions",
-        model: "google/gemini-3-flash-preview",
-        priority: 4,
       },
     ],
   },

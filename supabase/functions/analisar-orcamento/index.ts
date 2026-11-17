@@ -78,18 +78,7 @@ interface ProviderConfig {
 function getProviders(): ProviderConfig[] {
   const providers: ProviderConfig[] = [];
 
-  // Primary: Lovable AI Gateway
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (lovableKey) {
-    providers.push({
-      name: "Lovable AI",
-      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
-      apiKey: lovableKey,
-      model: "google/gemini-3-flash-preview",
-    });
-  }
-
-  // Fallback: OpenRouter
+  // Primary: OpenRouter
   const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
   if (openrouterKey) {
     providers.push({

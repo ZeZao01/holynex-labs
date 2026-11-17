@@ -1,4 +1,4 @@
-export type DevelopmentTarget = "codex" | "lovable" | "stitch" | "generic";
+export type DevelopmentTarget = "codex" | "stitch" | "generic";
 export type DevelopmentProduct = "site" | "landing_page" | "internal_system" | "saas";
 
 export interface DevelopmentLeadContext {
@@ -46,7 +46,6 @@ export interface DevelopmentPromptInput {
 
 const TARGET_LABELS: Record<DevelopmentTarget, string> = {
   codex: "Codex",
-  lovable: "Lovable",
   stitch: "Google Stitch",
   generic: "uma IA de desenvolvimento",
 };
@@ -66,16 +65,12 @@ function targetInstructions(target: DevelopmentTarget): string {
     return `- Leia primeiro o repositório, as instruções locais e o design system existente.
 - Implemente a experiência real, com código funcional, dados tipados e estados de loading, vazio, erro e sucesso.
 - Preserve arquivos e mudanças existentes; mantenha o escopo próximo aos módulos responsáveis.
-- Execute build, testes e QA visual em desktop e mobile antes de concluir.`;
-  }
-  if (target === "lovable") {
-    return `- Trabalhe no projeto existente conectado ao Git e altere somente os arquivos necessários; não recrie o projeto do zero.
-- Antes de editar, responda com um plano curto contendo rotas, componentes, dados e critérios de aceite.
-- Crie diretamente o produto utilizável, não uma página de marketing genérica.
-- Reuse Supabase, componentes e tokens existentes quando disponíveis.
+- Trabalhe no projeto existente conectado ao Git; não recrie o projeto do zero.
+- Antes de editar, apresente um plano curto com rotas, componentes, dados e critérios de aceite.
+- Reuse Supabase, o design system (DESIGN.md) e os componentes existentes.
 - Não invente integrações ou dados reais; use estados honestos e marque dependências externas.
 - Preserve o menu lateral e o shell da aplicação entre rotas; atualize somente a área de conteúdo.
-- Entregue rotas, formulários, persistência, responsividade, SEO local e feedback de ações completos.
+- Execute build, testes e QA visual em desktop e mobile antes de concluir.
 - Ao terminar, liste arquivos alterados, migrações, secrets necessários e testes executados.`;
   }
   if (target === "stitch") {
@@ -100,7 +95,7 @@ export function buildDevelopmentPrompt(input: DevelopmentPromptInput): string {
   ].filter(Boolean) as string[];
 
   const reference = input.projectReference;
-  return `# Execução Lovable — projeto comercial personalizado HolyNex
+  return `# Execução — projeto comercial personalizado HolyNex
 
 Você é responsável por projetar e desenvolver um ${PRODUCT_LABELS[product]} para o lead abaixo usando ${TARGET_LABELS[target]}.
 

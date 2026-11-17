@@ -251,7 +251,7 @@ export default function AdminConfiguracoes() {
         <SectionCard title="Segurança" action={<Shield className="h-4 w-4 text-muted-foreground" />}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div><p className="text-sm font-medium">Autenticação</p><p className="text-xs text-muted-foreground">Login por email e senha via Lovable Cloud</p></div>
+              <div><p className="text-sm font-medium">Autenticação</p><p className="text-xs text-muted-foreground">Login por e-mail e senha (Supabase Auth)</p></div>
               <span className="text-xs text-primary font-medium">Ativo</span>
             </div>
             <Separator />

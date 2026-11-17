@@ -28,7 +28,7 @@ const productLabels: Record<DevelopmentProduct, string> = {
 };
 
 export default function LeadPromptStudio({ lead }: LeadPromptStudioProps) {
-  const [target, setTarget] = useState<DevelopmentTarget>("lovable");
+  const [target, setTarget] = useState<DevelopmentTarget>("codex");
   const [product, setProduct] = useState<DevelopmentProduct>(() => inferDevelopmentProduct(lead.projectType));
   const [instructions, setInstructions] = useState("");
   const [copied, setCopied] = useState(false);
@@ -96,7 +96,7 @@ export default function LeadPromptStudio({ lead }: LeadPromptStudioProps) {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="codex">Codex</SelectItem>
-                  <SelectItem value="lovable">Lovable</SelectItem>
+                  
                   <SelectItem value="stitch">Google Stitch</SelectItem>
                   <SelectItem value="generic">IA genérica</SelectItem>
                 </SelectContent>

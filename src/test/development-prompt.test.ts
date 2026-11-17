@@ -33,9 +33,9 @@ describe("development prompt", () => {
     expect(inferDevelopmentProduct("SaaS / Micro SaaS")).toBe("saas");
   });
 
-  it("creates a Lovable execution brief with real local data and a reusable model", () => {
+  it("creates a Codex execution brief with real local data and a reusable model", () => {
     const prompt = buildDevelopmentPrompt({
-      target: "lovable", product: "landing_page",
+      target: "codex", product: "landing_page",
       lead: { id: "1", contactName: "", company: "Clínica Aurora", niche: "Clínica odontológica", projectType: "Landing page", objective: "Gerar agendamentos", mainPain: "Sem site", briefing: "Lead Google", phone: "+55 11 99999-0000", email: "", googleRating: 4.8, googleReviewCount: 120, prospectScore: 82 },
       projectReference: { title: "Agenda Clínica", category: "Clínicas", niche: "Odontologia", valueProposition: "Agendamento", problemSolved: "Atendimento disperso", commercialDescription: "Base pronta", investmentRange: "R$ 5 mil", baseDeadline: "15 dias", reuseReasons: ["Mesmo nicho"] },
     });

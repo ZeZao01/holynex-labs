@@ -41,7 +41,14 @@ Os SQLs prontos ficam **fora do repositório** (têm dados de clientes): `G:\Bac
    - `GOOGLE_MAPS_API_KEY` (prospectar leads);
    - `ADMIN_BOOTSTRAP_EMAILS`.
 
-   `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` já existem por padrão. A `LOVABLE_API_KEY` não existe fora da Lovable; o `analisar-orcamento` cai sozinho para OpenRouter ou Groq.
+   `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` já existem por padrão. O gateway de IA da Lovable foi removido do código; o `analisar-orcamento` usa OpenRouter e Groq.
 4. **Arquivos do Storage:** baixar do projeto antigo os 22 arquivos (PDFs, portfólio, anexos de orçamento), subir nos buckets com o mesmo caminho e só então rodar `99_arquivos_pendentes.sql`.
 5. **Conferir** (o Claude faz pelo conector do Supabase): contagem por tabela, avisos de segurança (advisors), login do admin e uma página de cada módulo.
 6. **Publicar:** juntar `migracao-supabase` no `main` e atualizar o deploy.
+
+## Estado em 17/11/2026
+- ✅ Passo 1 (banco) concluído e conferido pelo conector; os dados batem com o backup.
+- ✅ Endurecimento: migração `endurece_funcoes_pos_migracao`.
+- ✅ Lovable removida do código (plugin de build, gateway de IA, alvo do gerador de prompts, pasta `.lovable`, README).
+- ⬜ Ligar "Leaked password protection" em Authentication → Passwords.
+- ⬜ Passos 2 a 6.
