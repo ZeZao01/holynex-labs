@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/aeulestxwyhzsrltiwum\.supabase\.co\/.*/i,
+            urlPattern: /^https:\/\/ioqafyypnlzcbxzclehv\.supabase\.co\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-api",
