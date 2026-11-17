@@ -112,3 +112,7 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Design system
+
+O painel admin usa o **HolyNex Design System** (`design-system/`). Regras, tokens e o mapa da biblioteca estão em [DESIGN.md](DESIGN.md). Vitrine em `/admin/design-system`. Depois de mudar `design-system/`, rode `npm run ds:scope`.

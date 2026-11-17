@@ -1,0 +1,14 @@
+:root{
+--shadow-xs:0 1px 2px rgba(18,10,46,.05);
+--shadow-sm:0 1px 3px rgba(18,10,46,.06),0 1px 2px rgba(18,10,46,.04);
+--shadow-md:0 8px 24px -8px rgba(18,10,46,.12),0 2px 4px rgba(18,10,46,.04);
+--shadow-lg:0 24px 56px -16px rgba(18,10,46,.22),0 4px 12px rgba(18,10,46,.06);
+--shadow-brand:0 10px 24px -10px rgba(108,28,246,.55);
+--ring-focus:0 0 0 3px rgba(108,28,246,.22); /* @kind shadow */
+--ring-danger:0 0 0 3px rgba(229,72,77,.2); /* @kind shadow */
+--overlay-scrim:rgba(18,10,46,.36); /* @kind color */
+--blur-overlay:8px; /* @kind other */
+--ease-out:cubic-bezier(.2,.8,.2,1); /* @kind other */--ease-in-out:cubic-bezier(.65,0,.35,1); /* @kind other */
+--dur-fast:120ms; /* @kind other */--dur-base:180ms; /* @kind other */--dur-slow:280ms; /* @kind other */
+--z-sticky:20; /* @kind other */--z-drawer:40; /* @kind other */--z-overlay:50; /* @kind other */--z-toast:60; /* @kind other */--z-tooltip:70; /* @kind other */
+}

@@ -1,0 +1,29 @@
+// Ponto de entrada do HolyNex Design System (importar com '@ds').
+// Os estilos ficam em design-system/holynex-ds.scoped.css e só valem dentro de um elemento com a classe .hn-ds.
+export { Icon } from './components/core/Icon.jsx';
+export { Button } from './components/core/Button.jsx';
+export { IconButton } from './components/core/IconButton.jsx';
+export { Input } from './components/forms/Input.jsx';
+export { Select } from './components/forms/Select.jsx';
+export { Checkbox } from './components/forms/Checkbox.jsx';
+export { Radio } from './components/forms/Radio.jsx';
+export { Switch } from './components/forms/Switch.jsx';
+export { Card } from './components/display/Card.jsx';
+export { Badge } from './components/display/Badge.jsx';
+export { Chip } from './components/display/Chip.jsx';
+export { Avatar } from './components/display/Avatar.jsx';
+export { Progress } from './components/display/Progress.jsx';
+export { StatCard } from './components/display/StatCard.jsx';
+export { Tabs } from './components/navigation/Tabs.jsx';
+export { Breadcrumb } from './components/navigation/Breadcrumb.jsx';
+export { Pagination } from './components/navigation/Pagination.jsx';
+export { Dialog } from './components/feedback/Dialog.jsx';
+export { Toast } from './components/feedback/Toast.jsx';
+export { Tooltip } from './components/feedback/Tooltip.jsx';
+export { DataTable } from './components/data/DataTable.jsx';
+export { BarChart } from './components/data/BarChart.jsx';
+export { AreaChart } from './components/data/AreaChart.jsx';
+export { DonutChart } from './components/data/DonutChart.jsx';
+export { Sidebar } from './components/shell/Sidebar.jsx';
+export { Topbar } from './components/shell/Topbar.jsx';
+export { BottomNav } from './components/shell/BottomNav.jsx';

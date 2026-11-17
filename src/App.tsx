@@ -27,6 +27,7 @@ const Contato = lazy(() => import("./pages/Contato"));
 const PropostaPublica = lazy(() => import("./pages/PropostaPublica"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminDesignSystem = lazy(() => import("./pages/AdminDesignSystem"));
 const AdminOrcamentos = lazy(() => import("./pages/AdminOrcamentos"));
 const AdminLeadDetalhe = lazy(() => import("./pages/AdminLeadDetalhe"));
 const AdminPropostas = lazy(() => import("./pages/AdminPropostas"));
@@ -109,6 +110,7 @@ function AppRoutes() {
             <Route path="/admin/addons" element={<AdminRouteGuard module="addons"><AdminAddons /></AdminRouteGuard>} />
             <Route path="/admin/qg" element={<AdminRouteGuard module="configuracoes"><AdminQGHub /></AdminRouteGuard>} />
             <Route path="/admin/configuracoes" element={<AdminRouteGuard module="configuracoes"><AdminConfiguracoes /></AdminRouteGuard>} />
+            <Route path="/admin/design-system" element={<AdminRouteGuard module="configuracoes"><AdminDesignSystem /></AdminRouteGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -133,6 +135,8 @@ function AppRoutes() {
           <Route path="/contato" element={<Contato />} />
           <Route path="/proposta/:token" element={<PropostaPublica />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          {/* Só no modo de desenvolvimento: vitrine sem login para conferência visual. Não entra no build de produção. */}
+          {import.meta.env.DEV && <Route path="/dev/design-system" element={<AdminDesignSystem />} />}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

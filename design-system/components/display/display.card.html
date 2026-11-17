@@ -1,0 +1,27 @@
+<!-- @dsCard group="Components" viewport="700x520" name="Display" subtitle="Card, StatCard, Badge, Chip, Avatar, Progress" -->
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../styles.css">
+<style>body{background:#fff;padding:20px;margin:0}.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.col{display:flex;flex-direction:column;gap:14px}.lbl{font:500 11px/1 var(--font-ui);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;width:72px;flex-shrink:0}body{background:var(--bg-canvas)}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="../../tools/ds-fallback.js"></script>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const NS = window.HolyNexDesignSystem_40df70;
+
+const { Card, StatCard, Badge, Chip, Avatar, Progress, Button, IconButton, Select } = NS;
+function App(){return (<div className="col">
+<div style={{display:'grid',gridTemplateColumns:'1.1fr 1.6fr',gap:12}}>
+<StatCard variant="brand" icon="banknote" label="Receita recorrente (MRR)" value="R$ 86.240" unit="BRL" delta="+8,1%" footnote="vs. outubro"><div className="row" style={{gap:8,marginTop:4}}><Button variant="secondary" size="sm" iconRight="download">Relatório</Button><Button variant="dark" size="sm" iconRight="arrow-up-right">Faturar</Button></div></StatCard>
+<Card title="Indicadores" actions={<IconButton icon="plus" label="Adicionar" size="sm" variant="ghost" />}><div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}><StatCard icon="users" label="Clientes" value="1.248" delta={4.2} /><StatCard icon="ticket" label="Chamados" value="37" delta={-12} /><StatCard icon="cpu" label="Uso de API" value="82%" /></div></Card>
+</div>
+<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+<Card title="Status & tags" subtitle="Badge · Chip"><div className="col" style={{gap:10}}><div className="row" style={{gap:6}}><Badge tone="success">Concluído</Badge><Badge tone="warning" dot>Pendente</Badge><Badge tone="danger">Falhou</Badge><Badge tone="info">Em análise</Badge><Badge tone="brand">Pro</Badge><Badge>Rascunho</Badge></div><div className="row" style={{gap:6}}><Chip icon="sparkles" onClick={()=>{}}>Resumir mês</Chip><Chip selected onClick={()=>{}}>Ativos</Chip><Chip onRemove={()=>{}}>Plano: Pro</Chip></div></div></Card>
+<Card title="Saúde da conta" actions={<Select variant="pill" size="sm" options={['Este mês']} />}><div className="col" style={{gap:12}}><div className="row" style={{justifyContent:'space-between'}}><span style={{font:'700 20px var(--font-display)'}}>Excelente</span><span className="hn-num" style={{fontSize:18}}>92%</span></div><Progress value={78} variant="split" size="lg" /><div className="row" style={{justifyContent:'space-between'}}><div className="row" style={{gap:-6}}><Avatar name="Rafael Nunes" size={28} status="online" /><Avatar name="Ana Lima" size={28} /><Avatar name="Caio Prado" size={28} status="away" /></div><Progress value={70} variant="dots" /></div></div></Card>
+</div>
+</div>);}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script></body></html>

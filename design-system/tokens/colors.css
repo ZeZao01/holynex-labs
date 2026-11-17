@@ -1,0 +1,50 @@
+:root{
+/* Brand spectrum — sampled from the HolyNex mark (magenta → violet → blue → cyan) */
+--hn-magenta:#E115F4;--hn-orchid:#A130F4;--hn-violet:#6C1CF6;--hn-indigo:#3A40EF;--hn-azure:#1E9BF5;--hn-cyan:#2DC8F8;
+/* Violet (primary) scale */
+--violet-50:#F4EFFF;--violet-100:#EAE0FF;--violet-200:#D6C4FE;--violet-300:#B99AFC;--violet-400:#9662FA;--violet-500:#7E3BF8;--violet-600:#6C1CF6;--violet-700:#5A12D6;--violet-800:#4710AA;--violet-900:#2E0B70;
+/* Ink — deep indigo used for text, dark buttons and dark chart series */
+--ink-950:#120A2E;--ink-900:#1A1238;--ink-800:#2A2150;--ink-700:#3D3466;
+/* Neutrals — cool, faintly violet-tinted */
+--neutral-0:#FFFFFF;--neutral-25:#FAFAFB;--neutral-50:#F4F4F6;--neutral-100:#EEEEF1;--neutral-150:#E7E7EB;--neutral-200:#DCDCE2;--neutral-300:#C4C4CC;--neutral-400:#9C9CA6;--neutral-500:#787880;--neutral-600:#5C5C66;--neutral-700:#43434C;--neutral-800:#2C2C34;--neutral-900:#18181E;
+/* Status */
+--success-50:#E6F7EC;--success-500:#1FA855;--success-700:#137A3C;
+--warning-50:#FEF4E2;--warning-500:#F59E0B;--warning-700:#A65F00;
+--danger-50:#FDECEC;--danger-500:#E5484D;--danger-700:#B42328;
+--info-50:#E6F4FE;--info-500:#1E9BF5;--info-700:#0B6BB0;
+
+/* ---- Semantic aliases ---- */
+--bg-canvas:var(--neutral-50);
+--bg-app:var(--neutral-50);
+--surface-card:var(--neutral-0);
+--surface-sunken:var(--neutral-50);
+--surface-raised:var(--neutral-0);
+--surface-hover:var(--neutral-100);
+--surface-inverse:var(--ink-950);
+--surface-brand:var(--violet-600);
+--surface-brand-soft:var(--violet-50);
+--border-subtle:var(--neutral-150);
+--border-default:var(--neutral-200);
+--border-strong:var(--neutral-300);
+--border-brand:var(--violet-300);
+--text-primary:var(--ink-950);
+--text-secondary:var(--neutral-500);
+--text-tertiary:var(--neutral-400);
+--text-disabled:var(--neutral-300);
+--text-inverse:var(--neutral-0);
+--text-on-brand:var(--neutral-0);
+--text-brand:var(--violet-600);
+--text-link:var(--violet-600);
+--text-link-hover:var(--violet-800);
+--accent:var(--violet-600);
+--accent-hover:var(--violet-700);
+--accent-press:var(--violet-800);
+--accent-soft:var(--violet-50);
+--accent-soft-hover:var(--violet-100);
+--accent-soft-fg:var(--violet-700);
+--positive:var(--success-500);--positive-fg:var(--success-700);--positive-bg:var(--success-50);
+--negative:var(--danger-500);--negative-fg:var(--danger-700);--negative-bg:var(--danger-50);
+--gradient-brand:linear-gradient(120deg,#E115F4 0%,#A130F4 28%,#6C1CF6 52%,#3A40EF 74%,#1E9BF5 100%); /* @kind color */
+--gradient-ink:linear-gradient(90deg,#120A2E 0%,#5C5C66 55%,#DCDCE2 100%); /* @kind color */
+--chart-1:var(--ink-900);--chart-2:var(--violet-400);--chart-3:var(--violet-200);--chart-4:var(--neutral-200);--chart-5:var(--hn-azure);--chart-6:var(--hn-magenta);
+}
