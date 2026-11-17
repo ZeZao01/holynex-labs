@@ -36,15 +36,18 @@ export default function AdminDesignSystem() {
   const [page, setPage] = useState(2);
   const [dialog, setDialog] = useState(false);
   const [chip, setChip] = useState(true);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   return (
-    <div className="hn-ds" style={{ position: "relative", zIndex: 10, isolation: "isolate", minHeight: "100%", padding: 24, display: "grid", gap: 40, borderRadius: 16 }}>
+    <div className="hn-ds" data-theme={theme} style={{ position: "relative", zIndex: 10, isolation: "isolate", minHeight: "100%", padding: 24, display: "grid", gap: 40, borderRadius: 16 }}>
       <header style={{ display: "grid", gap: 6 }}>
         <Breadcrumb items={[{ label: "Admin", href: "/admin/dashboard" }, { label: "Design system" }]} />
         <h1 style={{ margin: 0, font: "600 32px/1.15 var(--font-ui)", color: "var(--text-primary)" }}>HolyNex Design System</h1>
         <p className="hn-muted" style={{ margin: 0 }}>
-          Biblioteca inteira com variantes e estados. Fonte da verdade: <code>DESIGN.md</code> e <code>design-system/</code>. Só tema claro.
+          Biblioteca inteira com variantes e estados, nos dois temas. Fonte da verdade: <code>DESIGN.md</code> e <code>design-system/</code>.
         </p>
+        <Tabs items={[{ id: "light", label: "Claro", icon: "sun" }, { id: "dark", label: "Escuro", icon: "moon" }]} value={theme}
+          onChange={(id: string) => setTheme(id as "light" | "dark")} variant="segmented" size="sm" />
       </header>
 
       <Section id="botoes" title="Botões">
